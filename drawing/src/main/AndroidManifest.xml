@@ -1,0 +1,19 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.drawing">
+
+    <application
+        android:allowBackup="true"
+        android:label="FTC Simulator"
+        android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
+
+        <activity android:name=".DrawingRunner"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
+    </application>
+
+</manifest>
