@@ -24,6 +24,7 @@ public class DrawingRunner extends View {
     private final Rect backgroundRect = new Rect();
     private final Rect fieldImgRect = new Rect();
     private final RectF robotDrawing = new RectF();
+    private long animateDelayMillis = 700;
 
 
     public void initDrawing()
@@ -40,7 +41,7 @@ public class DrawingRunner extends View {
         bgPaint.setColor(Color.LTGRAY);
 
         //change this delay millis to speed up/slow down animation
-        postDelayed(animator, 700);
+        postDelayed(animator, animateDelayMillis);
     }
 
 
@@ -64,7 +65,7 @@ public class DrawingRunner extends View {
         public void run() {
             if (robotIndex < points.size() - 1) robotIndex++;
             invalidate();
-            postDelayed(this, 200);
+            postDelayed(this, animateDelayMillis);
         }
     };
 
