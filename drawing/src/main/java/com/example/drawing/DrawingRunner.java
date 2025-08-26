@@ -15,8 +15,8 @@ public class DrawingRunner extends AppCompatActivity {
 
             double SCALE_FACTOR = 1;
 
-        int stateStartingX = 0;
-        int stateStartingY = 0;
+            int stateStartingX = 0;
+            int stateStartingY = 0;
 
 
 
@@ -25,7 +25,7 @@ public class DrawingRunner extends AppCompatActivity {
                 0, 0, 0, 0, 0, 0));
 
         points.add(new CurvePoint(20, 0,
-                0.4 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 20, 10, // changed move speed from .35 to .45
+                0.3 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 20, 10, // changed move speed from .35 to .45
                 Math.toRadians(0), 0.6));
 
         points.add(new CurvePoint(25.75, 15,

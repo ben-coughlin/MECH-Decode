@@ -8,7 +8,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
-import android.util.Log;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -21,19 +20,14 @@ public class Drawing extends View {
 
     private final Paint pathPaint = new Paint();
     private final Paint robotPaint = new Paint();
-    private final Bitmap fieldBitmap;
+    private Bitmap fieldBitmap;
+    private final Rect backgroundRect = new Rect();
+    private final Rect fieldImgRect = new Rect();
+    private final RectF robotDrawing = new RectF();
 
-    private double startX = 0;
-    private double startY = 20;
-    private boolean startSet = false;
 
-    private float robotPixelsToCornerX = 8.124F * 6;
-    private float robotPixelsToCornerY = 10F * 6;
-   
-
-    public Drawing(Context context, ArrayList<CurvePoint> points) {
-        super(context);
-        this.points = points;
+    public void initDrawing()
+    {
 
         fieldBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ftc_field);
 
@@ -49,7 +43,23 @@ public class Drawing extends View {
         postDelayed(animator, 700);
     }
 
-    private Runnable animator = new Runnable() {
+
+    public Drawing(Context context, ArrayList<CurvePoint> points) {
+        super(context);
+        this.points = points;
+        initDrawing();
+    }
+
+    //android gets upset without a default constructor so this is here but probably won't ever be needed
+    public Drawing(Context context)
+    {
+        super(context);
+        this.points = new ArrayList<>();
+        initDrawing();
+    }
+
+
+    private final Runnable animator = new Runnable() {
         @Override
         public void run() {
             if (robotIndex < points.size() - 1) robotIndex++;
@@ -72,7 +82,7 @@ public class Drawing extends View {
 
 
     @Override
-    protected void onDraw(Canvas canvas) {
+    protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
 
         float scaleX = getWidth() / 72f;   // FTC field width is 72 inches
@@ -82,12 +92,14 @@ public class Drawing extends View {
 
         // Draw field background
         if (fieldBitmap != null) {
-            Rect src = new Rect(0, 0, fieldBitmap.getWidth(), fieldBitmap.getHeight());
-            Rect dst = new Rect(0, 0, getWidth(), getHeight());
-            canvas.drawBitmap(fieldBitmap, src, dst, null);
+            fieldImgRect.set(0, 0, fieldBitmap.getWidth(), fieldBitmap.getHeight());
+            backgroundRect.set(0, 0, getWidth(), getHeight());
+            canvas.drawBitmap(fieldBitmap, fieldImgRect, backgroundRect, null);
         }
 
 
+        double startX = 0;
+        double startY = 20;
         for (int i = 0; i < points.size() - 1; i++) {
             CurvePoint p1 = points.get(i);
             CurvePoint p2 = points.get(i + 1);
@@ -105,7 +117,9 @@ public class Drawing extends View {
         float robotCenterX = (float) ((r.x + startX) * scaleX);
         float robotCenterY = getHeight() - (float) ((r.y + startY) * scaleY);
 
-            RectF rect = new RectF(robotCenterX - robotPixelsToCornerX, robotCenterY - robotPixelsToCornerY, robotCenterX + robotPixelsToCornerX, robotCenterY + robotPixelsToCornerY);
+        float robotPixelsToCornerX = 8.124F * 6;
+        float robotPixelsToCornerY = 10F * 6;
+        robotDrawing.set(robotCenterX - robotPixelsToCornerX, robotCenterY - robotPixelsToCornerY, robotCenterX + robotPixelsToCornerX, robotCenterY + robotPixelsToCornerY);
 
             float rotation = Float.isNaN((float) Math.toDegrees(r.slowDownTurnRadians)) ?
                     0f : (float) Math.toDegrees(r.slowDownTurnRadians);
@@ -113,7 +127,7 @@ public class Drawing extends View {
 
             canvas.save();
             canvas.rotate(rotation, robotCenterX, robotCenterY);
-            canvas.drawRect(rect, robotPaint);
+            canvas.drawRect(robotDrawing, robotPaint);
             canvas.restore();
         }
 
