@@ -28,9 +28,13 @@ public class DrawingRunner extends AppCompatActivity {
                 0.4 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 20, 10, // changed move speed from .35 to .45
                 Math.toRadians(0), 0.6));
 
+        points.add(new CurvePoint(25.75, 15,
+                0.3 * SCALE_FACTOR, 0.2 * SCALE_FACTOR, 20, 10, // changed move speed from .2 to .25
+                Math.toRadians(60), 0.6));
         points.add(new CurvePoint(25.75, 20,
                 0.3 * SCALE_FACTOR, 0.2 * SCALE_FACTOR, 20, 10, // changed move speed from .2 to .25
                 Math.toRadians(0), 0.6));
+
 
 
         // and here - - - - - - - - - - - - - - - - - - - - - - - - >

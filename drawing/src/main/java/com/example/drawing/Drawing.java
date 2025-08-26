@@ -28,7 +28,7 @@ public class Drawing extends View {
     private boolean startSet = false;
 
     private float robotPixelsToCornerX = 8.124F * 6;
-    private float robotPixelsToCornerY = 8.75F * 6;
+    private float robotPixelsToCornerY = 10F * 6;
    
 
     public Drawing(Context context, ArrayList<CurvePoint> points) {
@@ -45,7 +45,8 @@ public class Drawing extends View {
         Paint bgPaint = new Paint();
         bgPaint.setColor(Color.LTGRAY);
 
-        postDelayed(animator, 200);
+        //change this delay millis to speed up/slow down animation
+        postDelayed(animator, 700);
     }
 
     private Runnable animator = new Runnable() {
@@ -115,5 +116,7 @@ public class Drawing extends View {
             canvas.drawRect(rect, robotPaint);
             canvas.restore();
         }
+
+
     }
 
