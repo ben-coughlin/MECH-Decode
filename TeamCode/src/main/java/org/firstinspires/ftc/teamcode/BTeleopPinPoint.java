@@ -49,7 +49,7 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
         isAuto = false;
         resetEncoders =false;
 
-        super.init();      //Ask Miles what this is?
+        super.init();
 
         //drive = new MecanumDrivePinPoint(hardwareMap);
 
