@@ -113,9 +113,19 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(15, 0,
-                    0.4 * SCALE_FACTOR, 0.40 * SCALE_FACTOR, 10, 10,
-                    Math.toRadians(60), 0.6));
+            points.add(new CurvePoint(20, 0,
+                    0.3 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 20, 10, // changed move speed from .35 to .45
+                    Math.toRadians(0), 0.6));
+
+
+
+
+
+
+
+//            points.add(new CurvePoint(15, 0,
+//                    0.4 * SCALE_FACTOR, 0.40 * SCALE_FACTOR, 10, 10,
+//                    Math.toRadians(60), 0.6));
 
 //            points.add(new CurvePoint(20, 48,
 //                    0.4 * SCALE_FACTOR, 0.40 * SCALE_FACTOR, 5, 10,
@@ -139,7 +149,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(15,10,
+            points.add(new CurvePoint(20,10,
                     0.35 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.6));
 

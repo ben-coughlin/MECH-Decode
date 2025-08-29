@@ -131,7 +131,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
     @Override
     public void init() {
         odo = hardwareMap.get(GoBildaPinpointDriver.class,"odo");
-        odo.setOffsets(-84.0, -168.0, DistanceUnit.MM);
+        odo.setOffsets(61.0, 165.0, DistanceUnit.MM);
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED);
         odo.resetPosAndIMU();
@@ -258,7 +258,18 @@ public abstract class RobotMasterPinpoint extends OpMode {
         odo.update();
 
         Pose2D pos = odo.getPosition();
+        mainAutoLoop();
 
+        telemetry.addData("Status", "Initialized");
+        telemetry.addData("Status", odo.getDeviceStatus());
+        String data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", pos.getX(DistanceUnit.INCH), pos.getY(DistanceUnit.INCH), pos.getHeading(AngleUnit.DEGREES));
+        telemetry.addData("Position", data);
+
+            /*
+            gets the current Velocity (x & y in mm/sec and heading in degrees/sec) and prints it.
+             */
+        String velocity = String.format(Locale.US,"{XVel: %.3f, YVel: %.3f, HVel: %.3f}", odo.getVelX(DistanceUnit.INCH), odo.getVelY(DistanceUnit.INCH), odo.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES));
+        telemetry.addData("Velocity", velocity);
         telemetry.addData("Position Calculation Loop Time", SystemClock.uptimeMillis() - startLoopTime);
 
         worldXPosition = pos.getX(DistanceUnit.INCH);
@@ -273,7 +284,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
         telemetry.addData("Velocity Calculation Loop Time", SystemClock.uptimeMillis() - startLoopTime);
 
-        mainAutoLoop();
+
 
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
         telemetry.addData("World X", worldXPosition);
@@ -296,6 +307,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
 //        telemetry.addData("heading (deg)", Math.toDegrees(pose.heading.toDouble()));
 
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
+        telemetry.update();
         Log.i("Loop Time", String.valueOf(SystemClock.uptimeMillis() - startLoopTime));
     }
 
