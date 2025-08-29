@@ -76,6 +76,7 @@ public class DirectionDebugger extends RobotMasterPinpoint
     public void init() {
         //drive init is handled in robotmaster
       super.init();
+      odo.resetPosAndIMU();
 
       //this is to see if any motor is reversed
       motorDirections.put("leftFront", String.valueOf(drive.leftFront.getDirection()));
