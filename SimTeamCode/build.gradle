@@ -1,0 +1,73 @@
+////
+//// build.gradle in SimTeamCode
+////
+//// Most of the definitions for building your module reside in a common, shared
+//// file 'build.common.gradle'. Being factored in this way makes it easier to
+//// integrate updates to the FTC into your code. If you really need to customize
+//// the build definitions, you can place those customizations in this file, but
+//// please think carefully as to whether such customizations are really necessary
+//// before doing so.
+//
+//
+//// Custom definitions may go here
+//
+//// Include common definitions from above.
+//apply from: '../build.common.gradle'
+//apply from: '../build.dependencies.gradle'
+//
+//android {
+//    namespace = 'org.firstinspires.ftc.simteamcode'
+//
+//    packagingOptions {
+//        jniLibs.useLegacyPackaging true
+//    }
+//}
+//
+//dependencies {
+//    implementation project(':FtcRobotController')
+//}
+
+plugins {
+    id 'java-library'
+    id 'application' // Useful for defining a main class for running
+//    id 'org.openjfx.javafxplugin' version '0.1.0'
+}
+
+java {
+    sourceCompatibility JavaVersion.VERSION_11
+    targetCompatibility JavaVersion.VERSION_11
+}
+
+repositories {
+    mavenCentral() // Make sure this is here
+}
+
+//javafx {
+//    version = "24.0.2" // Or your desired JavaFX version (e.g., "21")
+////    modules = [ 'javafx.controls', 'javafx.fxml', 'javafx.graphics' ]
+//}
+
+application {
+    mainClass = 'org.firstinspires.ftc.simteamcode.SimApp' // Your main class
+}
+
+dependencies {
+    // Other dependencies if needed
+//        implementation 'org.firstinspires.ftc:Inspection:10.3.0'
+//        implementation 'org.firstinspires.ftc:Blocks:10.3.0'
+//        implementation 'org.firstinspires.ftc:RobotCore:10.3.0'
+//        implementation 'org.firstinspires.ftc:RobotServer:10.3.0'
+//        implementation 'org.firstinspires.ftc:OnBotJava:10.3.0'
+//        implementation 'org.firstinspires.ftc:Hardware:10.3.0'
+//        implementation 'org.firstinspires.ftc:FtcCommon:10.3.0'
+//        implementation 'org.firstinspires.ftc:Vision:10.3.0'
+//        implementation 'androidx.appcompat:appcompat:1.2.0'
+}
+
+//tasks.named('run', JavaExec) {
+//    doFirst {
+//        println "JavaFX Module Path for IDE: ${javafx.getRuntime().getModulePath().getAsPath()}"
+//        // The following line is an alternative way you might get it if the above doesn't give a clean path
+//        // println "Full JVM Args from Gradle: ${jvmArgs.join(' ')}"
+//    }
+//}
