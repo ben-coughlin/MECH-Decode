@@ -52,7 +52,7 @@ import static org.firstinspires.ftc.teamcode.MovementVars.movement_turn;
  */
 
 @TeleOp(name="Ryan Practice OpMode", group="Iterative OpMode")
-@Disabled
+//@Disabled
 public class RyanPracticeOpMode extends RobotMasterPinpoint
 {
     // Declare OpMode members.
@@ -65,6 +65,8 @@ public class RyanPracticeOpMode extends RobotMasterPinpoint
     public void init() {
         telemetry.addData("Status", "Initialized");
 
+        super.init();
+
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
@@ -73,10 +75,6 @@ public class RyanPracticeOpMode extends RobotMasterPinpoint
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
         // Pushing the left stick forward MUST make robot go forward. So adjust these two lines based on your first test drive.
         // Note: The settings here assume direct drive on left and right wheels.  Gear Reduction or 90 Deg drives may require direction flips
-        drive.leftFront.setDirection(DcMotor.Direction.REVERSE);
-        drive.leftBack.setDirection(DcMotor.Direction.REVERSE);
-        drive.rightFront.setDirection(DcMotor.Direction.FORWARD);
-        drive.rightBack.setDirection(DcMotor.Direction.FORWARD);
 
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
@@ -85,10 +83,7 @@ public class RyanPracticeOpMode extends RobotMasterPinpoint
     /*
      * Code to run REPEATEDLY after the driver hits INIT, but before they hit START
      */
-    public static void drivingYAY(float gamepad1_left_stick_x,
-                                  float gamepad1_left_stick_y,
-                                  float gamepad1_right_stick_x,
-                                  float gamepad1_right_stick_y){}
+
     @Override
     public void init_loop() {
     }
@@ -99,6 +94,7 @@ public class RyanPracticeOpMode extends RobotMasterPinpoint
     @Override
     public void start() {
         runtime.reset();
+        super.start();
     }
 
     /*
@@ -107,15 +103,13 @@ public class RyanPracticeOpMode extends RobotMasterPinpoint
     @Override
     public void loop() {
         // Setup a variable for each drive wheel to save power level for telemetry
-        double leftPower;
-        double rightPower;
+        super.loop();
 
         // Choose to drive using either Tank Mode, or POV Mode
         // Comment out the method that's not used.  The default below is POV.
 
         // POV Mode uses left stick to go forward, and right stick to turn.
         // - This uses basic math to combine motions and is easier to drive straight.
-        drivingYAY(gamepad1.left_stick_x, gamepad1.left_stick_y, gamepad1.right_stick_x, gamepad1.right_stick_y);
         movement_y = -gamepad1.left_stick_y;
         movement_x = -gamepad1.left_stick_x;
         movement_turn = -gamepad1.right_stick_x;
