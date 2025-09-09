@@ -86,6 +86,7 @@ public class RyanPracticeOpMode extends RobotMasterPinpoint
 
     @Override
     public void init_loop() {
+        super.init_loop();
     }
 
     /*
@@ -113,6 +114,7 @@ public class RyanPracticeOpMode extends RobotMasterPinpoint
         movement_y = -gamepad1.left_stick_y;
         movement_x = -gamepad1.left_stick_x;
         movement_turn = -gamepad1.right_stick_x;
+        drive.applyMovementDirectionBased();
 
         // Tank Mode uses one stick to control each wheel.
         // - This requires no math, but it is hard to drive forward slowly and keep straight.
