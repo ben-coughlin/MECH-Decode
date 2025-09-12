@@ -17,7 +17,7 @@ public class Movement {
 
     public static double movement_y_min = 0.1118;
     public static double movement_x_min = 0.101;
-    public static double movement_turn_min = 0.102;
+    public static double movement_turn_min = 0.152;
 
 
     public enum profileStates {

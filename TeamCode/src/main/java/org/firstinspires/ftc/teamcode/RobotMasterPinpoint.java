@@ -131,7 +131,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
     @Override
     public void init() {
         odo = hardwareMap.get(GoBildaPinpointDriver.class,"odo");
-        odo.setOffsets(61.0, 165.0, DistanceUnit.MM);
+        odo.setOffsets(171.45, 38, DistanceUnit.MM);
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED);
         odo.resetPosAndIMU();

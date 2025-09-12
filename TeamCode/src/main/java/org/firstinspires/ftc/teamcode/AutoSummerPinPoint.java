@@ -17,7 +17,7 @@ import java.util.HashMap;
 @Autonomous
 public class AutoSummerPinPoint extends RobotMasterPinpoint {
 
-    private final double SCALE_FACTOR = 1;
+    private final double SCALE_FACTOR = 1.4;
 
     private long startTime = 0;
 
@@ -115,7 +115,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
 
             points.add(new CurvePoint(20, 0,
                     0.3 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 20, 10, // changed move speed from .35 to .45
-                    Math.toRadians(0), 0.6));
+                    Math.toRadians(60), 0.6));
 
 
 
@@ -159,7 +159,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
 
             if (Movement.followCurve(points, Math.toRadians(0),2)) {
                 drive.stopAllMovementDirectionBased();
-                //nextStage(progStates.endBehavior.ordinal());
+                nextStage(progStates.strafeRight.ordinal());
             }
 
             drive.applyMovementDirectionBased(); // always put at end of state
@@ -175,7 +175,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(15, 0,
+            points.add(new CurvePoint(0, 10,
                     0.35 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.6));
 
@@ -184,7 +184,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
 //                    Math.toRadians(-90), 0.6));
 
 
-            if (Movement.followCurve(points, Math.toRadians(180),2)) {
+            if (Movement.followCurve(points, Math.toRadians(-90),2)) {
                 drive.stopAllMovementDirectionBased();
                 nextStage(progStates.driveBackward.ordinal());
             }
@@ -210,7 +210,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
 //                    0.25 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 12, 10,
 //                    Math.toRadians(-90), 0.6));
 
-            if (Movement.followCurve(points, Math.toRadians(-90),1)) {
+            if (Movement.followCurve(points, Math.toRadians(180),2)) {
                 drive.stopAllMovementDirectionBased();
                 nextStage(progStates.endBehavior.ordinal());
             }
