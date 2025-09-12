@@ -167,12 +167,27 @@ public class Movement {
         //now that we know what absolute angle to point to, we calculate how close we are to it
         double relativePointAngle = AngleWrap(absolutePointAngle - worldAngle_rad);
 
+        double velocityAdjustedRelativePointAngle = AngleWrap(relativePointAngle - SpeedOmeter.currSlipAngle());
+
+        // ALEJANDRO this is my only change so far on the original logic
+//        velocityAdjustedRelativePointAngle = relativePointAngle;
+
         if (DEBUG_MOVEMENT) {
             clientSim.sendText(String.format(Locale.US, "angleToPointRaw(%.0f), absolutePointAngle(%.0f), relativePointAngle(%.0f)",
                     Math.toDegrees(angleToPointRaw), Math.toDegrees(absolutePointAngle), Math.toDegrees(relativePointAngle)));
-        }
 
-        double velocityAdjustedRelativePointAngle = AngleWrap(relativePointAngle - SpeedOmeter.currSlipAngle());
+            System.out.println(String.format(Locale.US,
+                            "[GUN_TO_POS] Angles (deg): point_angle: %.1f, actualRelativePointAngle: %.1f, worldAngle_rad: %.1f, angleToPointRaw: %.1f, absolutePointAngle: %.1f, relativePointAngle: %.1f, velocityAdjustedRelativePointAngle: %.1f",
+                            Math.toDegrees(point_angle),
+                            Math.toDegrees(actualRelativePointAngle),
+                            Math.toDegrees(worldAngle_rad),
+                            Math.toDegrees(angleToPointRaw),
+                            Math.toDegrees(absolutePointAngle),
+                            Math.toDegrees(relativePointAngle),
+                            Math.toDegrees(velocityAdjustedRelativePointAngle)
+                    )
+            );
+        }
 
         //change the turn deceleration based on how fast we are going
         double decelerationDistance = Math.toRadians(40);
@@ -190,10 +205,10 @@ public class Movement {
             if (DEBUG_MOVEMENT) System.out.println("[GUN_TO_POS] Turn zeroed: close to point.");
         }
 
-//        if (DEBUG_MOVEMENT) {
-//            System.out.println(String.format(Locale.US, "[GUN_TO_POS] VelAdjRelPointAngle(%.2f rad), TurnSpeedCalc(%.2f), FinalMoveTurn(%.2f)",
-//                    velocityAdjustedRelativePointAngle, turnSpeed, movement_turn));
-//        }
+        if (DEBUG_MOVEMENT) {
+            System.out.println(String.format(Locale.US, "[GUN_TO_POS] VelAdjRelPointAngle(%.2f rad), TurnSpeedCalc(%.2f), FinalMoveTurn(%.2f)",
+                    velocityAdjustedRelativePointAngle, turnSpeed, movement_turn));
+        }
 
         //make sure the largest component doesn't fall below it's minimum power
         allComponentsMinPower();
@@ -221,6 +236,11 @@ public class Movement {
 //            System.out.println("--- [GUN_TO_POS] END ---");
 //            clientSim.sendText(String.format(Locale.US, "[Mov] gunToFinal: XY(%.3f,%.3f) ErrFactor(%.3f)",
 //                    movement_x, movement_y, errorTurnSoScaleDownMovement));
+//        }
+//        if (DEBUG_MOVEMENT) {
+////            clientSim.sendText(String.format(Locale.US, "movement_x:%.3f, movement_y:%.3f, movement_turn:%.3f",
+////                    movement_x, movement_y, movement_turn));
+//            clientSim.sendText(String.format(Locale.US, "movement_turn:%.3f", movement_turn));
 //        }
 
         movementResult r = new movementResult(relativePointAngle);
@@ -366,7 +386,7 @@ public class Movement {
 
         if (DEBUG_MOVEMENT) {
             // Marker for followMe point (small cross)
-            double markerSize = 1.0; // inches
+            double markerSize = 2.0; // inches
             clientSim.sendLine("follow_me_marker_h",
                     followMe.x - markerSize, followMe.y,
                     followMe.x + markerSize, followMe.y,
@@ -376,7 +396,14 @@ public class Movement {
                     followMe.x, followMe.y + markerSize,
                     1); // Style 1
 
-            clientSim.sendCircle(allPoints.get(currFollowIndex).followDistance, followAngle);
+            clientSim.sendCircle(allPoints.get(currFollowIndex).followDistance, Math.toDegrees(followAngle));
+
+//            clientSim.sendText(String.format(Locale.US, "followAngle %.2f", Math.toDegrees(followAngle)));
+
+            clientSim.sendLine("follow_me",
+                    worldXPosition, worldYPosition,
+                    followMe.x, followMe.y,
+                    3);
         }
 
         gunToPosition(followMe.x, followMe.y, followAngle,
@@ -388,6 +415,26 @@ public class Movement {
 
         //if our follow angle is different, point differently
         currFollowAngle += subtractAngles(followAngle, Math.toRadians(90));
+
+        if (DEBUG_MOVEMENT) {
+            clientSim.sendLine(
+                    "point_to_me",       // Name
+                    worldXPosition,           // Robot's current X
+                    worldYPosition,           // Robot's current Y
+                    pointToMe.x,
+                    pointToMe.y,
+                    3                         // Style 3: DOTTED
+            );
+        }
+
+        if (DEBUG_MOVEMENT) {
+//            clientSim.sendText(String.format(Locale.US, "currFollowAngle:%.3f, clipedDistToFinalEnd:%.3f",
+//                    Math.toDegrees(currFollowAngle), clipedDistToFinalEnd));
+//            clientSim.sendText(String.format(Locale.US, "pointToMe:%.1f,%.1f, currFollowAngle:%.0f",
+//                    pointToMe.x, pointToMe.y, Math.toDegrees(currFollowAngle)));
+
+
+        }
 
         movementResult result = pointAngle(currFollowAngle, allPoints.get(currFollowIndex).turnSpeed, Math.toRadians(45));
         movement_x *= 1 - Range.clip(Math.abs(result.turnDelta_rad) / followMe.slowDownTurnRadians, 0, followMe.slowDownTurnAmount);

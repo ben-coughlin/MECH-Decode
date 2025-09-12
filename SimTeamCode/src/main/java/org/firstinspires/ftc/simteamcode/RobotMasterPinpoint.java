@@ -40,18 +40,98 @@ public abstract class RobotMasterPinpoint {
 //            yVelocity    = 10;
 //            hVelocity    = 10;
 
-            yPosition    += -movement_x * SCALE;
-            xPosition    += movement_y * SCALE;
-//            xPosition    += 0;
-//            yPosition    += 0;
-//            hOrientation = (float) (movement_turn * SCALE);
-            hOrientation = 0;
+//            yPosition    += movement_y * SCALE;
+//            xPosition    += movement_x * SCALE;
+////            xPosition    += 0;
+////            yPosition    += 0;
+//            hOrientation -= (float) (movement_turn / 3);
+//            hOrientation = (float) (movement_turn / 3);
+            //        double fl_power_raw = movement_y - movement_turn + movement_x * 1.5;
+            //        double bl_power_raw = movement_y - movement_turn - movement_x * 1.5;
+            //        double br_power_raw = movement_y + movement_turn + movement_x * 1.5;
+            //        double fr_power_raw = movement_y + movement_turn - movement_x * 1.5;
 
-            xVelocity    = 0;
-            yVelocity    = 0;
-            hVelocity    = 0;
+//            hOrientation = 0;
+//
+//            xVelocity    = 0;
+//            yVelocity    = 0;
+//            hVelocity    = 0;
 
-//            // Print the values after they have been updated
+            // ALEJANDRO mecanum
+            double x_motor_multiplier = 1;
+            double fl_power_raw = movement_y - movement_turn + movement_x * x_motor_multiplier;
+            double bl_power_raw = movement_y - movement_turn - movement_x * x_motor_multiplier;
+            double br_power_raw = movement_y + movement_turn + movement_x * x_motor_multiplier;
+            double fr_power_raw = movement_y + movement_turn - movement_x * x_motor_multiplier;
+
+            //find the maximum of the powers
+            double maxRawPower = Math.abs(fl_power_raw);
+            if (Math.abs(bl_power_raw) > maxRawPower) {
+                maxRawPower = Math.abs(bl_power_raw);
+            }
+            if (Math.abs(br_power_raw) > maxRawPower) {
+                maxRawPower = Math.abs(br_power_raw);
+            }
+            if (Math.abs(fr_power_raw) > maxRawPower) {
+                maxRawPower = Math.abs(fr_power_raw);
+            }
+
+            //if the maximum is greater than 1, scale all the powers down to preserve the shape
+            double scaleDownAmount = 1.0;
+            if (maxRawPower > 1.0) {
+                //when max power is multiplied by this ratio, it will be 1.0, and others less
+                scaleDownAmount = 1.0 / maxRawPower;
+            }
+            fl_power_raw *= scaleDownAmount;
+            bl_power_raw *= scaleDownAmount;
+            br_power_raw *= scaleDownAmount;
+            fr_power_raw *= scaleDownAmount;
+
+            // ALEJANDRO: I've switched Vx/Vy to test!!!
+            double Vx = (fl_power_raw + fr_power_raw + bl_power_raw + br_power_raw) / 4.0;
+            double Vy = (-fl_power_raw + fr_power_raw + bl_power_raw - br_power_raw) / 4.0;
+            double omega = (-fl_power_raw + fr_power_raw - bl_power_raw + br_power_raw) / 4.0;
+
+            // original from ChatGPT
+//            double Vy = (fl_power_raw + fr_power_raw + bl_power_raw + br_power_raw) / 4.0;
+//            double Vx = (-fl_power_raw + fr_power_raw + bl_power_raw - br_power_raw) / 4.0;
+
+            xVelocity    = (float) Vx;
+            yVelocity    = (float) Vy;
+            hVelocity    = (float) omega;
+
+            // dt = time step in seconds
+            float dt = (float) 0.07;
+            xPosition += Vx * dt * 1000;
+            yPosition += Vy * dt * 1000;
+//            hOrientation += omega * dt * 1;
+//            hOrientation += omega * dt ;
+
+            hOrientation = (float) Math.toRadians(0);
+//            hOrientation = 0;
+
+            // --- BEGIN PRINT STATEMENTS ---
+            System.out.println("--- Mecanum Block Update ---");
+            System.out.printf(Locale.US, "    Inputs: movement_x: %.3f, movement_y: %.3f, movement_turn: %.3f%n",
+                    movement_x, movement_y, Math.toDegrees(movement_turn));
+            System.out.printf(Locale.US, "    Raw Powers: FL: %.3f, BL: %.3f, BR: %.3f, FR: %.3f%n",
+                    fl_power_raw, bl_power_raw, br_power_raw, fr_power_raw);
+            System.out.printf(Locale.US, "    MaxRawPower: %.3f, ScaleDownAmount: %.3f%n",
+                    maxRawPower, scaleDownAmount);
+            System.out.printf(Locale.US, "    Calculated Velocities (unit/s): Vx: %.3f, Vy: %.3f, Omega: %.3f rad/s%n",
+                    Vx, Vy, omega);
+            System.out.printf(Locale.US, "    Time Step (dt): %.3f s%n", dt);
+            System.out.printf(Locale.US, "    Updated State: xPos (mm): %.3f, yPos (mm): %.3f, hOrient (rad): %.3f, hOrient (deg): %.2f%n",
+                    xPosition, yPosition, hOrientation, Math.toDegrees(hOrientation));
+            System.out.println("--- End Mecanum Block ---");
+            // --- END PRINT STATEMENTS ---
+            // ALEJANDRO mecanum END
+
+
+
+
+//
+////            // Print the values after they have been updated
 //            System.out.println("MockGoBildaPinpointDriver.update():");
 //            System.out.println("  xPosition (mm): " + xPosition);
 //            System.out.println("  yPosition (mm): " + yPosition);
@@ -59,10 +139,9 @@ public abstract class RobotMasterPinpoint {
 //            System.out.println("  xVelocity (mm/s): " + xVelocity);
 //            System.out.println("  yVelocity (mm/s): " + yVelocity);
 //            System.out.println("  hVelocity (rad/s): " + hVelocity);
-
-            System.out.println("  movement_x : " + movement_x);
-            System.out.println("  movement_y : " + movement_y);
-            System.out.println("  movement_turn : " + movement_turn);
+//            System.out.println("  movement_x : " + movement_x);
+//            System.out.println("  movement_y : " + movement_y);
+//            System.out.println("  movement_turn : " + movement_turn);
 
             // Prepare pose data for FtcFieldSimulator
             // FtcFieldSimulator expects X, Y in INCHES and heading in DEGREES
@@ -73,16 +152,25 @@ public abstract class RobotMasterPinpoint {
             // Ensure headingDegrees is in the range [-180, 180] or [0, 360) as preferred by simulator
             // FtcFieldSimulator seems to handle various ranges, but normalizing is good practice.
             // This maps it to (-180, 180]
-            headingDegrees = ((headingDegrees + 180.0) % 360.0 + 360.0) % 360.0 - 180.0;
+//            headingDegrees = ((headingDegrees + 180.0) % 360.0 + 360.0) % 360.0 - 180.0;
+//            headingDegrees = (headingDegrees - 90) % 360.0;
 
-            // Format: "X,Y,Heading"
-            String message = String.format(Locale.US, "%.3f,%.3f,%.2f",
-                    xInches,
-                    yInches,
-                    headingDegrees);
+            System.out.println("MockGoBildaPinpointDriver.update():");
+            System.out.println("  xPosition (mm): " + xPosition);
+            System.out.println("  yPosition (mm): " + yPosition);
+            System.out.println("  hOrientation (deg): " + Math.toDegrees(hOrientation));
+            System.out.println("  xVelocity (mm/s): " + xVelocity);
+            System.out.println("  yVelocity (mm/s): " + yVelocity);
+            System.out.println("  hVelocity (rad/s): " + hVelocity);
+            System.out.println("  movement_x : " + movement_x);
+            System.out.println("  movement_y : " + movement_y);
+            System.out.println("  movement_turn : " + movement_turn);
 
             if (DEBUG_MOVEMENT) {
                 clientSim.sendPosition(xInches, yInches, headingDegrees);
+//                clientSim.sendText(String.format(Locale.US, "x/y(%.1f,%.1f) hOrientation(%.0f)", xInches, yInches, headingDegrees));
+//                System.exit(1); // ALEJANDRO
+
             }
         }
 
@@ -97,8 +185,10 @@ public abstract class RobotMasterPinpoint {
                     xPosition,
                     yPosition,
                     AngleUnit.RADIANS,
+                    hOrientation);
+
                     //this wraps the hOrientation variable from -180° to +180°
-                    ((hOrientation + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI);
+//                    ((hOrientation + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI);
         }
 
         public double getVelX(){
@@ -126,6 +216,13 @@ public abstract class RobotMasterPinpoint {
             return (float) distanceUnit.fromMm(0);
         }
         public float getYawScalar(){return 0; }
+
+        public Pose2D setPosition(Pose2D pos){
+            yPosition    = (float) pos.getY(DistanceUnit.MM);
+            xPosition    = (float) pos.getX(DistanceUnit.MM);
+            hOrientation = (float) pos.getHeading(AngleUnit.RADIANS);
+            return pos;
+        }
     }
     MockGoBildaPinpointDriver odo = new MockGoBildaPinpointDriver();
 
@@ -142,6 +239,9 @@ public abstract class RobotMasterPinpoint {
         }
         public void applyMovementDirectionBased() {
             System.out.println("MockMecanumDrivePinPoint: applyMovementDirectionBased");
+            System.out.println("  movement_x : " + movement_x);
+            System.out.println("  movement_y : " + movement_y);
+            System.out.println("  movement_turn : " + movement_turn);
         }
 
     }
@@ -219,10 +319,14 @@ public abstract class RobotMasterPinpoint {
 //        // pose update for pinpoint
 //        odo.update();
 
+        // Set initial robot position
+        odo.setPosition(new Pose2D(DistanceUnit.INCH,0,0,AngleUnit.DEGREES, 90));
+//        clientSim.sendPosition(60, 0, 90);
+
         Pose2D pos = odo.getPosition();
         String data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", pos.getX(DistanceUnit.INCH), pos.getY(DistanceUnit.INCH), pos.getHeading(AngleUnit.DEGREES));
         telemetry.addData("Position", data);
-
+//        System.exit(1); // ALEJANDRO
             /*
             gets the current Velocity (x & y in mm/sec and heading in degrees/sec) and prints it.
              */

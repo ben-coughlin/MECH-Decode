@@ -52,6 +52,11 @@ public class FtcFieldSimulatorApp extends Application {
     private ControlPanel controlPanel;
     private Robot robot; // Add robot instance
 
+    // --- Robot Starting Configuration ---
+    public static final double ROBOT_START_FIELD_X = 0.0;  // Initial position on Field X-axis (vertical, 0=center)
+    public static final double ROBOT_START_FIELD_Y = 0.0;  // Initial position on Field Y-axis (horizontal, 0=center)
+    public static final double ROBOT_START_HEADING_DEGREES = 90.0; // Initial heading (0=+FieldX/Down, 90=+FieldY/Right, CCW)
+
     private static final double ROBOT_MOVE_INCREMENT_INCHES = 2.0; // Move 2 inches per key press
     private static final double ROBOT_TURN_INCREMENT_DEGREES = 5.0; // Turn 5 degrees per key press
 
@@ -99,11 +104,18 @@ public class FtcFieldSimulatorApp extends Application {
 //        // --- Populate initialPath with S-shape points ---
 //        initialPath = createDefaultSPath();
 //        robot = createInitialRobot(initialPath);
-        robot = new Robot(
-                0.0, // Initial X at field center
-                0.0, // Initial Y at field center
-                0.0, // Initial Heading
-                ROBOT_IMAGE_PATH);
+//        robot = new Robot(
+//                0.0, // Initial X at field center
+//                0.0, // Initial Y at field center
+//                0.0, // Initial Heading
+//                ROBOT_IMAGE_PATH);
+
+        this.robot = new Robot(
+                ROBOT_START_FIELD_X,
+                ROBOT_START_FIELD_Y,
+                ROBOT_START_HEADING_DEGREES,
+                ROBOT_IMAGE_PATH
+        );
 
         // Create the field display
         fieldDisplay = new FieldDisplay(
@@ -448,95 +460,63 @@ public class FtcFieldSimulatorApp extends Application {
 //            updateUIFromRobotState();
 //        }
 //    }
+//
+
 
     private void handleRobotMovementKeyPress(KeyEvent event) {
-        System.out.println("handleRobotMovementKeyPress checking for: " + event.getCode()); // DEBUG
+        // System.out.println("handleRobotMovementKeyPress checking for: " + event.getCode()); // DEBUG
         if (robot == null || isCreatingPath) {
-            if(isCreatingPath) System.out.println("Robot movement skipped: isCreatingPath is true.");
-            if(robot == null) System.out.println("Robot movement skipped: robot is null.");
+            if (isCreatingPath) System.out.println("Robot movement skipped: isCreatingPath is true.");
+            if (robot == null) System.out.println("Robot movement skipped: robot is null.");
             return;
         }
 
-        double currentX = robot.getXInches();
-        double currentY = robot.getYInches();
-        double currentHeading = robot.getHeadingDegrees();
+        double currentX = robot.getXInches(); // Current Field X (vertical)
+        double currentY = robot.getYInches(); // Current Field Y (horizontal)
+        double currentHeading_CCW = robot.getHeadingDegrees(); // 0=+FieldX (Down), 90=+FieldY (Right), CCW positive
         boolean moved = false;
 
-        // Calculate movement based on current heading for UP/DOWN
-        double moveX = 0;
-        double moveY = 0;
-        if (event.getCode() == KeyCode.UP || event.getCode() == KeyCode.DOWN) {
-            double angleRad = Math.toRadians(currentHeading);
-            double delta = (event.getCode() == KeyCode.UP) ? ROBOT_MOVE_INCREMENT_INCHES : -ROBOT_MOVE_INCREMENT_INCHES;
-            moveX = delta * Math.sin(angleRad); // Assuming 0 degrees is positive Y, 90 is positive X
-            moveY = delta * Math.cos(angleRad); // Adjust if your heading definition is different
-            // For typical math angles (0=East):
-            // moveX = delta * Math.cos(angleRad);
-            // moveY = delta * Math.sin(angleRad);
-            // Let's assume 0 deg is North (positive Y) for now
-            // and heading increases clockwise.
-            // So, X component is sin(heading), Y is cos(heading)
-            // but our canvas Y is inverted.
-            // Let's use a simpler field-centric forward/backward for now
-            // relative to screen, not robot heading, then refine.
+        // Declare newFieldX and newFieldY here, to be assigned in the switch cases
+        double newFieldX = currentX; // Initialize with current position
+        double newFieldY = currentY; // Initialize with current position
 
-            // Simpler: Move along field axes (not robot-relative yet for simplicity)
-            // For robot-relative, we'd use trigonometry with the robot's heading.
-            // Let's do robot-relative forward/backward and left/right turns for now.
-        }
-
+        double angleRad_CCW = Math.toRadians(currentHeading_CCW);
 
         switch (event.getCode()) {
-            case UP:
-                System.out.println("Robot Movement: UP");
-                // Move forward relative to robot's heading
-                double angleRadUp = Math.toRadians(currentHeading);
-                // Standard geometry: 0 deg = +X axis. In our case, let's assume 0 deg = points "up" on screen (negative Y in math, positive Y in our field coords if 0,0 is top-left)
-                // If 0 deg is "North" (along positive Y field axis):
-                // X component = sin(heading), Y component = cos(heading)
-                // However, our `inchesToPixelY` inverts Y. Let's adjust for robot's orientation.
-                // Assuming 0 degrees is "up" on the screen (positive Y direction in INCHES)
-                robot.setPosition(
-                        currentX + ROBOT_MOVE_INCREMENT_INCHES * Math.sin(Math.toRadians(currentHeading)),
-                        currentY + ROBOT_MOVE_INCREMENT_INCHES * Math.cos(Math.toRadians(currentHeading))
-                );
+            case UP: // Move "forward" along the robot's current heading
+                // FieldX component = cos(angle), FieldY component = sin(angle)
+                newFieldX = currentX + ROBOT_MOVE_INCREMENT_INCHES * Math.cos(angleRad_CCW);
+                newFieldY = currentY + ROBOT_MOVE_INCREMENT_INCHES * Math.sin(angleRad_CCW);
+                // robot.setPosition(newFieldX, newFieldY); // Set position after switch
                 moved = true;
                 break;
-            case DOWN:
-                System.out.println("Robot Movement: DOWN");
-                // Move backward relative to robot's heading
-                robot.setPosition(
-                        currentX - ROBOT_MOVE_INCREMENT_INCHES * Math.sin(Math.toRadians(currentHeading)),
-                        currentY - ROBOT_MOVE_INCREMENT_INCHES * Math.cos(Math.toRadians(currentHeading))
-                );
+            case DOWN: // Move "backward"
+                newFieldX = currentX - ROBOT_MOVE_INCREMENT_INCHES * Math.cos(angleRad_CCW);
+                newFieldY = currentY - ROBOT_MOVE_INCREMENT_INCHES * Math.sin(angleRad_CCW);
+                // robot.setPosition(newFieldX, newFieldY);
                 moved = true;
                 break;
-            case LEFT:
-                System.out.println("Robot Movement: LEFT");
-                robot.setHeading(currentHeading - ROBOT_TURN_INCREMENT_DEGREES);
+            case LEFT: // Turn left (increase heading in CCW system)
+                robot.setHeading(currentHeading_CCW + ROBOT_TURN_INCREMENT_DEGREES);
+                // newFieldX and newFieldY remain unchanged for turns if setPosition is outside switch for movement
+                moved = true; // Still counts as a move for UI update
+                break;
+            case RIGHT: // Turn right (decrease heading in CCW system)
+                robot.setHeading(currentHeading_CCW - ROBOT_TURN_INCREMENT_DEGREES);
+                moved = true; // Still counts as a move for UI update
+                break;
+            case A: // Strafe Left (90 degrees CCW from current heading)
+                double strafeLeftAngleRad_CCW = Math.toRadians(currentHeading_CCW + 90.0);
+                newFieldX = currentX + ROBOT_MOVE_INCREMENT_INCHES * Math.cos(strafeLeftAngleRad_CCW);
+                newFieldY = currentY + ROBOT_MOVE_INCREMENT_INCHES * Math.sin(strafeLeftAngleRad_CCW);
+                // robot.setPosition(newFieldX, newFieldY);
                 moved = true;
                 break;
-            case RIGHT:
-                System.out.println("Robot Movement: RIGHT");
-                robot.setHeading(currentHeading + ROBOT_TURN_INCREMENT_DEGREES);
-                moved = true;
-                break;
-            case A: // Strafe Left
-                System.out.println("Robot Movement: STRAFE LEFT (A)");
-                double angleRadStrafeLeft = Math.toRadians(currentHeading + 90); // Perpendicular to heading
-                robot.setPosition(
-                        currentX + ROBOT_MOVE_INCREMENT_INCHES * Math.sin(angleRadStrafeLeft),
-                        currentY + ROBOT_MOVE_INCREMENT_INCHES * Math.cos(angleRadStrafeLeft)
-                );
-                moved = true;
-                break;
-            case D: // Strafe Right
-                System.out.println("Robot Movement: STRAFE RIGHT (D)");
-                double angleRadStrafeRight = Math.toRadians(currentHeading - 90); // Perpendicular to heading
-                robot.setPosition(
-                        currentX + ROBOT_MOVE_INCREMENT_INCHES * Math.sin(angleRadStrafeRight),
-                        currentY + ROBOT_MOVE_INCREMENT_INCHES * Math.cos(angleRadStrafeRight)
-                );
+            case D: // Strafe Right (90 degrees CW from current heading, or -90 CCW)
+                double strafeRightAngleRad_CCW = Math.toRadians(currentHeading_CCW - 90.0);
+                newFieldX = currentX + ROBOT_MOVE_INCREMENT_INCHES * Math.cos(strafeRightAngleRad_CCW);
+                newFieldY = currentY + ROBOT_MOVE_INCREMENT_INCHES * Math.sin(strafeRightAngleRad_CCW);
+                // robot.setPosition(newFieldX, newFieldY);
                 moved = true;
                 break;
             default:
@@ -545,16 +525,171 @@ public class FtcFieldSimulatorApp extends Application {
         }
 
         if (moved) {
+            // Set the robot's position only if it's a translational move (UP, DOWN, A, D)
+            // For turns (LEFT, RIGHT), only the heading was changed.
+            // We could also call setPosition for turns with currentX/Y, but it's redundant.
+            if (event.getCode() == KeyCode.UP || event.getCode() == KeyCode.DOWN ||
+                    event.getCode() == KeyCode.A || event.getCode() == KeyCode.D) {
+                robot.setPosition(newFieldX, newFieldY);
+            }
+
             // Ensure robot stays within field boundaries (optional, but good practice)
             // robot.setPosition(
-            //    Math.max(0, Math.min(FIELD_WIDTH_INCHES, robot.getXInches())),
-            //    Math.max(0, Math.min(FIELD_HEIGHT_INCHES, robot.getYInches()))
+            //    Math.max(-FIELD_HEIGHT_INCHES_VERTICAL_X / 2.0, Math.min(FIELD_HEIGHT_INCHES_VERTICAL_X / 2.0, robot.getXInches())),
+            //    Math.max(-FIELD_WIDTH_INCHES_HORIZONTAL_Y / 2.0, Math.min(FIELD_WIDTH_INCHES_HORIZONTAL_Y / 2.0, robot.getYInches()))
             // );
-            updateUIFromRobotState();
-            // Consume the event if it resulted in robot movement
-            event.consume();
+            updateUIFromRobotState(); // This will typically redraw the field display
+            event.consume();      // Consume the event if it resulted in robot movement
         }
     }
+
+
+
+//    private void handleRobotMovementKeyPress(KeyEvent event) {
+//        System.out.println("handleRobotMovementKeyPress checking for: " + event.getCode()); // DEBUG
+//        if (robot == null || isCreatingPath) {
+//            if(isCreatingPath) System.out.println("Robot movement skipped: isCreatingPath is true.");
+//            if(robot == null) System.out.println("Robot movement skipped: robot is null.");
+//            return;
+//        }
+//
+//        double currentX = robot.getXInches();
+//        double currentY = robot.getYInches();
+//        double currentHeading_CCW = robot.getHeadingDegrees();
+//        boolean moved = false;
+//
+//        // Calculate movement based on current heading for UP/DOWN
+//        double moveX = 0;
+//        double moveY = 0;
+//        if (event.getCode() == KeyCode.UP || event.getCode() == KeyCode.DOWN) {
+//            double angleRad = Math.toRadians(currentHeading_CCW);
+//            double delta = (event.getCode() == KeyCode.UP) ? ROBOT_MOVE_INCREMENT_INCHES : -ROBOT_MOVE_INCREMENT_INCHES;
+//            moveX = delta * Math.sin(angleRad); // Assuming 0 degrees is positive Y, 90 is positive X
+//            moveY = delta * Math.cos(angleRad); // Adjust if your heading definition is different
+//            // For typical math angles (0=East):
+//            // moveX = delta * Math.cos(angleRad);
+//            // moveY = delta * Math.sin(angleRad);
+//            // Let's assume 0 deg is North (positive Y) for now
+//            // and heading increases clockwise.
+//            // So, X component is sin(heading), Y is cos(heading)
+//            // but our canvas Y is inverted.
+//            // Let's use a simpler field-centric forward/backward for now
+//            // relative to screen, not robot heading, then refine.
+//
+//            // Simpler: Move along field axes (not robot-relative yet for simplicity)
+//            // For robot-relative, we'd use trigonometry with the robot's heading.
+//            // Let's do robot-relative forward/backward and left/right turns for now.
+//        }
+//
+//        // currentHeading_CCW is robot.getHeadingDegrees() (0 = +FieldX/Down, CCW positive)
+//        double angleRad_CCW = Math.toRadians(currentHeading_CCW);
+//
+//        switch (event.getCode()) {
+//            case UP: // Move "forward" along the robot's current heading
+//                // FieldX component = cos(angle), FieldY component = sin(angle)
+//                // This is correct for a system where 0 degrees is along X and angles are CCW.
+//                newFieldX = currentX + ROBOT_MOVE_INCREMENT_INCHES * Math.cos(angleRad_CCW);
+//                newFieldY = currentY + ROBOT_MOVE_INCREMENT_INCHES * Math.sin(angleRad_CCW);
+//                robot.setPosition(newFieldX, newFieldY);
+//                moved = true;
+//                break;
+//            case DOWN: // Move "backward"
+//                newFieldX = currentX - ROBOT_MOVE_INCREMENT_INCHES * Math.cos(angleRad_CCW);
+//                newFieldY = currentY - ROBOT_MOVE_INCREMENT_INCHES * Math.sin(angleRad_CCW);
+//                robot.setPosition(newFieldX, newFieldY);
+//                moved = true;
+//                break;
+//            case LEFT: // Turn left (increase heading in CCW system)
+//                robot.setHeading(currentHeading_CCW + ROBOT_TURN_INCREMENT_DEGREES); // CCW turn left = positive angle change
+//                moved = true;
+//                break;
+//            case RIGHT: // Turn right (decrease heading in CCW system)
+//                robot.setHeading(currentHeading_CCW - ROBOT_TURN_INCREMENT_DEGREES); // CCW turn right = negative angle change
+//                moved = true;
+//                break;
+//            case A: // Strafe Left (90 degrees CCW from current heading)
+//                // For a CCW system, strafing left means adding 90 degrees to the current heading
+//                double strafeLeftAngleRad_CCW = Math.toRadians(currentHeading_CCW + 90.0);
+//                newFieldX = currentX + ROBOT_MOVE_INCREMENT_INCHES * Math.cos(strafeLeftAngleRad_CCW);
+//                newFieldY = currentY + ROBOT_MOVE_INCREMENT_INCHES * Math.sin(strafeLeftAngleRad_CCW);
+//                robot.setPosition(newFieldX, newFieldY);
+//                moved = true;
+//                break;
+//            case D: // Strafe Right (90 degrees CW from current heading, or -90 CCW)
+//                double strafeRightAngleRad_CCW = Math.toRadians(currentHeading_CCW - 90.0);
+//                newFieldX = currentX + ROBOT_MOVE_INCREMENT_INCHES * Math.cos(strafeRightAngleRad_CCW);
+//                newFieldY = currentY + ROBOT_MOVE_INCREMENT_INCHES * Math.sin(strafeRightAngleRad_CCW);
+//                robot.setPosition(newFieldX, newFieldY);
+//                moved = true;
+//                break;
+////            case UP:
+////                System.out.println("Robot Movement: UP");
+//////                // Move forward relative to robot's heading
+//////                double angleRadUp = Math.toRadians(currentHeading);
+//////                // Standard geometry: 0 deg = +X axis. In our case, let's assume 0 deg = points "up" on screen (negative Y in math, positive Y in our field coords if 0,0 is top-left)
+//////                // If 0 deg is "North" (along positive Y field axis):
+//////                // X component = sin(heading), Y component = cos(heading)
+//////                // However, our `inchesToPixelY` inverts Y. Let's adjust for robot's orientation.
+//////                // Assuming 0 degrees is "up" on the screen (positive Y direction in INCHES)
+////                robot.setPosition(
+////                        currentX + ROBOT_MOVE_INCREMENT_INCHES * Math.sin(Math.toRadians(currentHeading)),
+////                        currentY + ROBOT_MOVE_INCREMENT_INCHES * Math.cos(Math.toRadians(currentHeading))
+////                );
+////                moved = true;
+////                break;
+////            case DOWN:
+////                System.out.println("Robot Movement: DOWN");
+////                // Move backward relative to robot's heading
+////                robot.setPosition(
+////                        currentX - ROBOT_MOVE_INCREMENT_INCHES * Math.sin(Math.toRadians(currentHeading)),
+////                        currentY - ROBOT_MOVE_INCREMENT_INCHES * Math.cos(Math.toRadians(currentHeading))
+////                );
+////                moved = true;
+////                break;
+////            case LEFT:
+////                System.out.println("Robot Movement: LEFT");
+////                robot.setHeading(currentHeading + ROBOT_TURN_INCREMENT_DEGREES);
+////                moved = true;
+////                break;
+////            case RIGHT:
+////                System.out.println("Robot Movement: RIGHT");
+////                robot.setHeading(currentHeading - ROBOT_TURN_INCREMENT_DEGREES);
+////                moved = true;
+////                break;
+////            case A: // Strafe Left
+////                System.out.println("Robot Movement: STRAFE LEFT (A)");
+////                double angleRadStrafeLeft = Math.toRadians(currentHeading + 90); // Perpendicular to heading
+////                robot.setPosition(
+////                        currentX + ROBOT_MOVE_INCREMENT_INCHES * Math.sin(angleRadStrafeLeft),
+////                        currentY + ROBOT_MOVE_INCREMENT_INCHES * Math.cos(angleRadStrafeLeft)
+////                );
+////                moved = true;
+////                break;
+////            case D: // Strafe Right
+////                System.out.println("Robot Movement: STRAFE RIGHT (D)");
+////                double angleRadStrafeRight = Math.toRadians(currentHeading - 90); // Perpendicular to heading
+////                robot.setPosition(
+////                        currentX + ROBOT_MOVE_INCREMENT_INCHES * Math.sin(angleRadStrafeRight),
+////                        currentY + ROBOT_MOVE_INCREMENT_INCHES * Math.cos(angleRadStrafeRight)
+////                );
+////                moved = true;
+////                break;
+//            default:
+//                // Do nothing for other keys
+//                break;
+//        }
+//
+//        if (moved) {
+//            // Ensure robot stays within field boundaries (optional, but good practice)
+//            // robot.setPosition(
+//            //    Math.max(0, Math.min(FIELD_WIDTH_INCHES, robot.getXInches())),
+//            //    Math.max(0, Math.min(FIELD_HEIGHT_INCHES, robot.getYInches()))
+//            // );
+//            updateUIFromRobotState();
+//            // Consume the event if it resulted in robot movement
+//            event.consume();
+//        }
+//    }
 
     private void updateUIFromRobotState() {
         if (robot != null && controlPanel != null && fieldDisplay != null) {

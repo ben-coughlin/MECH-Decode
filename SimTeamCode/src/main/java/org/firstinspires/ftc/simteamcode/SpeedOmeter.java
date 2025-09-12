@@ -60,12 +60,20 @@ public class SpeedOmeter {
     }
 
     public static double scalePrediction = 1.0;
-    //amount robot slips (cm) while going forwards 1 centimeter per second
-    public static double ySlipDistanceFor1CMPS = 0.2845 * scalePrediction;//0.169;
-    public static double xSlipDistanceFor1CMPS = 0.1872 * scalePrediction;//0.117;
-    //radians the robot slips when going 1 radian per second
-    public static double turnSlipAmountFor1RPS = 0.0733 * scalePrediction;//0.113;
 
+    // ALEJANDRO original slip values
+//    //amount robot slips (cm) while going forwards 1 centimeter per second
+//    public static double ySlipDistanceFor1CMPS = 0.2845 * scalePrediction;//0.169;
+//    public static double xSlipDistanceFor1CMPS = 0.1872 * scalePrediction;//0.117;
+//    //radians the robot slips when going 1 radian per second
+//    public static double turnSlipAmountFor1RPS = 0.0733 * scalePrediction;//0.113;
+
+    // ALEJANDRO for simulator
+    //amount robot slips (cm) while going forwards 1 centimeter per second
+    public static double ySlipDistanceFor1CMPS = 0 * scalePrediction;//0.169;
+    public static double xSlipDistanceFor1CMPS = 0 * scalePrediction;//0.117;
+    //radians the robot slips when going 1 radian per second
+    public static double turnSlipAmountFor1RPS = 0 * scalePrediction;//0.113;
 
     /**
      * Gives the current distance (cm) the robot would slip if power is set to 0

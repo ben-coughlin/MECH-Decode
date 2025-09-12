@@ -8,8 +8,8 @@ public class Robot {
     // --- Robot Configuration Constants ---
     public static final double ROBOT_WIDTH_INCHES = 18.0;
     public static final double ROBOT_HEIGHT_INCHES = 18.0;
-    private double xInches;         // Current X position on the field (inches, from bottom-left)
-    private double yInches;         // Current Y position on the field (inches, from bottom-left)
+    private double xInches;         // Current X position on the field
+    private double yInches;         // Current Y position on the field
     private double headingDegrees;  // Current heading (degrees, 0 might be facing right/East, 90 North)
 
     private Image robotImage;
