@@ -33,7 +33,11 @@ import static org.firstinspires.ftc.teamcode.MovementVars.movement_turn;
 import static org.firstinspires.ftc.teamcode.MovementVars.movement_x;
 import static org.firstinspires.ftc.teamcode.MovementVars.movement_y;
 
+import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.util.Range;
+
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -101,6 +105,11 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
     public void mainLoop() {
         super.mainLoop();
 
+        double targetX = 0.0;
+        double kP = 0.02;
+        double limelightX = 0.0;
+        double error = 0.0;
+
         ButtonPress.giveMeInputs(gamepad1.a, gamepad1.b, gamepad1.x, gamepad1.y, gamepad1.dpad_up,
                 gamepad1.dpad_down, gamepad1.dpad_right, gamepad1.dpad_left, gamepad1.right_bumper,
                 gamepad1.left_bumper, gamepad1.left_stick_button, gamepad1.right_stick_button,
@@ -108,20 +117,37 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
                 gamepad2.dpad_down, gamepad2.dpad_right, gamepad2.dpad_left, gamepad2.right_bumper,
                 gamepad2.left_bumper, gamepad2.left_stick_button, gamepad2.right_stick_button);
 
-         // this is the mechanum field centeric control does this make it so can't drive when in auto??
         movement_y = -gamepad1.left_stick_y;
         movement_x = gamepad1.left_stick_x;
-        movement_turn = -gamepad1.right_stick_x;
 
         drive.applyMovementDirectionBased();
 
-        if (gamepad1.a){
-            odo.resetPosAndIMU(); //resets the position to 0 and recalibrates the IMU
+        LLResult llResult = limelight.getLatestResult();
+
+        if(llResult.isValid())
+        {
+            Pose3D pose = llResult.getBotpose();
+
+            limelightX = llResult.getTx();
+            error = kP * (targetX - limelightX);
+
+            telemetry.addData("tx", llResult.getTx());
+            telemetry.addData("ty", llResult.getTy());
+            telemetry.addData("pose", pose.toString());
+            telemetry.addData("error", error);
+            telemetry.update();
+
         }
 
-        if (gamepad1.b){
-            odo.recalibrateIMU(); //recalibrates the IMU without resetting position
+        if (gamepad1.a){
+            movement_turn = error;
         }
+        else {
+            movement_turn = -gamepad1.right_stick_x;
+
+        }
+
+
 
     }
 }

@@ -7,6 +7,7 @@ import static org.firstinspires.ftc.teamcode.RobotPosition.worldYPosition;
 import android.os.SystemClock;
 import android.util.Log;
 
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
@@ -26,6 +27,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
 
     GoBildaPinpointDriver odo; // Declare OpMode member for the Odometry Computer
+    Limelight3A limelight;
 
     public boolean isAuto = false;
     public static boolean resetEncoders = false;
@@ -34,36 +36,6 @@ public abstract class RobotMasterPinpoint extends OpMode {
 //clocks
 
     ElapsedTime runtime = new ElapsedTime();
-    ElapsedTime waitTimer1 = new ElapsedTime();
-    ElapsedTime waitTimer2 = new ElapsedTime();
-
-    //Lift P controllers
-
-    // Vision for Tensor
-
-    private static final boolean USE_WEBCAM = true;  // true for webcam, false for phone camera
-
-    // TFOD_MODEL_ASSET points to a model file stored in the project Asset location,
-    // this is only used for Android Studio when using models in Assets.
-    private static final String TFOD_MODEL_ASSET = "model_20231227_193805.tflite";
-    // TFOD_MODEL_FILE points to a model file stored onboard the Robot Controller's storage,
-    // this is used when uploading models directly to the RC using the model upload interface.
-    private static final String TFOD_MODEL_FILE = "/sdcard/FIRST/tflitemodels/myCustomModel.tflite";
-    // Define the labels recognized in the model for TFOD (must be in training order!)
-    private static final String[] LABELS = {
-            "TPB",
-            "TPR",
-    };
-
-    /**
-     * The variable to store our instance of the TensorFlow Object Detection processor.
-     */
-    //public TfodProcessor tfod;
-
-    /**
-     * The variable to store our instance of the vision portal.
-     */
-    private VisionPortal visionPortal;
 
 
     //////// STATE MACHINE STUFF BELOW DO NOT TOUCH ////////
@@ -115,9 +87,6 @@ public abstract class RobotMasterPinpoint extends OpMode {
     }
     ///////////////////////////////
 
-    DigitalChannel frontPixelReceiver;
-    DigitalChannel backPixelReceiver;
-
     public ArrayList<CurvePoint> mirrorPoints(ArrayList<CurvePoint> points) {
         ArrayList<CurvePoint> newPoints = new ArrayList<>();
         for (CurvePoint point : points) {
@@ -126,7 +95,6 @@ public abstract class RobotMasterPinpoint extends OpMode {
         return newPoints;
     }
 
-    //Vision vision;
 
     @Override
     public void init() {
@@ -135,16 +103,15 @@ public abstract class RobotMasterPinpoint extends OpMode {
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED);
 
-
         drive = new MecanumDrivePinPoint(hardwareMap);
 
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        telemetry.setMsTransmissionInterval(11);
+        limelight.pipelineSwitch(0);
+        limelight.start();
 
         odo.resetPosAndIMU();
     }
-
-    private int pixelData = 0;
-    private ArrayList<Boolean> count = new ArrayList<>();
-    private int position = 1;
 
     @Override
     public void init_loop() {
@@ -157,16 +124,9 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
         double startLoopTime = SystemClock.uptimeMillis();
 
-        //Pose est for RR
-//        PoseVelocity2d currentPoseVel = drive.updatePoseEstimate();
-//        Pose2d pose = drive.localizer.getPose();
-
-//        worldXPosition = pose.position.x;
-//        worldYPosition = pose.position.y;
-//        worldAngle_rad = pose.heading.toDouble();
-
         // pose update for pinpoint
         odo.update();
+
 
         Pose2D pos = odo.getPosition();
         String data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", pos.getX(DistanceUnit.INCH), pos.getY(DistanceUnit.INCH), pos.getHeading(AngleUnit.DEGREES));
