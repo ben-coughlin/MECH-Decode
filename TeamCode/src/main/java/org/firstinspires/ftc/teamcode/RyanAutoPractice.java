@@ -55,7 +55,7 @@ public class RyanAutoPractice extends RobotMasterPinpoint {
 
         //isAuto = true;
 
-        odo.recalibrateIMU();
+        odo.resetPosAndIMU();
     }
 
     private int timeDelay = 0;
@@ -70,7 +70,6 @@ public class RyanAutoPractice extends RobotMasterPinpoint {
     public void start() {
         super.start();
         startTime = SystemClock.uptimeMillis();
-        odo.resetPosAndIMU();
 
     }
 
@@ -113,7 +112,7 @@ public class RyanAutoPractice extends RobotMasterPinpoint {
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(20, 0,
+            points.add(new CurvePoint(40, 0,
                     0.4 * SCALE_FACTOR, 0.40 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.6));
 
@@ -139,7 +138,7 @@ public class RyanAutoPractice extends RobotMasterPinpoint {
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(20,20,
+            points.add(new CurvePoint(40,20,
                     0.35 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.6));
 
