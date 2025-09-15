@@ -144,7 +144,8 @@ public class Movement {
         double relativePointAngle = AngleWrap(absolutePointAngle - worldAngle_rad);
 
 
-        double velocityAdjustedRelativePointAngle = AngleWrap(relativePointAngle - SpeedOmeter.currSlipAngle());
+        double velocityAdjustedRelativePointAngle = AngleWrap(relativePointAngle);
+        //was AngleWrap(relativePointAngle - SpeedOmeter.currSlipAngle();
 
         //change the turn deceleration based on how fast we are going
         double decelerationDistance = Math.toRadians(40);
@@ -157,7 +158,7 @@ public class Movement {
         //now just clip the result to be in range
         movement_turn = Range.clip(turnSpeed, -point_speed, point_speed);
         //HOWEVER don't go frantic when right next to the point
-        if (distanceToPoint < 10) {
+        if (distanceToPoint < 3) {
             movement_turn = 0;
         }
 
@@ -182,8 +183,7 @@ public class Movement {
         movement_x *= errorTurnSoScaleDownMovement;
         movement_y *= errorTurnSoScaleDownMovement;
 
-        movementResult r = new movementResult(relativePointAngle);
-        return r;
+        return new movementResult(relativePointAngle);
     }
 
 
@@ -204,8 +204,7 @@ public class Movement {
         //smooths down the last bit to finally settle on an angle
         movement_turn *= Range.clip(Math.abs(relativePointAngle) / Math.toRadians(3), 0, 1);
 
-        movementResult r = new movementResult(relativePointAngle);
-        return r;
+        return new movementResult(relativePointAngle);
     }
 
 

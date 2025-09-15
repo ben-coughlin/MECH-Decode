@@ -55,7 +55,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
 
         //isAuto = true;
 
-        odo.recalibrateIMU();
+        odo.resetPosAndIMU();
     }
 
     private int timeDelay = 0;
@@ -70,7 +70,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
     public void start() {
         super.start();
         startTime = SystemClock.uptimeMillis();
-        odo.resetPosAndIMU();
+
 
     }
 

@@ -134,29 +134,12 @@ public abstract class RobotMasterPinpoint extends OpMode {
         odo.setOffsets(171.45, 38, DistanceUnit.MM);
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED);
-        odo.resetPosAndIMU();
+
 
         drive = new MecanumDrivePinPoint(hardwareMap);
 
 
-        //initTfod();
-/*
-        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId",
-                "id",
-                hardwareMap.appContext.getPackageName());
-        vision = new Vision(
-                OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class,
-                                "Webcam 1"),
-                        cameraMonitorViewId));
-        vision.openCameraDevice();
-        vision.setPipeline(new Vision.AutoVisionPipeline());
-        vision.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
-*/
-
-
-
-        // distance sensors
-
+        odo.resetPosAndIMU();
     }
 
     private int pixelData = 0;
