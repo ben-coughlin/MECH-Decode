@@ -261,8 +261,13 @@ public class Movement {
         return followCurve(allPoints, followAngle, 0.5);
     }
 
+
     /**
-     * follows a set of points, while maintaining a following distance
+     *
+      * @param allPoints the ArrayList of CurvePoints that should be executed in the current state
+     * @param followAngle the angle that the robot should drive towards, <strong>not the angle the front of the bot is pointing to</strong>
+     * @param tolerance the threshold in cm after the last point to complete the path
+     * @return true if the path was completed, false if not. should never return false.
      */
     public static boolean followCurve(ArrayList<CurvePoint> allPoints, double followAngle, double tolerance) {
 
