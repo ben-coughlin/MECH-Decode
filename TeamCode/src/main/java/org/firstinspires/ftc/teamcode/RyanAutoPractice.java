@@ -113,7 +113,7 @@ public class RyanAutoPractice extends RobotMasterPinpoint {
                     0, 0, 0, 0, 0, 0));
 
             points.add(new CurvePoint(45, 0,
-                    0.4 * SCALE_FACTOR, 0.40 * SCALE_FACTOR, 10, 10,
+                    0.35 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.6));
 
 //            points.add(new CurvePoint(20, 48,
@@ -173,7 +173,7 @@ public class RyanAutoPractice extends RobotMasterPinpoint {
 //                    Math.toRadians(-90), 0.6));
 
 
-            if (Movement.followCurve(points, Math.toRadians(180),2)) {
+            if (Movement.followCurve(points, Math.toRadians(-90),2)) {
                 drive.stopAllMovementDirectionBased();
                 nextStage(progStates.driveBackward.ordinal());
             }
