@@ -58,7 +58,7 @@ public abstract class RobotMasterPinpoint {
 //            hVelocity    = 0;
 
             // ALEJANDRO mecanum
-            double x_motor_multiplier = 1;
+            double x_motor_multiplier = 1.5;
             double fl_power_raw = movement_y - movement_turn + movement_x * x_motor_multiplier;
             double bl_power_raw = movement_y - movement_turn - movement_x * x_motor_multiplier;
             double br_power_raw = movement_y + movement_turn + movement_x * x_motor_multiplier;
@@ -105,9 +105,9 @@ public abstract class RobotMasterPinpoint {
             xPosition += Vx * dt * 1000;
             yPosition += Vy * dt * 1000;
 //            hOrientation += omega * dt * 1;
-//            hOrientation += omega * dt ;
+            hOrientation += omega * dt ;
 
-            hOrientation = (float) Math.toRadians(0);
+//            hOrientation = (float) Math.toRadians(0);
 //            hOrientation = 0;
 
             // --- BEGIN PRINT STATEMENTS ---
@@ -320,7 +320,7 @@ public abstract class RobotMasterPinpoint {
 //        odo.update();
 
         // Set initial robot position
-        odo.setPosition(new Pose2D(DistanceUnit.INCH,0,0,AngleUnit.DEGREES, 90));
+        odo.setPosition(new Pose2D(DistanceUnit.INCH,0,0,AngleUnit.DEGREES, 0));
 //        clientSim.sendPosition(60, 0, 90);
 
         Pose2D pos = odo.getPosition();
@@ -389,6 +389,7 @@ public abstract class RobotMasterPinpoint {
         odo.update();
 
         Pose2D pos = odo.getPosition();
+        mainAutoLoop();
 
 //        telemetry.addData("Status", "Initialized");
 //        telemetry.addData("Status", odo.getDeviceStatus());
@@ -422,6 +423,21 @@ public abstract class RobotMasterPinpoint {
         telemetry.addData("vel heading", odo.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS));
 
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
+    }
+
+    private void mainAutoLoop() {
+        if (inDebugState) {
+//            drive.stopAllMovementDirectionBased();
+//            // ControlMovement(); CHANGE THIS
+//
+//            telemetry.addLine("in debug state");
+//            if (gamepad1.a) {
+//                incrementStage();
+//                inDebugState = false;
+//            }
+        } else {
+            mainLoop();
+        }
     }
 
 }

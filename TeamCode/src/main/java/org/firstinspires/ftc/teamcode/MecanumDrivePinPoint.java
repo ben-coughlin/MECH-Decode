@@ -80,10 +80,16 @@ public final class MecanumDrivePinPoint {
         }
         lastUpdateTime = currTime;
 
-        double fl_power_raw = movement_y - movement_turn + movement_x * 1.5;
-        double bl_power_raw = movement_y - movement_turn - movement_x * 1.5;
-        double br_power_raw = movement_y + movement_turn + movement_x * 1.5;
-        double fr_power_raw = movement_y + movement_turn - movement_x * 1.5;
+        // ALEJANDRO original 1.5 multiplier for strafing
+//        double fl_power_raw = movement_y - movement_turn + movement_x * 1.5;
+//        double bl_power_raw = movement_y - movement_turn - movement_x * 1.5;
+//        double br_power_raw = movement_y + movement_turn + movement_x * 1.5;
+//        double fr_power_raw = movement_y + movement_turn - movement_x * 1.5;
+        double fl_power_raw = movement_y - movement_turn + movement_x * 1.1;
+        double bl_power_raw = movement_y - movement_turn - movement_x * 1.1;
+        double br_power_raw = movement_y + movement_turn + movement_x * 1.1;
+        double fr_power_raw = movement_y + movement_turn - movement_x * 1.1;
+
 
         //find the maximum of the powers
         double maxRawPower = Math.abs(fl_power_raw);

@@ -9,11 +9,15 @@ import static org.firstinspires.ftc.teamcode.RobotPosition.worldAngle_rad;
 import static org.firstinspires.ftc.teamcode.RobotPosition.worldXPosition;
 import static org.firstinspires.ftc.teamcode.RobotPosition.worldYPosition;
 
+import static org.firstinspires.ftc.teamcode.AutoSummerPinPoint.clientSim;
+
 import com.qualcomm.robotcore.util.Range;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class Movement {
+    private static final boolean DEBUG_MOVEMENT = true;
 
     public static double movement_y_min = 0.1118;
     public static double movement_x_min = 0.101;
@@ -147,6 +151,11 @@ public class Movement {
         double velocityAdjustedRelativePointAngle = AngleWrap(relativePointAngle);
         //was AngleWrap(relativePointAngle - SpeedOmeter.currSlipAngle();
 
+        if (DEBUG_MOVEMENT) {
+            clientSim.sendText(String.format(Locale.US, "angleToPointRaw(%.0f), absolutePointAngle(%.0f), relativePointAngle(%.0f)",
+                    Math.toDegrees(angleToPointRaw), Math.toDegrees(absolutePointAngle), Math.toDegrees(relativePointAngle)));
+        }
+
         //change the turn deceleration based on how fast we are going
         double decelerationDistance = Math.toRadians(40);
 
@@ -270,6 +279,21 @@ public class Movement {
      * @return true if the path was completed, false if not. should never return false.
      */
     public static boolean followCurve(ArrayList<CurvePoint> allPoints, double followAngle, double tolerance) {
+        if (DEBUG_MOVEMENT) {
+            if (allPoints != null && allPoints.size() >= 2) {
+                for (int i = 0; i < allPoints.size() - 1; i++) {
+                    CurvePoint p1 = allPoints.get(i);
+                    CurvePoint p2 = allPoints.get(i + 1);
+                    clientSim.sendLine("seg_" + i, p1.x, p1.y, p2.x, p2.y, 2);
+                }
+            }
+//            double xInches = worldXPosition / 25.4;
+//            double yInches = worldYPosition / 25.4;
+//            double headingDegrees = Math.toDegrees(worldAngle_rad);
+//            clientSim.sendPosition(xInches, yInches, headingDegrees);
+            clientSim.sendPosition(worldXPosition, worldYPosition, Math.toDegrees(worldAngle_rad));
+
+        }
 
         //now we will extend the last line so that the pointing looks smooth at the end
         ArrayList<CurvePoint> pathExtended = (ArrayList<CurvePoint>) allPoints.clone();
@@ -277,6 +301,17 @@ public class Movement {
         //first get which segment we are on
         pointWithIndex clippedToPath = clipToPath(allPoints, worldXPosition, worldYPosition);
         int currFollowIndex = clippedToPath.index + 1;
+
+        if (DEBUG_MOVEMENT) {
+            clientSim.sendLine(
+                    "robot_to_clipped",       // Name
+                    worldXPosition,           // Robot's current X
+                    worldYPosition,           // Robot's current Y
+                    clippedToPath.x,          // Clipped point X
+                    clippedToPath.y,          // Clipped point Y
+                    3                         // Style 3: DOTTED
+            );
+        }
 
         //get the point to follow
         CurvePoint followMe = getFollowPointPath(pathExtended, worldXPosition, worldYPosition,
@@ -308,6 +343,25 @@ public class Movement {
             followMe.setPoint(allPoints.get(allPoints.size() - 1).toPoint());
         }
 
+        if (DEBUG_MOVEMENT) {
+            // Marker for followMe point (small cross)
+            double markerSize = 2.0; // inches
+            clientSim.sendLine("follow_me_marker_h",
+                    followMe.x - markerSize, followMe.y,
+                    followMe.x + markerSize, followMe.y,
+                    1); // Style 1
+            clientSim.sendLine("follow_me_marker_v",
+                    followMe.x, followMe.y - markerSize,
+                    followMe.x, followMe.y + markerSize,
+                    1); // Style 1
+
+            clientSim.sendCircle(allPoints.get(currFollowIndex).followDistance, Math.toDegrees(followAngle));
+
+            clientSim.sendLine("follow_me",
+                    worldXPosition, worldYPosition,
+                    followMe.x, followMe.y,
+                    3);
+        }
 
         gunToPosition(followMe.x, followMe.y, followAngle,
                 followMe.moveSpeed, followMe.turnSpeed,
@@ -318,6 +372,17 @@ public class Movement {
 
         //if our follow angle is different, point differently
         currFollowAngle += subtractAngles(followAngle, Math.toRadians(90));
+
+        if (DEBUG_MOVEMENT) {
+            clientSim.sendLine(
+                    "point_to_me",       // Name
+                    worldXPosition,           // Robot's current X
+                    worldYPosition,           // Robot's current Y
+                    pointToMe.x,
+                    pointToMe.y,
+                    3                         // Style 3: DOTTED
+            );
+        }
 
         movementResult result = pointAngle(currFollowAngle, allPoints.get(currFollowIndex).turnSpeed, Math.toRadians(45));
         movement_x *= 1 - Range.clip(Math.abs(result.turnDelta_rad) / followMe.slowDownTurnRadians, 0, followMe.slowDownTurnAmount);

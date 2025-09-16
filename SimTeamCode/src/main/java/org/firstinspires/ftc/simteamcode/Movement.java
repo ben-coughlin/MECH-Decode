@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 public class Movement {
     private static final boolean DEBUG_MOVEMENT = true; // Set to false to disable debug prints
+    private static ArrayList<CurvePoint> lastSentCurve = null;
 
     public static double movement_y_min = 0.1118;
     public static double movement_x_min = 0.101;
@@ -328,12 +329,17 @@ public class Movement {
      */
     public static boolean followCurve(ArrayList<CurvePoint> allPoints, double followAngle, double tolerance) {
         if (DEBUG_MOVEMENT) {
-            if (allPoints != null && allPoints.size() >= 2) {
-                for (int i = 0; i < allPoints.size() - 1; i++) {
-                    CurvePoint p1 = allPoints.get(i);
-                    CurvePoint p2 = allPoints.get(i + 1);
-                    clientSim.sendLine("seg_" + i, p1.x, p1.y, p2.x, p2.y, 2);
+            if (allPoints == null || !allPoints.equals(lastSentCurve)) {
+                if (allPoints != null && allPoints.size() >= 2) {
+                    for (int i = 0; i < allPoints.size() - 1; i++) {
+                        CurvePoint p1 = allPoints.get(i);
+                        CurvePoint p2 = allPoints.get(i + 1);
+                        clientSim.sendLine("seg_" + i, p1.x, p1.y, p2.x, p2.y, 2);
+                    }
                 }
+                // Update the cache with the path we just sent.
+                // It's important to clone it so we have a snapshot from that moment in time.
+                lastSentCurve = (allPoints != null) ? (ArrayList<CurvePoint>) allPoints.clone() : null;
             }
         }
 

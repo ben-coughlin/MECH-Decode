@@ -42,9 +42,10 @@ public class SimApp extends AutoSummerPinPoint {
 
         for (int i = 0; i < 1000; i++) {
             System.out.println("-------------- Main Loop Iteration: " + (i + 1)); // Print 1 to 1000
-            sim.mainLoop();
+//            sim.mainLoop();
+            sim.loop();
              try {
-                 Thread.sleep(70); // e.g., sleep for 20 milliseconds
+                 Thread.sleep(20); // e.g., sleep for 20 milliseconds
              } catch (InterruptedException e) {
                  Thread.currentThread().interrupt();
                  System.out.println("Loop interrupted.");

@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.simteamcode;
 
+import java.util.Objects;
+
 public class CurvePoint {
     public double x;
     public double y;
@@ -55,5 +57,31 @@ public class CurvePoint {
     public void setPoint(PointDouble p){
         x = p.x;
         y = p.y;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        // This is a standard, robust way to check for equality.
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        CurvePoint that = (CurvePoint) o;
+
+        // Compare all the fields that define if two CurvePoints are the same.
+        return Double.compare(that.x, x) == 0 &&
+                Double.compare(that.y, y) == 0 &&
+                Double.compare(that.moveSpeed, moveSpeed) == 0 &&
+                Double.compare(that.turnSpeed, turnSpeed) == 0 &&
+                Double.compare(that.followDistance, followDistance) == 0 &&
+                Double.compare(that.pointLength, pointLength) == 0 &&
+                Double.compare(that.slowDownTurnRadians, slowDownTurnRadians) == 0 &&
+                Double.compare(that.slowDownTurnAmount, slowDownTurnAmount) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        // This is required whenever you override equals().
+        // It generates a unique number based on the object's values.
+        return Objects.hash(x, y, moveSpeed, turnSpeed, followDistance, pointLength, slowDownTurnRadians, slowDownTurnAmount);
     }
 }
