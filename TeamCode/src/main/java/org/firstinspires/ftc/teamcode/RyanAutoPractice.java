@@ -85,7 +85,7 @@ public class RyanAutoPractice extends RobotMasterPinpoint {
     private boolean hasGrabbedPixels = false;
 
     private double cutOffTime = 22.5;
-    private int currentState = RyanAutoPractice.programStage;
+    private String currentState = String.valueOf(progStates.values()[RyanAutoPractice.programStage]);
 
     private boolean past5In = false;
 
