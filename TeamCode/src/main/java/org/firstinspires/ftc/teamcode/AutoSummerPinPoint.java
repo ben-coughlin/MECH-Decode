@@ -17,16 +17,12 @@ import java.util.HashMap;
 @Autonomous
 public class AutoSummerPinPoint extends RobotMasterPinpoint {
 
-    private final double SCALE_FACTOR = 1.4;
+    private final double SCALE_FACTOR = 1;
 
     private long startTime = 0;
 
     private int cycle = 0;
     private int driveToGetSampleCycle = 0;
-
-    private static final String SIMULATOR_HOST = "192.168.43.22";
-    private static final int SIMULATOR_PORT = 7777;
-    public static UdpClientFieldSim clientSim;
 
     public enum progStates {
 
@@ -59,8 +55,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
 
         //isAuto = true;
 
-        odo.resetPosAndIMU();
-        clientSim = new UdpClientFieldSim(SIMULATOR_HOST, SIMULATOR_PORT);
+        odo.recalibrateIMU();
     }
 
     private int timeDelay = 0;
@@ -75,7 +70,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
     public void start() {
         super.start();
         startTime = SystemClock.uptimeMillis();
-
+        odo.resetPosAndIMU();
 
     }
 
@@ -91,15 +86,13 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
     private boolean hasGrabbedPixels = false;
 
     private double cutOffTime = 22.5;
-    private String currentState = String.valueOf(AutoTemplate.progStates.values()[AutoTemplate.programStage]);
+    private int currentState = AutoSummerPinPoint.programStage;
 
     private boolean past5In = false;
 
     public static boolean pickupOffWall = false;
 
     public int overallCycleToChamber = 0;
-
-
 
     @Override
     public void mainLoop() {
@@ -120,7 +113,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(20, 0,
+            points.add(new CurvePoint(25, 0,
                     0.4 * SCALE_FACTOR, 0.40 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.6));
 
@@ -146,7 +139,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(20,20,
+            points.add(new CurvePoint(25,25,
                     0.35 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.6));
 
@@ -154,7 +147,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
 //                    0.25 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 12, 10,
 //                    Math.toRadians(-90), 0.6));
 
-            if (Movement.followCurve(points, Math.toRadians(0),2)) {
+            if (Movement.followCurve(points, Math.toRadians(180),2)) {
                 drive.stopAllMovementDirectionBased();
                 nextStage(progStates.strafeRight.ordinal());
             }
@@ -172,7 +165,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(0, 20,
+            points.add(new CurvePoint(0, 25,
                     0.35 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.6));
 
@@ -181,7 +174,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
 //                    Math.toRadians(-90), 0.6));
 
 
-            if (Movement.followCurve(points, Math.toRadians(180),2)) {
+            if (Movement.followCurve(points, Math.toRadians(-90),2)) {
                 drive.stopAllMovementDirectionBased();
                 nextStage(progStates.driveBackward.ordinal());
             }
