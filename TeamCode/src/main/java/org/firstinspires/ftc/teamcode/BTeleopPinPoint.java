@@ -106,7 +106,7 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
         super.mainLoop();
 
         double targetX = 0.0;
-        double kP = 0.02;
+        double kP = 0.03;
         double limelightX = 0.0;
         double error = 0.0;
 
@@ -128,8 +128,11 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
         {
             Pose3D pose = llResult.getBotpose();
 
+            //calculate heading error
             limelightX = llResult.getTx();
             error = kP * (targetX - limelightX);
+
+            gamepad1.rumble(1, 1, 20);
 
             telemetry.addData("tx", llResult.getTx());
             telemetry.addData("ty", llResult.getTy());
@@ -138,6 +141,7 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
             telemetry.update();
 
         }
+
 
         if (gamepad1.a){
             movement_turn = error;

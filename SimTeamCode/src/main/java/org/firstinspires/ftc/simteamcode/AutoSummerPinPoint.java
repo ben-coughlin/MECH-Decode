@@ -118,7 +118,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(50, 0,
+            points.add(new CurvePoint(20, 0,
                     0.4 * SCALE_FACTOR, 0.40 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.6));
 
@@ -126,9 +126,8 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
 //                    0.4 * SCALE_FACTOR, 0.40 * SCALE_FACTOR, 5, 10,
 //                    Math.toRadians(60), 0.6));
 
-            if (Movement.followCurve(points, Math.toRadians(45),2)) { //the second term is is if drive strait or the strafe angle 90 deg is strait ahead
+            if (Movement.followCurve(points, Math.toRadians(90),2)) { //the second term is is if drive strait or the strafe angle 90 deg is strait ahead
                 drive.stopAllMovementDirectionBased();
-                System.exit(1); // ALEJANDRO
                 nextStage(progStates.strafeLeft.ordinal());
             }
 
@@ -141,12 +140,11 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
                 initializeStateVariables();
             }
 
-
             ArrayList<CurvePoint> points = new ArrayList<>();
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(50,50,
+            points.add(new CurvePoint(20,20,
                     0.35 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.6));
 
@@ -172,7 +170,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(50, 0,
+            points.add(new CurvePoint(0, 20,
                     0.35 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.6));
 
@@ -181,7 +179,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
 //                    Math.toRadians(-90), 0.6));
 
 
-            if (Movement.followCurve(points, Math.toRadians(180),1)) {
+            if (Movement.followCurve(points, Math.toRadians(180),2)) {
                 drive.stopAllMovementDirectionBased();
                 nextStage(progStates.driveBackward.ordinal());
             }
@@ -213,17 +211,6 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
             }
 
             drive.applyMovementDirectionBased(); // always put at end of state
-        }
-
-
-
-        if (programStage == progStates.endBehavior.ordinal()) {
-            if (stageFinished) {
-                past5In = false;
-                initializeStateVariables();
-            }
-            drive.stopAllMovementDirectionBased();
-
         }
 
     }

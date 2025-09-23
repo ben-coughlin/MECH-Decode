@@ -234,6 +234,11 @@ public class Movement {
         }
     }
 
+   
+
+
+
+
 
     public static double minPower(double val, double min) {
         if (val >= 0 && val <= min) {
@@ -243,6 +248,10 @@ public class Movement {
             return -min;
         }
         return val;
+
+
+
+
     }
 
     static class myPoint {

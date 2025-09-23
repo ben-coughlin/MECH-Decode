@@ -24,6 +24,10 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
     private int cycle = 0;
     private int driveToGetSampleCycle = 0;
 
+    private static final String SIMULATOR_HOST = "192.168.43.22";
+    private static final int SIMULATOR_PORT = 7777;
+    public static UdpClientFieldSim clientSim;
+
     public enum progStates {
 
         driveForward,
@@ -56,6 +60,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
         //isAuto = true;
 
         odo.resetPosAndIMU();
+        clientSim = new UdpClientFieldSim(SIMULATOR_HOST, SIMULATOR_PORT);
     }
 
     private int timeDelay = 0;
@@ -116,8 +121,12 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
                     0, 0, 0, 0, 0, 0));
 
             points.add(new CurvePoint(20, 0,
-                    0.3 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 20, 10, // changed move speed from .35 to .45
+                    0.4 * SCALE_FACTOR, 0.40 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.6));
+
+//            points.add(new CurvePoint(20, 48,
+//                    0.4 * SCALE_FACTOR, 0.40 * SCALE_FACTOR, 5, 10,
+//                    Math.toRadians(60), 0.6));
 
             if (Movement.followCurve(points, Math.toRadians(90),2)) { //the second term is is if drive strait or the strafe angle 90 deg is strait ahead
                 drive.stopAllMovementDirectionBased();
@@ -137,9 +146,13 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(20,10,
+            points.add(new CurvePoint(20,20,
                     0.35 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.6));
+
+//            points.add(new CurvePoint(24, 35,
+//                    0.25 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 12, 10,
+//                    Math.toRadians(-90), 0.6));
 
             if (Movement.followCurve(points, Math.toRadians(0),2)) {
                 drive.stopAllMovementDirectionBased();
@@ -159,11 +172,16 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(0, 10,
+            points.add(new CurvePoint(0, 20,
                     0.35 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.6));
 
-            if (Movement.followCurve(points, Math.toRadians(-90),2)) {
+//            points.add(new CurvePoint(24, 35,
+//                    0.25 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 12, 10,
+//                    Math.toRadians(-90), 0.6));
+
+
+            if (Movement.followCurve(points, Math.toRadians(180),2)) {
                 drive.stopAllMovementDirectionBased();
                 nextStage(progStates.driveBackward.ordinal());
             }
@@ -185,7 +203,11 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
                     0.35 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.6));
 
-            if (Movement.followCurve(points, Math.toRadians(180),2)) {
+//            points.add(new CurvePoint(24, 35,
+//                    0.25 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 12, 10,
+//                    Math.toRadians(-90), 0.6));
+
+            if (Movement.followCurve(points, Math.toRadians(-90),1)) {
                 drive.stopAllMovementDirectionBased();
                 nextStage(progStates.endBehavior.ordinal());
             }
