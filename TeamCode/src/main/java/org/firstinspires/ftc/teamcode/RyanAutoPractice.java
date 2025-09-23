@@ -112,7 +112,7 @@ public class RyanAutoPractice extends RobotMasterPinpoint {
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(45, 0,
+            points.add(new CurvePoint(0, 42,
                     0.35 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.6));
 
@@ -120,7 +120,7 @@ public class RyanAutoPractice extends RobotMasterPinpoint {
 //                    0.4 * SCALE_FACTOR, 0.40 * SCALE_FACTOR, 5, 10,
 //                    Math.toRadians(60), 0.6));
 
-            if (Movement.followCurve(points, Math.toRadians(90),2)) { //the second term is is if drive strait or the strafe angle 90 deg is strait ahead
+            if (Movement.followCurve(points, Math.toRadians(0),2)) { //the second term is is if drive strait or the strafe angle 90 deg is strait ahead
                 drive.stopAllMovementDirectionBased();
                 nextStage(progStates.strafeLeft.ordinal());
             }
@@ -146,7 +146,7 @@ public class RyanAutoPractice extends RobotMasterPinpoint {
 //                    0.25 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 12, 10,
 //                    Math.toRadians(-90), 0.6));
 
-            if (Movement.followCurve(points, Math.toRadians(0),2)) {
+            if (Movement.followCurve(points, Math.toRadians(-90),2)) {
                 drive.stopAllMovementDirectionBased();
                 nextStage(progStates.strafeRight.ordinal());
             }
@@ -164,7 +164,7 @@ public class RyanAutoPractice extends RobotMasterPinpoint {
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(0, 42,
+            points.add(new CurvePoint(45, 0,
                     0.35 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.6));
 
@@ -173,7 +173,7 @@ public class RyanAutoPractice extends RobotMasterPinpoint {
 //                    Math.toRadians(-90), 0.6));
 
 
-            if (Movement.followCurve(points, Math.toRadians(-90),2)) {
+            if (Movement.followCurve(points, Math.toRadians(180),2)) {
                 drive.stopAllMovementDirectionBased();
                 nextStage(progStates.driveBackward.ordinal());
             }
