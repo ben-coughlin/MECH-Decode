@@ -107,7 +107,6 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
 
         double targetX = 0.0;
         double kP = 0.03;
-        double limelightX = 0.0;
         double error = 0.0;
 
         ButtonPress.giveMeInputs(gamepad1.a, gamepad1.b, gamepad1.x, gamepad1.y, gamepad1.dpad_up,
@@ -129,8 +128,12 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
             Pose3D pose = llResult.getBotpose();
 
             //calculate heading error
-            limelightX = llResult.getTx();
+            double limelightX = llResult.getTx();
+            // Create profile when we detect a new target
+
+
             error = kP * (targetX - limelightX);
+
 
             gamepad1.rumble(1, 1, 20);
 
