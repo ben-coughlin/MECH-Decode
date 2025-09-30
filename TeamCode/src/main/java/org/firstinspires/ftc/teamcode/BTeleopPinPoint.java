@@ -35,18 +35,15 @@ import static org.firstinspires.ftc.teamcode.MovementVars.movement_y;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.util.Range;
+
 
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-//import org.firstinspires.ftc.vision.VisionPortal;
-//import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
-//import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 @TeleOp(name = "BTeleop PinPoint")
 public class BTeleopPinPoint extends RobotMasterPinpoint {
+
+    PIDController autoheading = new PIDController(0.02,0.0005,-0.01);
 
     @Override
     public void init() {
@@ -55,7 +52,6 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
 
         super.init();
 
-        //drive = new MecanumDrivePinPoint(hardwareMap);
 
     }
 
@@ -80,34 +76,13 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
     }
 
 
-    private boolean autoPilotEnabled = false;
-    private boolean atBasket = false;
-
-
-    private ArrayList<Double> distances = new ArrayList<>();
-
-    private boolean hangAutomation = false;
-
-
-    private HashMap<Integer, PointDouble> yellowDropBlue = new HashMap<Integer, PointDouble>() {{
-        put(0, new PointDouble(30, 118));
-        put(1, new PointDouble(36, 118));
-        put(2, new PointDouble(42, 118));
-    }};
-
-
-
-    private boolean autoDriveToHang = false;
-    //private PointDouble autoDriveToDroneLaunchPosition = new PointDouble();
-
-
     @Override
     public void mainLoop() {
         super.mainLoop();
 
-        double targetX = 0.0;
-        double kP = 0.03;
+
         double error = 0.0;
+
 
         ButtonPress.giveMeInputs(gamepad1.a, gamepad1.b, gamepad1.x, gamepad1.y, gamepad1.dpad_up,
                 gamepad1.dpad_down, gamepad1.dpad_right, gamepad1.dpad_left, gamepad1.right_bumper,
@@ -123,17 +98,14 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
 
         LLResult llResult = limelight.getLatestResult();
 
-        if(llResult.isValid())
+
+        if(llResult.isValid() && !VisionUtils.isTagObelisk(VisionUtils.getTagId(llResult)))
         {
             Pose3D pose = llResult.getBotpose();
 
             //calculate heading error
             double limelightX = llResult.getTx();
-            // Create profile when we detect a new target
-
-
-            error = kP * (targetX - limelightX);
-
+            error = autoheading.calculatePID(limelightX);
 
             gamepad1.rumble(1, 1, 20);
 
@@ -141,6 +113,9 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
             telemetry.addData("ty", llResult.getTy());
             telemetry.addData("pose", pose.toString());
             telemetry.addData("error", error);
+            telemetry.addData("proportional", autoheading.getProportional());
+            telemetry.addData("integral", autoheading.getIntegral());
+            telemetry.addData("derivative", autoheading.getDerivative());
             telemetry.update();
 
         }
@@ -151,6 +126,8 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
         }
         else {
             movement_turn = -gamepad1.right_stick_x;
+
+
 
         }
 

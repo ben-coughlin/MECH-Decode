@@ -20,6 +20,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit
 import org.firstinspires.ftc.vision.VisionPortal;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Locale;
 
 public abstract class RobotMasterPinpoint extends OpMode {
@@ -31,6 +32,8 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
     public boolean isAuto = false;
     public static boolean resetEncoders = false;
+
+
 
 
 //clocks
@@ -189,6 +192,13 @@ public abstract class RobotMasterPinpoint extends OpMode {
         programStage = 0;
 
     }
+    @Override
+    public void stop()
+    {
+        drive.stopAllMovementDirectionBased();
+        limelight.stop();
+    }
+
 
     @Override
     public void loop() {
