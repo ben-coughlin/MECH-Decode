@@ -29,6 +29,9 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import static com.sun.tools.javac.jvm.ByteCodes.error;
+
+import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -36,6 +39,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import static org.firstinspires.ftc.teamcode.MovementVars.movement_y;
 import static org.firstinspires.ftc.teamcode.MovementVars.movement_x;
 import static org.firstinspires.ftc.teamcode.MovementVars.movement_turn;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 
 /*
  * This file contains an example of an iterative (Non-Linear) "OpMode".
@@ -114,15 +118,41 @@ public class RyanPracticeOpMode extends RobotMasterPinpoint
         movement_y = -gamepad1.left_stick_y;
         movement_x = -gamepad1.left_stick_x;
         movement_turn = -gamepad1.right_stick_x;
+
+        // type out Limelight thingy from BTeleopPinPoint (no auto complete)
+
+        double targetX = 0.0;
+        double kP = 0.03;
+        double limelightX = 0.0;
+        double error = 0.0;
+
         drive.applyMovementDirectionBased();
 
+        LLResult llResult = limelight.getLatestResult();
+
+        if (llResult.isValid()) {
+            Pose3D pose = llResult.getBotpose();
+
+            limelightX = llResult.getTx();
+            error = kP * (targetX - limelightX);
+
+            telemetry.addData("tx", llResult.getTx());
+            telemetry.addData("ty", llResult.getTx());
+            telemetry.addData("pose", pose.toString());
+            telemetry.addData("error", error);
+            telemetry.update();
+        }
+
+        if(gamepad1.a){
+            movement_turn = error;
+        }
+        else {
+            movement_turn = -gamepad1.right_stick_x;
+        }
         // Tank Mode uses one stick to control each wheel.
         // - This requires no math, but it is hard to drive forward slowly and keep straight.
         // leftPower  = -gamepad1.left_stick_y ;
         // rightPower = -gamepad1.right_stick_y ;
-
-        // Send calculated power to wheels
-
 
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime.toString());
