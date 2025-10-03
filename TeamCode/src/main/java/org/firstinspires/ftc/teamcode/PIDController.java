@@ -111,6 +111,12 @@ public class PIDController {
 
     }
 
+    /**
+     * updates the values of the error so they can be read for debugging
+     * @param proportional current proportional error
+     * @param integral current integral error
+     * @param derivative current derivative error
+     */
    public void updatePIDConstants(double proportional, double integral, double derivative)
    {
        pidConstants[0] = proportional;

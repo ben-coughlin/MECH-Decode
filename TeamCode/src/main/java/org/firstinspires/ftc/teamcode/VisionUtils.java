@@ -7,9 +7,11 @@ import java.util.List;
 
 public class VisionUtils {
     public static final int[] obeliskAprilTagIDs = {21, 22, 23};
-
     public static final int redGoalID = 24;
     public static final int blueGoalID = 20;
+
+
+
 
     /**
      * Gets the tag ID from the latest result
@@ -24,6 +26,8 @@ public class VisionUtils {
             id = tag.getFiducialId(); // The ID number of the tag
            break;
         }
+
+
 
         return id;
     }
@@ -46,6 +50,9 @@ public class VisionUtils {
         }
         return false;
     }
+
+
+
 
 
 
