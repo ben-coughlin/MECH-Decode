@@ -23,6 +23,7 @@ public class AutoTemplate extends RobotMasterPinpoint {
         driveBackward,
         strafeRight,
 
+
         endBehavior
     }
 
@@ -53,6 +54,7 @@ public class AutoTemplate extends RobotMasterPinpoint {
 
     @Override
     public void mainLoop() {
+
 
         telemetry.addData("Superstructure State", currentState);
         telemetry.addData("Path State", programStage);

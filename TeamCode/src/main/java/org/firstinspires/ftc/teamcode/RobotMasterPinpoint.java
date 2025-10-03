@@ -30,6 +30,8 @@ public abstract class RobotMasterPinpoint extends OpMode {
     GoBildaPinpointDriver odo; // Declare OpMode member for the Odometry Computer
     Limelight3A limelight;
 
+    Pattern obelisk = null;
+
     public boolean isAuto = false;
     public static boolean resetEncoders = false;
 
@@ -112,6 +114,8 @@ public abstract class RobotMasterPinpoint extends OpMode {
         telemetry.setMsTransmissionInterval(11);
         limelight.pipelineSwitch(0);
         limelight.start();
+
+        obelisk = new Pattern(Pattern.getObeliskPatternFromTag(VisionUtils.getTagId(limelight.getLatestResult())));
 
         odo.resetPosAndIMU();
     }
@@ -288,6 +292,9 @@ public abstract class RobotMasterPinpoint extends OpMode {
         }
     }
 
+    /**
+     * I honestly don't know why this is here - it does nothing.
+     */
     public void mainLoop() {
     }
 
