@@ -49,14 +49,14 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Basic: Iterative OpMode", group="Iterative OpMode")
-@Disabled
+@TeleOp(name="LauncherSpeed", group="Iterative OpMode")
+//@Disabled
 public class LauncherSpeed extends RobotMasterPinpoint
 {
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
     private Servo launcher = null;
-    private double launcherSpeed = .3;
+    private double launcherSpeed = 0;
     private boolean launcherOn = false;
     private boolean bLastState = false;
 
@@ -70,7 +70,7 @@ public class LauncherSpeed extends RobotMasterPinpoint
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
-        launcher = hardwareMap.get(Servo.class, "Launcher");
+        launcher = hardwareMap.get(Servo.class, "launcher");
 
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
         // Pushing the left stick forward MUST make robot go forward. So adjust these two lines based on your first test drive.

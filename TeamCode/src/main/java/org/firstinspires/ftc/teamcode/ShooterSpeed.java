@@ -50,8 +50,8 @@ import com.qualcomm.robotcore.util.Range;
  * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Basic: Iterative OpMode", group="Iterative OpMode")
-@Disabled
+@TeleOp(name="ShooterSpeed", group="Iterative OpMode")
+//@Disabled
 public class ShooterSpeed extends RobotMasterPinpoint
 {
     // Declare OpMode members.

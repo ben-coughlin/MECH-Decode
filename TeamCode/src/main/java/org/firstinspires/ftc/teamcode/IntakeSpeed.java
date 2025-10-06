@@ -29,9 +29,8 @@
 
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 /*
@@ -48,15 +47,15 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list
  */
 
-@TeleOp(name="SpindexerSpeed", group="Iterative OpMode")
+@TeleOp(name="ShooterSpeed", group="Iterative OpMode")
 //@Disabled
-public class SpindexerSpeed extends RobotMasterPinpoint
+public class IntakeSpeed extends RobotMasterPinpoint
 {
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
-    private CRServo spindexer = null;
-    private double spindexerSpeed = .3;
-    private boolean spindexerOn = false;
+    private DcMotorEx intake = null;
+    private double intakeSpeed = .3;
+    private boolean intakeOn = false;
     private boolean bLastState = false;
 
     /*
@@ -69,12 +68,12 @@ public class SpindexerSpeed extends RobotMasterPinpoint
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
-        spindexer = hardwareMap.get(CRServo.class, "spindexer");
+        intake = hardwareMap.get(DcMotorEx.class, "intake");
 
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
         // Pushing the left stick forward MUST make robot go forward. So adjust these two lines based on your first test drive.
         // Note: The settings here assume direct drive on left and right wheels.  Gear Reduction or 90 Deg drives may require direction flips
-        spindexer.setDirection(CRServo.Direction.FORWARD);
+        intake.setDirection(DcMotorEx.Direction.FORWARD);
 
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
@@ -101,38 +100,40 @@ public class SpindexerSpeed extends RobotMasterPinpoint
     @Override
     public void loop() {
         // Setup a variable for each drive wheel to save power level for telemetry
+        double leftPower;
+        double rightPower;
 
         // Choose to drive using either Tank Mode, or POV Mode
         // Comment out the method that's not used.  The default below is POV.
 
         //Use the booleans to change the speed of the shooter
-        boolean spindexerSpeedUp = gamepad1.dpad_up;
-        boolean spindexerSpeedDown = gamepad1.dpad_down;
+        boolean intakeSpeedUp = gamepad1.dpad_up;
+        boolean intakeSpeedDown = gamepad1.dpad_down;
         boolean bCurrentState = gamepad1.b;
 
-        if(spindexerSpeedUp){
-            spindexerSpeed += .02;
+        if(intakeSpeedUp){
+            intakeSpeed += .02;
         }
-        else if(spindexerSpeedDown){
-            spindexerSpeed -= .02;
+        else if(intakeSpeedDown){
+            intakeSpeed -= .02;
         }
         
         if(bCurrentState && !bLastState){
-            spindexerOn = !spindexerOn;
+            intakeOn = !intakeOn;
         }
         bLastState = bCurrentState;
         
-        if(spindexerOn){
-            spindexer.setPower(spindexerSpeed);
+        if(intakeOn){
+            intake.setPower(intakeSpeed);
         }
         else{
-            spindexer.setPower(0);
+            intake.setPower(0);
         }
 
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime.toString());
-        telemetry.addData("Spindexer Speed", spindexerSpeed);
-        telemetry.addData("Spindexer On", spindexerOn);
+        telemetry.addData("Shooter Speed", intakeSpeed);
+        telemetry.addData("Shooter On", intakeOn);
         telemetry.update();
     }
 
