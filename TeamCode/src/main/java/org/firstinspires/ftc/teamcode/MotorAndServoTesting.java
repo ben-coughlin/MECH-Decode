@@ -30,7 +30,9 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 /*
@@ -47,16 +49,28 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list
  */
 
-@TeleOp(name="ShooterSpeed", group="Iterative OpMode")
+@TeleOp(name="Motor and Servo Testing", group="Iterative OpMode")
 //@Disabled
-public class IntakeSpeed extends RobotMasterPinpoint
+public class MotorAndServoTesting extends RobotMasterPinpoint
 {
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
-    private DcMotorEx intake = null;
+    private DcMotor shooter = null;
+    private DcMotor intake = null;
+    private CRServo spindexer = null;
+    private Servo launcher = null;
+    private double shooterSpeed = .3;
+    private double spindexerSpeed = .3;
+    private double launcherSpeed = .3;
     private double intakeSpeed = .3;
+    private boolean shooterOn = false;
+    private boolean spindexerOn = false;
+    private boolean launcherOn = false;
     private boolean intakeOn = false;
+    private boolean aLastState = false;
     private boolean bLastState = false;
+    private boolean xLastState = false;
+    private boolean yLastState = false;
 
     /*
      * Code to run ONCE when the driver hits INIT
@@ -68,12 +82,15 @@ public class IntakeSpeed extends RobotMasterPinpoint
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
-        intake = hardwareMap.get(DcMotorEx.class, "intake");
+        shooter = hardwareMap.get(DcMotor.class, "shooter");
+        intake = hardwareMap.get(DcMotor.class, "intake");
+        spindexer = hardwareMap.get(CRServo.class, "spindexer");
+        launcher = hardwareMap.get(Servo.class, "launcher");
 
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
         // Pushing the left stick forward MUST make robot go forward. So adjust these two lines based on your first test drive.
         // Note: The settings here assume direct drive on left and right wheels.  Gear Reduction or 90 Deg drives may require direction flips
-        intake.setDirection(DcMotorEx.Direction.FORWARD);
+        shooter.setDirection(DcMotor.Direction.FORWARD);
 
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
@@ -107,34 +124,110 @@ public class IntakeSpeed extends RobotMasterPinpoint
         // Comment out the method that's not used.  The default below is POV.
 
         //Use the booleans to change the speed of the shooter
-        boolean intakeSpeedUp = gamepad1.dpad_up;
-        boolean intakeSpeedDown = gamepad1.dpad_down;
+        boolean shooterSpeedUp = gamepad1.dpad_up;
+        boolean shooterSpeedDown = gamepad1.dpad_down;
         boolean bCurrentState = gamepad1.b;
+        boolean intakeSpeedUp = gamepad1.dpad_left;
+        boolean intakeSpeedDown = gamepad1.dpad_right;
+        boolean xCurrentState = gamepad1.x;
+        boolean spindexerSpeedUp = gamepad1.left_stick_button;
+        boolean spindexerSpeedDown = gamepad1.right_stick_button;
+        boolean aCurrentState = gamepad1.b;
+        boolean launcherSpeedUp = gamepad1.left_bumper;
+        boolean launcherSpeedDown = gamepad1.right_bumper;
+        boolean yCurrentState = gamepad1.y;
 
+        if(shooterSpeedUp){
+            shooterSpeed += .02;
+        }
+        else if(shooterSpeedDown){
+            shooterSpeed -= .02;
+        }
+        
+        if(bCurrentState && !bLastState){
+            shooterOn = !shooterOn;
+        }
+        bLastState = bCurrentState;
+        
+        if(shooterOn){
+            shooter.setPower(shooterSpeed);
+        }
+        else{
+            shooter.setPower(0);
+        }
         if(intakeSpeedUp){
             intakeSpeed += .02;
         }
         else if(intakeSpeedDown){
             intakeSpeed -= .02;
         }
-        
-        if(bCurrentState && !bLastState){
+
+        if(xCurrentState && !xLastState){
             intakeOn = !intakeOn;
         }
-        bLastState = bCurrentState;
-        
+        xLastState = bCurrentState;
+
         if(intakeOn){
             intake.setPower(intakeSpeed);
         }
         else{
             intake.setPower(0);
         }
+        if(spindexerSpeedUp){
+            spindexerSpeed += .02;
+        }
+        else if(spindexerSpeedDown){
+            spindexerSpeed -= .02;
+        }
 
+        if(aCurrentState && !aLastState){
+            spindexerOn = !spindexerOn;
+        }
+        aLastState = bCurrentState;
+
+        if(spindexerOn){
+            spindexer.setPower(spindexerSpeed);
+        }
+        else{
+            spindexer.setPower(0);
+        }
+        if(launcherSpeedUp){
+            launcherSpeed += .02;
+        }
+        else if(launcherSpeedDown){
+            launcherSpeed -= .02;
+        }
+
+        if(yCurrentState && !yLastState){
+            launcherOn = !launcherOn;
+        }
+        yLastState = bCurrentState;
+
+        if(launcherOn){
+            launcher.setPosition(launcherSpeed);
+        }
+        else{
+            launcher.setPosition(0);
+        }
 
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime.toString());
+        telemetry.addData("Shooter Speed", shooterSpeed);
+        telemetry.addData("Shooter On", shooterOn);
         telemetry.addData("Intake Speed", intakeSpeed);
         telemetry.addData("Intake On", intakeOn);
+        telemetry.addData("Spindexer Speed", spindexerSpeed);
+        telemetry.addData("Spindexer On", spindexerOn);
+        telemetry.addData("Launcher Speed", launcherSpeed);
+        telemetry.addData("Launcher On", launcherOn);
+        telemetry.addData("How to turn shooter on", "Press B to turn on shooter, press B again to turn off shooter");
+        telemetry.addData("How to turn intake on", "Press X to turn on intake, press X again to turn off intake");
+        telemetry.addData("How to turn spindexer on", "Press A to turn on spindexer, press A again to turn off spindexer");
+        telemetry.addData("How to turn launcher on", "Press Y to turn on launcher, press Y again to turn off launcher");
+        telemetry.addData("How to increase or decrease shooter speed", "Press Dpad Up to increase shooter speed, press Dpad Down to decrease shooter speed");
+        telemetry.addData("How to increase or decrease intake speed", "Press Dpad Left to increase intake speed, press Dpad Right to decrease intake speed");
+        telemetry.addData("How to increase or decrease spindexer speed", "Press Left Stick Button to increase spindexer speed, press Right Stick Button to decrease spindexer speed");
+        telemetry.addData("How to increase or decrease launcher speed", "Press Left Bumper to increase launcher speed, press Right Bumper to decrease launcher speed");
         telemetry.update();
     }
 
