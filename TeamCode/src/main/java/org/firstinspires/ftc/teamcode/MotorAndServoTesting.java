@@ -56,12 +56,12 @@ public class MotorAndServoTesting extends RobotMasterPinpoint
 {
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
-    private final double TICKS_PER_REVOLUTION = 6000; // Example for GoBILDA 5203-2402-0019
+    private final double TICKS_PER_REVOLUTION = 6000;
     private DcMotorEx shooter = null;
     private DcMotor intake = null;
     private CRServo spindexer = null;
     private Servo launcher = null;
-    private double shooterRPM = 1500;
+    private double shooterRPM = 0;
     private double spindexerSpeed = .3;
     private double launcherSpeed = .3;
     private double intakeSpeed = .3;
