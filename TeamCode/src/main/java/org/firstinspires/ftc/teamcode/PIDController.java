@@ -138,7 +138,14 @@ public class PIDController {
         return pidConstants[2];
     }
 
-    private double clamp(double value, double min, double max) {
+    /**
+     * returns a double between min or max, will return min if value < min and max if value > max
+     * @param value input
+     * @param min minimum output
+     * @param max max output
+     * @return value between min/max inclusive
+     */
+    public static double clamp(double value, double min, double max) {
         return Math.max(min, Math.min(max, value));
     }
 

@@ -9,8 +9,12 @@ import android.util.Log;
 
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -31,6 +35,10 @@ public abstract class RobotMasterPinpoint extends OpMode {
     Limelight3A limelight;
 
     Pattern obelisk = null;
+
+    CRServo spindexer = null;
+    Servo kicker = null;
+    DcMotorEx intake = null;
 
     public boolean isAuto = false;
     public static boolean resetEncoders = false;
@@ -116,6 +124,11 @@ public abstract class RobotMasterPinpoint extends OpMode {
         limelight.start();
 
         obelisk = new Pattern(Pattern.getObeliskPatternFromTag(VisionUtils.getTagId(limelight.getLatestResult())));
+        spindexer = hardwareMap.get(CRServo.class, "spindexer");
+        kicker = hardwareMap.get(Servo.class, "kicker");
+        intake = hardwareMap.get(DcMotorEx.class, "intake");
+        intake.setDirection(DcMotorSimple.Direction.REVERSE);
+
 
         odo.resetPosAndIMU();
     }

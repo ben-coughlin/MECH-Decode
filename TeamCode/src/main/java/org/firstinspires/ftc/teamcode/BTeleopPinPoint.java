@@ -43,7 +43,20 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 @TeleOp(name = "BTeleop PinPoint")
 public class BTeleopPinPoint extends RobotMasterPinpoint {
 
-    PIDController autoheading = new PIDController(0.02,0.0005,-0.01);
+    PIDController autoheading = new PIDController(0.04,0.0005,0);
+
+    final double intakePower = 1;
+    final double kickerInit = 0.52;
+    final double kickerMin = .52;
+    final double kickerMax = .48;
+    double kickerPos = kickerInit;
+
+    boolean intakeOn = false;
+    boolean circlePressedLast = false;
+    boolean trianglePressedLast = false;
+    boolean crossPressedLast = false;
+    boolean dpadUpPressedLast = false;
+    boolean dpadDownPressedLast = false;
 
     @Override
     public void init() {
@@ -91,10 +104,10 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
                 gamepad2.dpad_down, gamepad2.dpad_right, gamepad2.dpad_left, gamepad2.right_bumper,
                 gamepad2.left_bumper, gamepad2.left_stick_button, gamepad2.right_stick_button);
 
-        movement_y = -gamepad1.left_stick_y;
+        movement_y = gamepad1.left_stick_y;
         movement_x = gamepad1.left_stick_x;
 
-        drive.applyMovementDirectionBased();
+
 
         LLResult llResult = limelight.getLatestResult();
 
@@ -122,15 +135,64 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
         }
 
 
-        if (gamepad1.a){
+        if (gamepad1.guide){
             movement_turn = error;
         }
         else {
-            movement_turn = -gamepad1.right_stick_x;
-
-
+            movement_turn = gamepad1.right_stick_x;
 
         }
+
+        drive.applyMovementDirectionBasedFieldCentric();
+
+
+        trianglePressedLast = gamepad1.triangle;
+        crossPressedLast = gamepad1.cross;
+
+
+        if(gamepad1.circle && !circlePressedLast)
+        {
+            intakeOn = !intakeOn;
+        }
+        circlePressedLast = gamepad1.circle;
+
+        if(intakeOn) {
+            intake.setPower(intakePower);
+        } else {
+            intake.setPower(0);
+        }
+
+        if(gamepad1.square)
+        {
+            spindexer.setPower(0.7);
+        }
+        else
+        {
+            spindexer.setPower(0);
+
+        }
+        if(gamepad1.dpad_up && !dpadUpPressedLast)
+        {
+            kickerPos += 0.01;
+        }
+        else if(gamepad1.dpad_down && !dpadDownPressedLast)
+        {
+            kickerPos -= 0.01;
+        }
+        else if(gamepad1.dpad_left)
+        {
+            kicker.setPosition(kickerPos);
+        }
+        dpadUpPressedLast = gamepad1.dpad_up;
+        dpadDownPressedLast = gamepad1.dpad_down;
+
+
+
+        telemetry.addData("intakePower ", intakePower);
+        telemetry.addData("intake ", intake.getPower());
+        telemetry.addData("kicker", kicker.getPosition());
+        telemetry.addData("kickerInit", kickerInit);
+
 
 
 

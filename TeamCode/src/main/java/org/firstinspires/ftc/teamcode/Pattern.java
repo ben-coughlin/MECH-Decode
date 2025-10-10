@@ -28,7 +28,6 @@ public class Pattern {
         this.spindexSlotOne = spindexSlotOne;
         this.spindexSlotTwo = spindexSlotTwo;
         this.spindexSlotThree = spindexSlotThree;
-
     }
 
     /**
