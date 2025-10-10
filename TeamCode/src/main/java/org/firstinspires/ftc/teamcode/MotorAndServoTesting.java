@@ -32,6 +32,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -55,11 +56,12 @@ public class MotorAndServoTesting extends RobotMasterPinpoint
 {
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
-    private DcMotor shooter = null;
+    private final double TICKS_PER_REVOLUTION = 6000; // Example for GoBILDA 5203-2402-0019
+    private DcMotorEx shooter = null;
     private DcMotor intake = null;
     private CRServo spindexer = null;
     private Servo launcher = null;
-    private double shooterSpeed = .3;
+    private double shooterRPM = 1500;
     private double spindexerSpeed = .3;
     private double launcherSpeed = .3;
     private double intakeSpeed = .3;
@@ -77,12 +79,14 @@ public class MotorAndServoTesting extends RobotMasterPinpoint
      */
     @Override
     public void init() {
+        super.init();
+        limelight.start();
         telemetry.addData("Status", "Initialized");
 
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
-        shooter = hardwareMap.get(DcMotor.class, "shooter");
+        shooter = hardwareMap.get(DcMotorEx.class, "shooter");
         intake = hardwareMap.get(DcMotor.class, "intake");
         spindexer = hardwareMap.get(CRServo.class, "spindexer");
         launcher = hardwareMap.get(Servo.class, "launcher");
@@ -91,6 +95,11 @@ public class MotorAndServoTesting extends RobotMasterPinpoint
         // Pushing the left stick forward MUST make robot go forward. So adjust these two lines based on your first test drive.
         // Note: The settings here assume direct drive on left and right wheels.  Gear Reduction or 90 Deg drives may require direction flips
         shooter.setDirection(DcMotor.Direction.FORWARD);
+
+        // Set the motor to run using encoders to control velocity
+        shooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
 
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
@@ -132,16 +141,16 @@ public class MotorAndServoTesting extends RobotMasterPinpoint
         boolean xCurrentState = gamepad1.x;
         boolean spindexerSpeedUp = gamepad1.left_stick_button;
         boolean spindexerSpeedDown = gamepad1.right_stick_button;
-        boolean aCurrentState = gamepad1.b;
+        boolean aCurrentState = gamepad1.a;
         boolean launcherSpeedUp = gamepad1.left_bumper;
         boolean launcherSpeedDown = gamepad1.right_bumper;
         boolean yCurrentState = gamepad1.y;
 
         if(shooterSpeedUp){
-            shooterSpeed += .02;
+            shooterRPM += 50;
         }
         else if(shooterSpeedDown){
-            shooterSpeed -= .02;
+            shooterRPM -= 50;
         }
         
         if(bCurrentState && !bLastState){
@@ -150,7 +159,8 @@ public class MotorAndServoTesting extends RobotMasterPinpoint
         bLastState = bCurrentState;
         
         if(shooterOn){
-            shooter.setPower(shooterSpeed);
+            double ticksPerSecond = shooterRPM * TICKS_PER_REVOLUTION / 60;
+            shooter.setVelocity(ticksPerSecond);
         }
         else{
             shooter.setPower(0);
@@ -165,7 +175,7 @@ public class MotorAndServoTesting extends RobotMasterPinpoint
         if(xCurrentState && !xLastState){
             intakeOn = !intakeOn;
         }
-        xLastState = bCurrentState;
+        xLastState = xCurrentState;
 
         if(intakeOn){
             intake.setPower(intakeSpeed);
@@ -183,7 +193,7 @@ public class MotorAndServoTesting extends RobotMasterPinpoint
         if(aCurrentState && !aLastState){
             spindexerOn = !spindexerOn;
         }
-        aLastState = bCurrentState;
+        aLastState = aCurrentState;
 
         if(spindexerOn){
             spindexer.setPower(spindexerSpeed);
@@ -201,7 +211,7 @@ public class MotorAndServoTesting extends RobotMasterPinpoint
         if(yCurrentState && !yLastState){
             launcherOn = !launcherOn;
         }
-        yLastState = bCurrentState;
+        yLastState = yCurrentState;
 
         if(launcherOn){
             launcher.setPosition(launcherSpeed);
@@ -212,7 +222,8 @@ public class MotorAndServoTesting extends RobotMasterPinpoint
 
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime.toString());
-        telemetry.addData("Shooter Speed", shooterSpeed);
+        telemetry.addData("Shooter RPM", shooterRPM);
+        telemetry.addData("Current Shooter Velocity (ticks/sec)", shooter.getVelocity());
         telemetry.addData("Shooter On", shooterOn);
         telemetry.addData("Intake Speed", intakeSpeed);
         telemetry.addData("Intake On", intakeOn);
@@ -224,10 +235,11 @@ public class MotorAndServoTesting extends RobotMasterPinpoint
         telemetry.addData("How to turn intake on", "Press X to turn on intake, press X again to turn off intake");
         telemetry.addData("How to turn spindexer on", "Press A to turn on spindexer, press A again to turn off spindexer");
         telemetry.addData("How to turn launcher on", "Press Y to turn on launcher, press Y again to turn off launcher");
-        telemetry.addData("How to increase or decrease shooter speed", "Press Dpad Up to increase shooter speed, press Dpad Down to decrease shooter speed");
+        telemetry.addData("How to increase or decrease shooter speed", "Press Dpad Up to increase shooter RPM, press Dpad Down to decrease shooter RPM");
         telemetry.addData("How to increase or decrease intake speed", "Press Dpad Left to increase intake speed, press Dpad Right to decrease intake speed");
         telemetry.addData("How to increase or decrease spindexer speed", "Press Left Stick Button to increase spindexer speed, press Right Stick Button to decrease spindexer speed");
         telemetry.addData("How to increase or decrease launcher speed", "Press Left Bumper to increase launcher speed, press Right Bumper to decrease launcher speed");
+        telemetry.addData("Distance from April Tag", limelight.getLatestResult().getTy());
         telemetry.update();
     }
 
