@@ -9,9 +9,12 @@ import android.util.Log;
 
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
-import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -21,6 +24,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit
 import org.firstinspires.ftc.vision.VisionPortal;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Locale;
 
 public abstract class RobotMasterPinpoint extends OpMode {
@@ -29,10 +33,17 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
     GoBildaPinpointDriver odo; // Declare OpMode member for the Odometry Computer
     Limelight3A limelight;
-    public NormalizedColorSensor artifactSensor;
+
+    Pattern obelisk = null;
+
+    CRServo spindexer = null;
+    Servo kicker = null;
+    DcMotorEx intake = null;
 
     public boolean isAuto = false;
     public static boolean resetEncoders = false;
+
+
 
 
 //clocks
@@ -112,7 +123,12 @@ public abstract class RobotMasterPinpoint extends OpMode {
         limelight.pipelineSwitch(0);
         limelight.start();
 
-        artifactSensor = hardwareMap.get(NormalizedColorSensor.class, "artifactSensor");
+        obelisk = new Pattern(Pattern.getObeliskPatternFromTag(VisionUtils.getTagId(limelight.getLatestResult())));
+        spindexer = hardwareMap.get(CRServo.class, "spindexer");
+        kicker = hardwareMap.get(Servo.class, "kicker");
+        intake = hardwareMap.get(DcMotorEx.class, "intake");
+        intake.setDirection(DcMotorSimple.Direction.REVERSE);
+
 
         odo.resetPosAndIMU();
     }
@@ -193,6 +209,13 @@ public abstract class RobotMasterPinpoint extends OpMode {
         programStage = 0;
 
     }
+    @Override
+    public void stop()
+    {
+        drive.stopAllMovementDirectionBased();
+        limelight.stop();
+    }
+
 
     @Override
     public void loop() {
@@ -282,6 +305,9 @@ public abstract class RobotMasterPinpoint extends OpMode {
         }
     }
 
+    /**
+     * I honestly don't know why this is here - it does nothing.
+     */
     public void mainLoop() {
     }
 

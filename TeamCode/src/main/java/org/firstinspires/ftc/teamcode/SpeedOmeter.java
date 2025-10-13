@@ -60,10 +60,10 @@ public class SpeedOmeter {
 
     public static double scalePrediction = 1.0;
     //amount robot slips (cm) while going forwards 1 centimeter per second
-    public static double ySlipDistanceFor1CMPS = 0.2845 * scalePrediction;//0.169;
-    public static double xSlipDistanceFor1CMPS = 0.1872 * scalePrediction;//0.117;
+    public static double ySlipDistanceFor1CMPS = 0; //0.2845 * scalePrediction;//0.169;
+    public static double xSlipDistanceFor1CMPS = 0; //0.1872 * scalePrediction;//0.117;
     //radians the robot slips when going 1 radian per second
-    public static double turnSlipAmountFor1RPS = 0.0733 * scalePrediction;//0.113;
+    public static double turnSlipAmountFor1RPS = 0; //0.0733 * scalePrediction;//0.113;
 
 
     /**

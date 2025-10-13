@@ -35,19 +35,28 @@ import static org.firstinspires.ftc.teamcode.MovementVars.movement_y;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.NormalizedRGBA;
-import com.qualcomm.robotcore.util.Range;
+
 
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-//import org.firstinspires.ftc.vision.VisionPortal;
-//import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
-//import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 @TeleOp(name = "BTeleop PinPoint")
 public class BTeleopPinPoint extends RobotMasterPinpoint {
+
+    PIDController autoheading = new PIDController(0.04,0.0005,0);
+
+    final double intakePower = 1;
+    final double kickerInit = 0.52;
+    final double kickerMin = .52;
+    final double kickerMax = .48;
+    double kickerPos = kickerInit;
+
+    boolean intakeOn = false;
+    boolean circlePressedLast = false;
+    boolean trianglePressedLast = false;
+    boolean crossPressedLast = false;
+    boolean dpadUpPressedLast = false;
+    boolean dpadDownPressedLast = false;
 
     @Override
     public void init() {
@@ -56,7 +65,6 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
 
         super.init();
 
-        //drive = new MecanumDrivePinPoint(hardwareMap);
 
     }
 
@@ -81,37 +89,13 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
     }
 
 
-    private boolean autoPilotEnabled = false;
-    private boolean atBasket = false;
-    private boolean green = false;
-    private boolean purple = false;
-
-
-    private ArrayList<Double> distances = new ArrayList<>();
-
-    private boolean hangAutomation = false;
-
-
-    private HashMap<Integer, PointDouble> yellowDropBlue = new HashMap<Integer, PointDouble>() {{
-        put(0, new PointDouble(30, 118));
-        put(1, new PointDouble(36, 118));
-        put(2, new PointDouble(42, 118));
-    }};
-
-
-
-    private boolean autoDriveToHang = false;
-    //private PointDouble autoDriveToDroneLaunchPosition = new PointDouble();
-
-
     @Override
     public void mainLoop() {
         super.mainLoop();
 
-        double targetX = 0.0;
-        double kP = 0.03;
-        double limelightX = 0.0;
+
         double error = 0.0;
+
 
         ButtonPress.giveMeInputs(gamepad1.a, gamepad1.b, gamepad1.x, gamepad1.y, gamepad1.dpad_up,
                 gamepad1.dpad_down, gamepad1.dpad_right, gamepad1.dpad_left, gamepad1.right_bumper,
@@ -120,60 +104,21 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
                 gamepad2.dpad_down, gamepad2.dpad_right, gamepad2.dpad_left, gamepad2.right_bumper,
                 gamepad2.left_bumper, gamepad2.left_stick_button, gamepad2.right_stick_button);
 
-        movement_y = -gamepad1.left_stick_y;
+        movement_y = gamepad1.left_stick_y;
         movement_x = gamepad1.left_stick_x;
 
-        drive.applyMovementDirectionBased();
 
-        NormalizedRGBA colors = artifactSensor.getNormalizedColors();
 
-        //thresholds for color detection
-        final double purpleThreshold = 0.003;
-        final double greenThreshold = 0.002;
-
-        //check for purple
-        if (colors.blue > purpleThreshold && colors.red > purpleThreshold) {
-            purple = true;
-            green = false;
-            telemetry.addData("Red Value", colors.red);
-            telemetry.addData("Blue Value", colors.blue);
-            telemetry.addData("Green Value", colors.green);
-            telemetry.addData("Is Purple?", purple);
-            telemetry.addData("Is Green?", green);
-            telemetry.update();
-        }
-        //check for green
-        else if (colors.green > greenThreshold && colors.red < 0.0015) {
-            green = true;
-            purple = false;
-            telemetry.addData("Red Value", colors.red);
-            telemetry.addData("Blue Value", colors.blue);
-            telemetry.addData("Green Value", colors.green);
-            telemetry.addData("Is Purple?", purple);
-            telemetry.addData("Is Green?", green);
-            telemetry.update();
-        }
-        //no color detected
-        else {
-            green = false;
-            purple = false;
-            telemetry.addData("Red Value", colors.red);
-            telemetry.addData("Blue Value", colors.blue);
-            telemetry.addData("Green Value", colors.green);
-            telemetry.addData("Is Purple?", purple);
-            telemetry.addData("Is Green?", green);
-            telemetry.update();
-        }
-        telemetry.addData("Intake Position", intake.getEncoderPosition());
         LLResult llResult = limelight.getLatestResult();
 
-        if(llResult.isValid())
+
+        if(llResult.isValid() && !VisionUtils.isTagObelisk(VisionUtils.getTagId(llResult)))
         {
             Pose3D pose = llResult.getBotpose();
 
             //calculate heading error
-            limelightX = llResult.getTx();
-            error = kP * (targetX - limelightX);
+            double limelightX = llResult.getTx();
+            error = autoheading.calculatePID(limelightX);
 
             gamepad1.rumble(1, 1, 20);
 
@@ -181,18 +126,73 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
             telemetry.addData("ty", llResult.getTy());
             telemetry.addData("pose", pose.toString());
             telemetry.addData("error", error);
+            telemetry.addData("proportional", autoheading.getProportional());
+            telemetry.addData("integral", autoheading.getIntegral());
+            telemetry.addData("derivative", autoheading.getDerivative());
             telemetry.update();
+
 
         }
 
 
-        if (gamepad1.a){
+        if (gamepad1.guide){
             movement_turn = error;
         }
         else {
-            movement_turn = -gamepad1.right_stick_x;
+            movement_turn = gamepad1.right_stick_x;
 
         }
+
+        drive.applyMovementDirectionBasedFieldCentric();
+
+
+        trianglePressedLast = gamepad1.triangle;
+        crossPressedLast = gamepad1.cross;
+
+
+        if(gamepad1.circle && !circlePressedLast)
+        {
+            intakeOn = !intakeOn;
+        }
+        circlePressedLast = gamepad1.circle;
+
+        if(intakeOn) {
+            intake.setPower(intakePower);
+        } else {
+            intake.setPower(0);
+        }
+
+        if(gamepad1.square)
+        {
+            spindexer.setPower(0.7);
+        }
+        else
+        {
+            spindexer.setPower(0);
+
+        }
+        if(gamepad1.dpad_up && !dpadUpPressedLast)
+        {
+            kickerPos += 0.01;
+        }
+        else if(gamepad1.dpad_down && !dpadDownPressedLast)
+        {
+            kickerPos -= 0.01;
+        }
+        else if(gamepad1.dpad_left)
+        {
+            kicker.setPosition(kickerPos);
+        }
+        dpadUpPressedLast = gamepad1.dpad_up;
+        dpadDownPressedLast = gamepad1.dpad_down;
+
+
+
+        telemetry.addData("intakePower ", intakePower);
+        telemetry.addData("intake ", intake.getPower());
+        telemetry.addData("kicker", kicker.getPosition());
+        telemetry.addData("kickerInit", kickerInit);
+
 
 
 

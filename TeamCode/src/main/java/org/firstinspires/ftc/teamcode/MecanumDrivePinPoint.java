@@ -122,4 +122,77 @@ public final class MecanumDrivePinPoint {
         rightFront.setPower(fr_power_raw);
     }
 
+    public void applyMovementDirectionBasedFieldCentric()
+    {
+        long currTime = SystemClock.uptimeMillis();
+        if (currTime - lastUpdateTime < 16) {
+            return;
+        }
+        lastUpdateTime = currTime;
+        double scaleFactor = 1.1;
+
+        double angle = RobotPosition.worldAngle_rad;
+        // The original joystick x (movement_x) and y (movement_y) must be rotated by the robot's angle.
+        // The new x component is x*cos(a) - y*sin(a)
+        // The new y component is x*sin(a) + y*cos(a)
+        // In our case, 'y' is forward/strafe and 'x' is left/right strafe.
+        // Standard FTC forward stick is negative, so we use -movement_y for the 'y' component of our vector.
+        double xAdjusted = movement_x * Math.cos(-angle) - (-movement_y) * Math.sin(-angle);
+        double yAdjusted = movement_x * Math.sin(-angle) + (-movement_y) * Math.cos(-angle);
+
+        // Because we used -movement_y, yAdjusted is now the forward component.
+        double frontLeftPower = -yAdjusted + movement_turn + xAdjusted * scaleFactor;
+        double backLeftPower = -yAdjusted + movement_turn - xAdjusted * scaleFactor;
+        double backRightPower = -yAdjusted - movement_turn + xAdjusted * scaleFactor;
+        double frontRightPower = -yAdjusted - movement_turn - xAdjusted * scaleFactor;
+
+        // Normalize wheel powers to prevent exceeding +/- 1.0
+        double max = Math.max(Math.abs(frontLeftPower), Math.abs(backLeftPower));
+        max = Math.max(max, Math.abs(backRightPower));
+        max = Math.max(max, Math.abs(frontRightPower));
+
+        if (max > 1.0) {
+            frontLeftPower /= max;
+            backLeftPower /= max;
+            backRightPower /= max;
+            frontRightPower /= max;
+        }
+
+
+        double fl_power_raw = yAdjusted - movement_turn + xAdjusted * scaleFactor;
+        double bl_power_raw = yAdjusted - movement_turn - xAdjusted * scaleFactor;
+        double br_power_raw = yAdjusted + movement_turn + xAdjusted * scaleFactor;
+        double fr_power_raw = yAdjusted + movement_turn - xAdjusted * scaleFactor;
+
+        //find the maximum of the powers
+        double maxRawPower = Math.abs(fl_power_raw);
+        if (Math.abs(bl_power_raw) > maxRawPower) {
+            maxRawPower = Math.abs(bl_power_raw);
+        }
+        if (Math.abs(br_power_raw) > maxRawPower) {
+            maxRawPower = Math.abs(br_power_raw);
+        }
+        if (Math.abs(fr_power_raw) > maxRawPower) {
+            maxRawPower = Math.abs(fr_power_raw);
+        }
+
+        //if the maximum is greater than 1, scale all the powers down to preserve the shape
+        double scaleDownAmount = 1.0;
+        if (maxRawPower > 1.0) {
+            //when max power is multiplied by this ratio, it will be 1.0, and others less
+            scaleDownAmount = 1.0 / maxRawPower;
+        }
+        fl_power_raw *= scaleDownAmount;
+        bl_power_raw *= scaleDownAmount;
+        br_power_raw *= scaleDownAmount;
+        fr_power_raw *= scaleDownAmount;
+
+        leftFront.setPower(fl_power_raw);
+        leftBack.setPower(bl_power_raw);
+        rightBack.setPower(br_power_raw);
+        rightFront.setPower(fr_power_raw);
+
+    }
+
+
 }
