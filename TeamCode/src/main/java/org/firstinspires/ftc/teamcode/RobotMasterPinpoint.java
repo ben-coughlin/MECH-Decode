@@ -147,7 +147,6 @@ public abstract class RobotMasterPinpoint extends OpMode {
         // pose update for pinpoint
         odo.update();
 
-
         Pose2D pos = odo.getPosition();
         String data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", pos.getX(DistanceUnit.INCH), pos.getY(DistanceUnit.INCH), pos.getHeading(AngleUnit.DEGREES));
         telemetry.addData("Position", data);
