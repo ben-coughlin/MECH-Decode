@@ -40,7 +40,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
     CRServo spindexer = null;
     Servo kicker = null;
-    DcMotorEx intake = null; //TODO: needs to be a regular DcMotor in order to print Encoder values
+    DcMotorEx intake = null; //needs to be a regular DcMotor in order to print Encoder values
 
     public boolean isAuto = false;
     public static boolean resetEncoders = false;
