@@ -11,6 +11,7 @@ import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -28,6 +29,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
     GoBildaPinpointDriver odo; // Declare OpMode member for the Odometry Computer
     Limelight3A limelight;
+    public NormalizedColorSensor artifactSensor;
 
     public boolean isAuto = false;
     public static boolean resetEncoders = false;
@@ -109,6 +111,8 @@ public abstract class RobotMasterPinpoint extends OpMode {
         telemetry.setMsTransmissionInterval(11);
         limelight.pipelineSwitch(0);
         limelight.start();
+
+        artifactSensor = hardwareMap.get(NormalizedColorSensor.class, "artifactSensor");
 
         odo.resetPosAndIMU();
     }

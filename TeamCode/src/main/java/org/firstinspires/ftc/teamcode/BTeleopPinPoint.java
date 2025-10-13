@@ -35,6 +35,7 @@ import static org.firstinspires.ftc.teamcode.MovementVars.movement_y;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
@@ -82,6 +83,8 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
 
     private boolean autoPilotEnabled = false;
     private boolean atBasket = false;
+    private boolean green = false;
+    private boolean purple = false;
 
 
     private ArrayList<Double> distances = new ArrayList<>();
@@ -122,6 +125,46 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
 
         drive.applyMovementDirectionBased();
 
+        NormalizedRGBA colors = artifactSensor.getNormalizedColors();
+
+        //thresholds for color detection
+        final double purpleThreshold = 0.003;
+        final double greenThreshold = 0.002;
+
+        //check for purple
+        if (colors.blue > purpleThreshold && colors.red > purpleThreshold) {
+            purple = true;
+            green = false;
+            telemetry.addData("Red Value", colors.red);
+            telemetry.addData("Blue Value", colors.blue);
+            telemetry.addData("Green Value", colors.green);
+            telemetry.addData("Is Purple?", purple);
+            telemetry.addData("Is Green?", green);
+            telemetry.update();
+        }
+        //check for green
+        else if (colors.green > greenThreshold && colors.red < 0.0015) {
+            green = true;
+            purple = false;
+            telemetry.addData("Red Value", colors.red);
+            telemetry.addData("Blue Value", colors.blue);
+            telemetry.addData("Green Value", colors.green);
+            telemetry.addData("Is Purple?", purple);
+            telemetry.addData("Is Green?", green);
+            telemetry.update();
+        }
+        //no color detected
+        else {
+            green = false;
+            purple = false;
+            telemetry.addData("Red Value", colors.red);
+            telemetry.addData("Blue Value", colors.blue);
+            telemetry.addData("Green Value", colors.green);
+            telemetry.addData("Is Purple?", purple);
+            telemetry.addData("Is Green?", green);
+            telemetry.update();
+        }
+        telemetry.addData("Intake Position", intake.getEncoderPosition());
         LLResult llResult = limelight.getLatestResult();
 
         if(llResult.isValid())
