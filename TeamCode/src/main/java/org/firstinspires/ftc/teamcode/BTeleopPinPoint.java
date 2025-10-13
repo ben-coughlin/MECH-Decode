@@ -117,20 +117,30 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
         if (artifactSensor.getNormalizedColors().red > purpleThreshold && artifactSensor.getNormalizedColors().blue > purpleThreshold) {
             isPurple = true;
             isGreen = false;
+            telemetry.addData("isPurple", isPurple);
+            telemetry.addData("isGreen", isGreen);
+            telemetry.addData("Red Value", artifactSensor.getNormalizedColors().red);
+            telemetry.addData("Blue Value", artifactSensor.getNormalizedColors().blue);
+            telemetry.addData("Green Value", artifactSensor.getNormalizedColors().green);
         }
         else if (artifactSensor.getNormalizedColors().green > greenThreshold && artifactSensor.getNormalizedColors().red < 0.0015) {
             isGreen = true;
             isPurple = false;
+            telemetry.addData("isPurple", isPurple);
+            telemetry.addData("isGreen", isGreen);
+            telemetry.addData("Red Value", artifactSensor.getNormalizedColors().red);
+            telemetry.addData("Blue Value", artifactSensor.getNormalizedColors().blue);
+            telemetry.addData("Green Value", artifactSensor.getNormalizedColors().green);
         }
         else {
             isGreen = false;
             isPurple = false;
+            telemetry.addData("isPurple", isPurple);
+            telemetry.addData("isGreen", isGreen);
+            telemetry.addData("Red Value", artifactSensor.getNormalizedColors().red);
+            telemetry.addData("Blue Value", artifactSensor.getNormalizedColors().blue);
+            telemetry.addData("Green Value", artifactSensor.getNormalizedColors().green);
         }
-        telemetry.addData("isPurple", isPurple);
-        telemetry.addData("isGreen", isGreen);
-        telemetry.addData("Red Value", artifactSensor.getNormalizedColors().red);
-        telemetry.addData("Blue Value", artifactSensor.getNormalizedColors().blue);
-        telemetry.addData("Green Value", artifactSensor.getNormalizedColors().green);
         LLResult llResult = limelight.getLatestResult();
 
         double spindexCurrentPosition = intake.getCurrentPosition();
