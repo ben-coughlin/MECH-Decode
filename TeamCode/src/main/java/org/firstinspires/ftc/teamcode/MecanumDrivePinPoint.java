@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import static org.firstinspires.ftc.teamcode.MovementVars.movement_turn;
 import static org.firstinspires.ftc.teamcode.MovementVars.movement_x;
 import static org.firstinspires.ftc.teamcode.MovementVars.movement_y;
+import static org.firstinspires.ftc.teamcode.RobotPosition.worldAngle_rad;
 
 import android.os.SystemClock;
 
@@ -13,6 +14,8 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 
 public final class MecanumDrivePinPoint {
@@ -122,76 +125,46 @@ public final class MecanumDrivePinPoint {
         rightFront.setPower(fr_power_raw);
     }
 
-    public void applyMovementDirectionBasedFieldCentric()
-    {
-        long currTime = SystemClock.uptimeMillis();
-        if (currTime - lastUpdateTime < 16) {
-            return;
-        }
-        lastUpdateTime = currTime;
-        double scaleFactor = 1.1;
+    private void applyMovementDirectionBasedFieldRelative(double forward, double right, double rotate) {
+        // First, convert direction being asked to drive to polar coordinates
+        double theta = Math.atan2(forward, right);
+        double r = Math.hypot(right, forward);
 
-        double angle = RobotPosition.worldAngle_rad;
-        // The original joystick x (movement_x) and y (movement_y) must be rotated by the robot's angle.
-        // The new x component is x*cos(a) - y*sin(a)
-        // The new y component is x*sin(a) + y*cos(a)
-        // In our case, 'y' is forward/strafe and 'x' is left/right strafe.
-        // Standard FTC forward stick is negative, so we use -movement_y for the 'y' component of our vector.
-        double xAdjusted = movement_x * Math.cos(-angle) - (-movement_y) * Math.sin(-angle);
-        double yAdjusted = movement_x * Math.sin(-angle) + (-movement_y) * Math.cos(-angle);
+        // Second, rotate angle by the angle the robot is pointing
+        theta = worldAngle_rad;
 
-        // Because we used -movement_y, yAdjusted is now the forward component.
-        double frontLeftPower = -yAdjusted + movement_turn + xAdjusted * scaleFactor;
-        double backLeftPower = -yAdjusted + movement_turn - xAdjusted * scaleFactor;
-        double backRightPower = -yAdjusted - movement_turn + xAdjusted * scaleFactor;
-        double frontRightPower = -yAdjusted - movement_turn - xAdjusted * scaleFactor;
+        // Third, convert back to cartesian
+        double newForward = r * Math.sin(theta);
+        double newRight = r * Math.cos(theta);
 
-        // Normalize wheel powers to prevent exceeding +/- 1.0
-        double max = Math.max(Math.abs(frontLeftPower), Math.abs(backLeftPower));
-        max = Math.max(max, Math.abs(backRightPower));
-        max = Math.max(max, Math.abs(frontRightPower));
+        // Finally, call the drive method with robot relative forward and right amounts
+        drive(newForward, newRight, rotate);
+    }
 
-        if (max > 1.0) {
-            frontLeftPower /= max;
-            backLeftPower /= max;
-            backRightPower /= max;
-            frontRightPower /= max;
-        }
+    public void drive(double forward, double right, double rotate) {
+        // This calculates the power needed for each wheel based on the amount of forward,
+        // strafe right, and rotate
+        double frontLeftPower = forward + right + rotate;
+        double frontRightPower = forward - right - rotate;
+        double backRightPower = forward + right - rotate;
+        double backLeftPower = forward - right + rotate;
+
+        double maxPower = 1.0;
+        double maxSpeed = 1.0;  // make this slower for outreaches
+
+        // This is needed to make sure we don't pass > 1.0 to any wheel
+        // It allows us to keep all of the motors in proportion to what they should
+        // be and not get clipped
+        maxPower = Math.max(maxPower, Math.abs(frontLeftPower));
+        maxPower = Math.max(maxPower, Math.abs(frontRightPower));
+        maxPower = Math.max(maxPower, Math.abs(backRightPower));
+        maxPower = Math.max(maxPower, Math.abs(backLeftPower));
 
 
-        double fl_power_raw = yAdjusted - movement_turn + xAdjusted * scaleFactor;
-        double bl_power_raw = yAdjusted - movement_turn - xAdjusted * scaleFactor;
-        double br_power_raw = yAdjusted + movement_turn + xAdjusted * scaleFactor;
-        double fr_power_raw = yAdjusted + movement_turn - xAdjusted * scaleFactor;
-
-        //find the maximum of the powers
-        double maxRawPower = Math.abs(fl_power_raw);
-        if (Math.abs(bl_power_raw) > maxRawPower) {
-            maxRawPower = Math.abs(bl_power_raw);
-        }
-        if (Math.abs(br_power_raw) > maxRawPower) {
-            maxRawPower = Math.abs(br_power_raw);
-        }
-        if (Math.abs(fr_power_raw) > maxRawPower) {
-            maxRawPower = Math.abs(fr_power_raw);
-        }
-
-        //if the maximum is greater than 1, scale all the powers down to preserve the shape
-        double scaleDownAmount = 1.0;
-        if (maxRawPower > 1.0) {
-            //when max power is multiplied by this ratio, it will be 1.0, and others less
-            scaleDownAmount = 1.0 / maxRawPower;
-        }
-        fl_power_raw *= scaleDownAmount;
-        bl_power_raw *= scaleDownAmount;
-        br_power_raw *= scaleDownAmount;
-        fr_power_raw *= scaleDownAmount;
-
-        leftFront.setPower(fl_power_raw);
-        leftBack.setPower(bl_power_raw);
-        rightBack.setPower(br_power_raw);
-        rightFront.setPower(fr_power_raw);
-
+        leftFront.setPower(maxSpeed * (frontLeftPower / maxPower));
+        rightFront.setPower(maxSpeed * (frontRightPower / maxPower));
+        leftBack.setPower(maxSpeed * (backLeftPower / maxPower));
+        rightBack.setPower(maxSpeed * (backRightPower / maxPower));
     }
 
 

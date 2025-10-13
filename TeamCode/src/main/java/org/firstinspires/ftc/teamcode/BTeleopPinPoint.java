@@ -64,8 +64,8 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
     public void init() {
         isAuto = false;
         resetEncoders =false;
-
         super.init();
+        kicker.setPosition(kickerInit);
 
 
     }
@@ -106,7 +106,7 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
                 gamepad2.dpad_down, gamepad2.dpad_right, gamepad2.dpad_left, gamepad2.right_bumper,
                 gamepad2.left_bumper, gamepad2.left_stick_button, gamepad2.right_stick_button);
 
-        movement_y = gamepad1.left_stick_y;
+        movement_y = -gamepad1.left_stick_y;
         movement_x = gamepad1.left_stick_x;
 
         artifactSensor.getNormalizedColors();
@@ -179,7 +179,7 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
 
         }
 
-        drive.applyMovementDirectionBasedFieldCentric();
+        drive.applyMovementDirectionBased();
 
 
         trianglePressedLast = gamepad1.triangle;
@@ -209,16 +209,13 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
         }
         if(gamepad1.dpad_up && !dpadUpPressedLast)
         {
-            kickerPos += 0.01;
+            kickerPos = kickerMax;
         }
         else if(gamepad1.dpad_down && !dpadDownPressedLast)
         {
-            kickerPos -= 0.01;
+            kickerPos = kickerMin;
         }
-        else if(gamepad1.dpad_left)
-        {
-            kicker.setPosition(kickerPos);
-        }
+
         dpadUpPressedLast = gamepad1.dpad_up;
         dpadDownPressedLast = gamepad1.dpad_down;
 
