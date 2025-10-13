@@ -33,35 +33,44 @@ import static org.firstinspires.ftc.teamcode.MovementVars.movement_turn;
 import static org.firstinspires.ftc.teamcode.MovementVars.movement_x;
 import static org.firstinspires.ftc.teamcode.MovementVars.movement_y;
 
-
+import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+
+
 @TeleOp(name = "BTeleop PinPoint")
-public class BTeleopPinPoint extends RobotMasterPinpoint
-{
+public class BTeleopPinPoint extends RobotMasterPinpoint {
 
-    PIDController autoheading = new PIDController(0.04, 0.0005, 0);
-    PIDController headingHold = new PIDController(0.03, 0, 0.0, true); //TODO: tune these!
-    Toggle intakeToggle = new Toggle(false);
-    Toggle kickerToggle = new Toggle(false);
+    PIDController autoheading = new PIDController(0.04,0.0005,0);
 
-    boolean isAutoHeading = false;
-    double targetHeading = 0.0;
+    final double intakePower = 1;
+    final double kickerInit = 0.52;
+    final double kickerMin = .52;
+    final double kickerMax = .48;
+    double kickerPos = kickerInit;
 
+    boolean intakeOn = false;
+    boolean circlePressedLast = false;
+    boolean trianglePressedLast = false;
+    boolean crossPressedLast = false;
+    boolean dpadUpPressedLast = false;
+    boolean dpadDownPressedLast = false;
+    boolean isGreen = false;
+    boolean isPurple = false;
 
     @Override
-    public void init()
-    {
+    public void init() {
         isAuto = false;
-        resetEncoders = false;
+        resetEncoders =false;
         super.init();
+        kicker.setPosition(kickerInit);
 
 
     }
 
-    public void init_loop()
-    {
+    public void init_loop() {
         super.init_loop();
 
 
@@ -69,111 +78,155 @@ public class BTeleopPinPoint extends RobotMasterPinpoint
 
 
     @Override
-    public void start()
-    {
-        super.start();
+    public void start() {
+        super.start(); //what is super.start?
 
 
     }
 
     @Override
-    public void stop()
-    {
-        super.stop();
+    public void stop() {
+        super.stop(); //what is super.stop?
 
     }
 
 
     @Override
-    public void mainLoop()
-    {
+    public void mainLoop() {
         super.mainLoop();
-
-        intakeToggle.updateToggle(gamepad1.circle);
-        kickerToggle.updateToggle(gamepad1.square);
 
 
         double error = 0.0;
 
+
+        ButtonPress.giveMeInputs(gamepad1.a, gamepad1.b, gamepad1.x, gamepad1.y, gamepad1.dpad_up,
+                gamepad1.dpad_down, gamepad1.dpad_right, gamepad1.dpad_left, gamepad1.right_bumper,
+                gamepad1.left_bumper, gamepad1.left_stick_button, gamepad1.right_stick_button,
+                gamepad2.a, gamepad2.b, gamepad2.x, gamepad2.y, gamepad2.dpad_up,
+                gamepad2.dpad_down, gamepad2.dpad_right, gamepad2.dpad_left, gamepad2.right_bumper,
+                gamepad2.left_bumper, gamepad2.left_stick_button, gamepad2.right_stick_button);
+
         movement_y = -gamepad1.left_stick_y;
         movement_x = gamepad1.left_stick_x;
 
+        artifactSensor.getNormalizedColors();
 
-        if (limelight.currResult.isValid() && !Limelight.isTagObelisk(Limelight.getTagId(limelight.currResult)))
+        final double purpleThreshold = 0.003;
+        final double greenThreshold = 0.002;
+
+        if (artifactSensor.getNormalizedColors().red > purpleThreshold && artifactSensor.getNormalizedColors().blue > purpleThreshold) {
+            isPurple = true;
+            isGreen = false;
+            telemetry.addData("isPurple", isPurple);
+            telemetry.addData("isGreen", isGreen);
+            telemetry.addData("Red Value", artifactSensor.getNormalizedColors().red);
+            telemetry.addData("Blue Value", artifactSensor.getNormalizedColors().blue);
+            telemetry.addData("Green Value", artifactSensor.getNormalizedColors().green);
+            telemetry.update();
+        }
+        else if (artifactSensor.getNormalizedColors().green > greenThreshold && artifactSensor.getNormalizedColors().red < 0.0015) {
+            isGreen = true;
+            isPurple = false;
+            telemetry.addData("isPurple", isPurple);
+            telemetry.addData("isGreen", isGreen);
+            telemetry.addData("Red Value", artifactSensor.getNormalizedColors().red);
+            telemetry.addData("Blue Value", artifactSensor.getNormalizedColors().blue);
+            telemetry.addData("Green Value", artifactSensor.getNormalizedColors().green);
+            telemetry.update();
+        }
+        else {
+            isGreen = false;
+            isPurple = false;
+            telemetry.addData("isPurple", isPurple);
+            telemetry.addData("isGreen", isGreen);
+            telemetry.addData("Red Value", artifactSensor.getNormalizedColors().red);
+            telemetry.addData("Blue Value", artifactSensor.getNormalizedColors().blue);
+            telemetry.addData("Green Value", artifactSensor.getNormalizedColors().green);
+            telemetry.update();
+        }
+        LLResult llResult = limelight.getLatestResult();
+
+        //telemetry.addData("Intake Encoder Values", intake.getEncoderValues());
+
+        if(llResult.isValid() && !VisionUtils.isTagObelisk(VisionUtils.getTagId(llResult)))
         {
+            Pose3D pose = llResult.getBotpose();
 
             //calculate heading error
-            double limelightX = limelight.currResult.getTx();
+            double limelightX = llResult.getTx();
             error = autoheading.calculatePID(limelightX);
 
             gamepad1.rumble(1, 1, 20);
 
+            telemetry.addData("tx", llResult.getTx());
+            telemetry.addData("ty", llResult.getTy());
+            telemetry.addData("pose", pose.toString());
+            telemetry.addData("error", error);
+            telemetry.addData("proportional", autoheading.getProportional());
+            telemetry.addData("integral", autoheading.getIntegral());
+            telemetry.addData("derivative", autoheading.getDerivative());
+            telemetry.update();
 
 
         }
 
 
-        intakeSubsystem.showSpindexerTelemetry(telemetry);
-        colorSensor.showColorSensorTelemetry(telemetry);
-
-        double currentHeadingRad = RobotPosition.worldAngle_rad;
-        double turnDeadzone = 0.05;
-
-        if (gamepad1.guide)
-        {
-            //limelight auto-heading gets first priority
+        if (gamepad1.guide){
             movement_turn = error;
-            isAutoHeading = true;
-            headingHold.reset();
-            targetHeading = currentHeadingRad;
         }
-        else if (Math.abs(gamepad1.right_stick_x) > turnDeadzone)
-        {
-            //if the driver is turning manually without limelight then that takes next priority
+        else {
             movement_turn = gamepad1.right_stick_x;
-            isAutoHeading = false;
-            targetHeading = currentHeadingRad;
-            headingHold.reset();
-            autoheading.reset();
+
+        }
+
+        drive.applyMovementDirectionBased();
+
+
+        trianglePressedLast = gamepad1.triangle;
+        crossPressedLast = gamepad1.cross;
+
+
+        if(gamepad1.circle && !circlePressedLast)
+        {
+            intakeOn = !intakeOn;
+        }
+        circlePressedLast = gamepad1.circle;
+
+        if(intakeOn) {
+            intake.setPower(intakePower);
+        } else {
+            intake.setPower(0);
+        }
+
+        if(gamepad1.square)
+        {
+            spindexer.setPower(0.7);
         }
         else
         {
-            //if there's no turning at all, use PID to hold us at the same heading
-            headingHold.setReference(targetHeading);
-            movement_turn = headingHold.calculatePID(currentHeadingRad);
-            isAutoHeading = false;
-            autoheading.reset();
+            spindexer.setPower(0);
+
+        }
+        if(gamepad1.dpad_up && !dpadUpPressedLast)
+        {
+            kickerPos = kickerMax;
+        }
+        else if(gamepad1.dpad_down && !dpadDownPressedLast)
+        {
+            kickerPos = kickerMin;
         }
 
-        drive.applyMovementDirectionBasedFieldRelative(-gamepad1.left_stick_y, gamepad1.left_stick_x, movement_turn, isAutoHeading);
+        dpadUpPressedLast = gamepad1.dpad_up;
+        dpadDownPressedLast = gamepad1.dpad_down;
 
 
-        if (intakeToggle.getState())
-        {
-            intakeSubsystem.turnIntakeOn();
-        }
-        else
-        {
-            intakeSubsystem.turnIntakeOff();
-        }
 
-        if (gamepad1.square)
-        {
-            intakeSubsystem.rotateSpindexerOneSlot();
-        }
-        else if (gamepad1.cross)
-        {
-            intakeSubsystem.stopSpindexer();
-        }
+        telemetry.addData("intakePower ", intakePower);
+        telemetry.addData("intake ", intake.getPower());
+        telemetry.addData("kicker", kicker.getPosition());
+        telemetry.addData("kickerInit", kickerInit);
 
-        if (kickerToggle.getState())
-        {
-            intakeSubsystem.moveKickerVertical();
-        }
-        else
-        {
-            intakeSubsystem.moveKickerHorizontal();
-        }
+
 
 
     }
