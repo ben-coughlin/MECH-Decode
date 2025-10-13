@@ -16,6 +16,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -33,12 +34,13 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
     GoBildaPinpointDriver odo; // Declare OpMode member for the Odometry Computer
     Limelight3A limelight;
+    public NormalizedColorSensor artifactSensor;
 
     Pattern obelisk = null;
 
     CRServo spindexer = null;
     Servo kicker = null;
-    DcMotorEx intake = null;
+    DcMotorEx intake = null; //TODO: needs to be a regular DcMotor in order to print Encoder values
 
     public boolean isAuto = false;
     public static boolean resetEncoders = false;
@@ -123,12 +125,13 @@ public abstract class RobotMasterPinpoint extends OpMode {
         limelight.pipelineSwitch(0);
         limelight.start();
 
+        artifactSensor = hardwareMap.get(NormalizedColorSensor.class, "artifactSensor");
+
         obelisk = new Pattern(Pattern.getObeliskPatternFromTag(VisionUtils.getTagId(limelight.getLatestResult())));
         spindexer = hardwareMap.get(CRServo.class, "spindexer");
         kicker = hardwareMap.get(Servo.class, "kicker");
         intake = hardwareMap.get(DcMotorEx.class, "intake");
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
-
 
         odo.resetPosAndIMU();
     }

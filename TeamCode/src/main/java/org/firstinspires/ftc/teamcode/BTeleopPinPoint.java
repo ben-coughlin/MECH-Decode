@@ -57,6 +57,8 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
     boolean crossPressedLast = false;
     boolean dpadUpPressedLast = false;
     boolean dpadDownPressedLast = false;
+    boolean isGreen = false;
+    boolean isPurple = false;
 
     @Override
     public void init() {
@@ -107,10 +109,44 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
         movement_y = gamepad1.left_stick_y;
         movement_x = gamepad1.left_stick_x;
 
+        artifactSensor.getNormalizedColors();
 
+        final double purpleThreshold = 0.003;
+        final double greenThreshold = 0.002;
 
+        if (artifactSensor.getNormalizedColors().red > purpleThreshold && artifactSensor.getNormalizedColors().blue > purpleThreshold) {
+            isPurple = true;
+            isGreen = false;
+            telemetry.addData("isPurple", isPurple);
+            telemetry.addData("isGreen", isGreen);
+            telemetry.addData("Red Value", artifactSensor.getNormalizedColors().red);
+            telemetry.addData("Blue Value", artifactSensor.getNormalizedColors().blue);
+            telemetry.addData("Green Value", artifactSensor.getNormalizedColors().green);
+            telemetry.update();
+        }
+        else if (artifactSensor.getNormalizedColors().green > greenThreshold && artifactSensor.getNormalizedColors().red < 0.0015) {
+            isGreen = true;
+            isPurple = false;
+            telemetry.addData("isPurple", isPurple);
+            telemetry.addData("isGreen", isGreen);
+            telemetry.addData("Red Value", artifactSensor.getNormalizedColors().red);
+            telemetry.addData("Blue Value", artifactSensor.getNormalizedColors().blue);
+            telemetry.addData("Green Value", artifactSensor.getNormalizedColors().green);
+            telemetry.update();
+        }
+        else {
+            isGreen = false;
+            isPurple = false;
+            telemetry.addData("isPurple", isPurple);
+            telemetry.addData("isGreen", isGreen);
+            telemetry.addData("Red Value", artifactSensor.getNormalizedColors().red);
+            telemetry.addData("Blue Value", artifactSensor.getNormalizedColors().blue);
+            telemetry.addData("Green Value", artifactSensor.getNormalizedColors().green);
+            telemetry.update();
+        }
         LLResult llResult = limelight.getLatestResult();
 
+        //telemetry.addData("Intake Encoder Values", intake.getEncoderValues());
 
         if(llResult.isValid() && !VisionUtils.isTagObelisk(VisionUtils.getTagId(llResult)))
         {
