@@ -131,7 +131,6 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
         telemetry.addData("Red Value", artifactSensor.getNormalizedColors().red);
         telemetry.addData("Blue Value", artifactSensor.getNormalizedColors().blue);
         telemetry.addData("Green Value", artifactSensor.getNormalizedColors().green);
-        telemetry.update();
         LLResult llResult = limelight.getLatestResult();
 
         double spindexCurrentPosition = intake.getCurrentPosition();
