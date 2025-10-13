@@ -15,6 +15,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.SwitchableLight;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 
@@ -34,16 +35,20 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
     GoBildaPinpointDriver odo; // Declare OpMode member for the Odometry Computer
     Limelight3A limelight;
-    public NormalizedColorSensor artifactSensor;
+    NormalizedColorSensor artifactSensor;
 
     Pattern obelisk = null;
 
     CRServo spindexer = null;
     Servo kicker = null;
     DcMotorEx intake = null; //needs to be a regular DcMotor in order to print Encoder values
+    Pattern currentPattern = new Pattern(Pattern.Ball.EMPTY, Pattern.Ball.EMPTY, Pattern.Ball.EMPTY);
 
     public boolean isAuto = false;
     public static boolean resetEncoders = false;
+
+    public final int spindexCountsPerRev = 8192;
+    
 
 
 
@@ -126,12 +131,20 @@ public abstract class RobotMasterPinpoint extends OpMode {
         limelight.start();
 
         artifactSensor = hardwareMap.get(NormalizedColorSensor.class, "artifactSensor");
+        if(artifactSensor instanceof SwitchableLight)
+        {
+            ((SwitchableLight)artifactSensor).enableLight(true);
+        }
+
 
         obelisk = new Pattern(Pattern.getObeliskPatternFromTag(VisionUtils.getTagId(limelight.getLatestResult())));
         spindexer = hardwareMap.get(CRServo.class, "spindexer");
         kicker = hardwareMap.get(Servo.class, "kicker");
         intake = hardwareMap.get(DcMotorEx.class, "intake");
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         odo.resetPosAndIMU();
     }

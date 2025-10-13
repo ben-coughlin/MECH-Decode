@@ -51,6 +51,16 @@ public class VisionUtils {
         return false;
     }
 
+    public static double normalizeAngleFromTicks(double position, int ticksPerRevolution)
+    {
+        double revolutions = position / ticksPerRevolution;
+
+        double angle = revolutions * 360;
+
+        return angle / 360;
+    }
+
+
 
 
 

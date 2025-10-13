@@ -146,7 +146,9 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
         }
         LLResult llResult = limelight.getLatestResult();
 
-        //telemetry.addData("Intake Encoder Values", intake.getEncoderValues());
+        double spindexCurrentPosition = intake.getCurrentPosition();
+        telemetry.addData("Intake Encoder Values", spindexCurrentPosition);
+        telemetry.addData("Intake Encoder Angle ", VisionUtils.normalizeAngleFromTicks(spindexCurrentPosition, spindexCountsPerRev));
 
         if(llResult.isValid() && !VisionUtils.isTagObelisk(VisionUtils.getTagId(llResult)))
         {
