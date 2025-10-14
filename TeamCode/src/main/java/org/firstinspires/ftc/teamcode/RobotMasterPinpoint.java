@@ -7,26 +7,15 @@ import static org.firstinspires.ftc.teamcode.RobotPosition.worldYPosition;
 import android.os.SystemClock;
 import android.util.Log;
 
-import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.hardware.CRServo;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.DigitalChannel;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.SwitchableLight;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
-import org.firstinspires.ftc.vision.VisionPortal;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Locale;
 
 public abstract class RobotMasterPinpoint extends OpMode {
@@ -34,22 +23,17 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
 
     GoBildaPinpointDriver odo; // Declare OpMode member for the Odometry Computer
-    Limelight3A limelight;
-    NormalizedColorSensor artifactSensor;
 
+    ColorSensor colorSensor = null;
+    Limelight limelight = null;
     Pattern obelisk = null;
+    IntakeSubsystem intakeSubsystem = null;
 
-    CRServo spindexer = null;
-    Servo kicker = null;
-    DcMotorEx intake = null; //needs to be a regular DcMotor in order to print Encoder values
+
     Pattern currentPattern = new Pattern(Pattern.Ball.EMPTY, Pattern.Ball.EMPTY, Pattern.Ball.EMPTY);
 
     public boolean isAuto = false;
     public static boolean resetEncoders = false;
-
-    public final int spindexCountsPerRev = 8192;
-    
-
 
 
 
@@ -124,27 +108,12 @@ public abstract class RobotMasterPinpoint extends OpMode {
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
 
         drive = new MecanumDrivePinPoint(hardwareMap);
-
-        limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        telemetry.setMsTransmissionInterval(11);
-        limelight.pipelineSwitch(0);
-        limelight.start();
-
-        artifactSensor = hardwareMap.get(NormalizedColorSensor.class, "artifactSensor");
-        if(artifactSensor instanceof SwitchableLight)
-        {
-            ((SwitchableLight)artifactSensor).enableLight(true);
-        }
+        colorSensor = new ColorSensor(hardwareMap);
+        limelight = new Limelight(hardwareMap);
+        intakeSubsystem = new IntakeSubsystem(hardwareMap);
 
 
-        obelisk = new Pattern(Pattern.getObeliskPatternFromTag(VisionUtils.getTagId(limelight.getLatestResult())));
-        spindexer = hardwareMap.get(CRServo.class, "spindexer");
-        kicker = hardwareMap.get(Servo.class, "kicker");
-        intake = hardwareMap.get(DcMotorEx.class, "intake");
-        intake.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         odo.resetPosAndIMU();
     }
@@ -241,6 +210,10 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
         //pinpoint pose update
         odo.update();
+        //read everything once and only once per loop
+        colorSensor.updateDetection();
+        limelight.updateLimelight();
+        intakeSubsystem.updateIntakeSubsystem();
 
         Pose2D pos = odo.getPosition();
         mainAutoLoop();

@@ -28,18 +28,19 @@ public final class MecanumDrivePinPoint {
     public final VoltageSensor voltageSensor;
 
 
-    public MecanumDrivePinPoint(HardwareMap hardwareMap) {
 
-        for (LynxModule module : hardwareMap.getAll(LynxModule.class)) {
+    public MecanumDrivePinPoint(HardwareMap hwMap) {
+
+        for (LynxModule module : hwMap.getAll(LynxModule.class)) {
             module.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         }
 
         // TODO: make sure your config has motors with these names (or change them)
         //   see https://ftc-docs.firstinspires.org/en/latest/hardware_and_software_configuration/configuring/index.html
-        leftFront = hardwareMap.get(DcMotorEx.class, "leftFront");
-        leftBack = hardwareMap.get(DcMotorEx.class, "leftBack");    
-        rightBack = hardwareMap.get(DcMotorEx.class, "rightBack");
-        rightFront = hardwareMap.get(DcMotorEx.class, "rightFront");
+        leftFront = hwMap.get(DcMotorEx.class, "leftFront");
+        leftBack = hwMap.get(DcMotorEx.class, "leftBack");
+        rightBack = hwMap.get(DcMotorEx.class, "rightBack");
+        rightFront = hwMap.get(DcMotorEx.class, "rightFront");
 
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -54,7 +55,7 @@ public final class MecanumDrivePinPoint {
         //   see https://ftc-docs.firstinspires.org/en/latest/hardware_and_software_configuration/configuring/index.html
 
 
-        voltageSensor = hardwareMap.voltageSensor.iterator().next();
+        voltageSensor = hwMap.voltageSensor.iterator().next();
 
 
     }
@@ -125,20 +126,25 @@ public final class MecanumDrivePinPoint {
         rightFront.setPower(fr_power_raw);
     }
 
-    private void applyMovementDirectionBasedFieldRelative(double forward, double right, double rotate) {
+    public void applyMovementDirectionBasedFieldRelative(double forward, double right, double rotate, boolean isAutoHeading) {
+
+
         // First, convert direction being asked to drive to polar coordinates
         double theta = Math.atan2(forward, right);
         double r = Math.hypot(right, forward);
 
         // Second, rotate angle by the angle the robot is pointing
-        theta = worldAngle_rad;
+        theta = AngleUnit.normalizeRadians(theta - worldAngle_rad);
 
-        // Third, convert back to cartesian
-        double newForward = r * Math.sin(theta);
-        double newRight = r * Math.cos(theta);
+        if(!isAutoHeading) {
+            // Third, convert back to cartesian only if we aren't using the autoheading
+             forward = r * Math.sin(theta);
+             right = r * Math.cos(theta);
+        }
+
 
         // Finally, call the drive method with robot relative forward and right amounts
-        drive(newForward, newRight, rotate);
+        drive(forward, right, rotate);
     }
 
     public void drive(double forward, double right, double rotate) {

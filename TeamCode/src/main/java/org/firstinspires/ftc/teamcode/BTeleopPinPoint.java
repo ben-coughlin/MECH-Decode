@@ -33,11 +33,9 @@ import static org.firstinspires.ftc.teamcode.MovementVars.movement_turn;
 import static org.firstinspires.ftc.teamcode.MovementVars.movement_x;
 import static org.firstinspires.ftc.teamcode.MovementVars.movement_y;
 
-import com.qualcomm.hardware.limelightvision.LLResult;
+
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-
-
-import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 
 
 @TeleOp(name = "BTeleop PinPoint")
@@ -45,27 +43,23 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
 
     PIDController autoheading = new PIDController(0.04,0.0005,0);
 
-    final double intakePower = 1;
-    final double kickerInit = 0.52;
-    final double kickerMin = .52;
-    final double kickerMax = .48;
-    double kickerPos = kickerInit;
 
+    boolean isAutoHeading = false;
     boolean intakeOn = false;
     boolean circlePressedLast = false;
     boolean trianglePressedLast = false;
     boolean crossPressedLast = false;
     boolean dpadUpPressedLast = false;
     boolean dpadDownPressedLast = false;
-    boolean isGreen = false;
-    boolean isPurple = false;
+
+
 
     @Override
     public void init() {
         isAuto = false;
         resetEncoders =false;
         super.init();
-        kicker.setPosition(kickerInit);
+
 
 
     }
@@ -109,79 +103,34 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
         movement_y = -gamepad1.left_stick_y;
         movement_x = gamepad1.left_stick_x;
 
-        artifactSensor.getNormalizedColors();
 
-        final double purpleThreshold = 0.003;
-        final double greenThreshold = 0.002;
 
-        if (artifactSensor.getNormalizedColors().red > purpleThreshold && artifactSensor.getNormalizedColors().blue > purpleThreshold) {
-            isPurple = true;
-            isGreen = false;
-            telemetry.addData("isPurple", isPurple);
-            telemetry.addData("isGreen", isGreen);
-            telemetry.addData("Red Value", artifactSensor.getNormalizedColors().red);
-            telemetry.addData("Blue Value", artifactSensor.getNormalizedColors().blue);
-            telemetry.addData("Green Value", artifactSensor.getNormalizedColors().green);
-            telemetry.update();
-        }
-        else if (artifactSensor.getNormalizedColors().green > greenThreshold && artifactSensor.getNormalizedColors().red < 0.0015) {
-            isGreen = true;
-            isPurple = false;
-            telemetry.addData("isPurple", isPurple);
-            telemetry.addData("isGreen", isGreen);
-            telemetry.addData("Red Value", artifactSensor.getNormalizedColors().red);
-            telemetry.addData("Blue Value", artifactSensor.getNormalizedColors().blue);
-            telemetry.addData("Green Value", artifactSensor.getNormalizedColors().green);
-            telemetry.update();
-        }
-        else {
-            isGreen = false;
-            isPurple = false;
-            telemetry.addData("isPurple", isPurple);
-            telemetry.addData("isGreen", isGreen);
-            telemetry.addData("Red Value", artifactSensor.getNormalizedColors().red);
-            telemetry.addData("Blue Value", artifactSensor.getNormalizedColors().blue);
-            telemetry.addData("Green Value", artifactSensor.getNormalizedColors().green);
-            telemetry.update();
-        }
-        LLResult llResult = limelight.getLatestResult();
-
-        double spindexCurrentPosition = intake.getCurrentPosition();
-        telemetry.addData("Intake Encoder Values", spindexCurrentPosition);
-        telemetry.addData("Intake Encoder Angle ", VisionUtils.normalizeAngleFromTicks(spindexCurrentPosition, spindexCountsPerRev));
-
-        if(llResult.isValid() && !VisionUtils.isTagObelisk(VisionUtils.getTagId(llResult)))
+        if(limelight.currResult.isValid() && !Limelight.isTagObelisk(Limelight.getTagId(limelight.currResult)))
         {
-            Pose3D pose = llResult.getBotpose();
 
             //calculate heading error
-            double limelightX = llResult.getTx();
+            double limelightX = limelight.currResult.getTx();
             error = autoheading.calculatePID(limelightX);
 
             gamepad1.rumble(1, 1, 20);
 
-            telemetry.addData("tx", llResult.getTx());
-            telemetry.addData("ty", llResult.getTy());
-            telemetry.addData("pose", pose.toString());
-            telemetry.addData("error", error);
-            telemetry.addData("proportional", autoheading.getProportional());
-            telemetry.addData("integral", autoheading.getIntegral());
-            telemetry.addData("derivative", autoheading.getDerivative());
-            telemetry.update();
-
 
         }
+
+        colorSensor.showColorSensorTelemetry(telemetry);
 
 
         if (gamepad1.guide){
             movement_turn = error;
+            isAutoHeading = true;
         }
         else {
-            movement_turn = gamepad1.right_stick_x;
 
+            movement_turn = gamepad1.right_stick_x;
+            isAutoHeading = false;
         }
 
-        drive.applyMovementDirectionBased();
+        drive.applyMovementDirectionBasedFieldRelative(-gamepad1.left_stick_y, gamepad1.left_stick_x, movement_turn, isAutoHeading);
 
 
         trianglePressedLast = gamepad1.triangle;
@@ -195,38 +144,28 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
         circlePressedLast = gamepad1.circle;
 
         if(intakeOn) {
-            intake.setPower(intakePower);
+            intakeSubsystem.turnIntakeOn();
         } else {
-            intake.setPower(0);
+            intakeSubsystem.turnIntakeOff();
         }
 
         if(gamepad1.square)
         {
-            spindexer.setPower(0.7);
-        }
-        else
-        {
-            spindexer.setPower(0);
-
+            intakeSubsystem.rotateSpindexerOneSlot();
         }
         if(gamepad1.dpad_up && !dpadUpPressedLast)
         {
-            kickerPos = kickerMax;
+            intakeSubsystem.turnKickerOn();
         }
         else if(gamepad1.dpad_down && !dpadDownPressedLast)
         {
-            kickerPos = kickerMin;
+            intakeSubsystem.turnKickerOff();
         }
 
         dpadUpPressedLast = gamepad1.dpad_up;
         dpadDownPressedLast = gamepad1.dpad_down;
 
 
-
-        telemetry.addData("intakePower ", intakePower);
-        telemetry.addData("intake ", intake.getPower());
-        telemetry.addData("kicker", kicker.getPosition());
-        telemetry.addData("kickerInit", kickerInit);
 
 
 

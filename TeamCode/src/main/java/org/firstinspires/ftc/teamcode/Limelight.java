@@ -2,15 +2,27 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import java.util.List;
 
-public class VisionUtils {
+public class Limelight extends RobotMasterPinpoint{
     public static final int[] obeliskAprilTagIDs = {21, 22, 23};
     public static final int redGoalID = 24;
     public static final int blueGoalID = 20;
+    Limelight3A limelight;
+    LLResult currResult = null;
 
 
+    public Limelight (HardwareMap hwMap) {
+        limelight = hwMap.get(Limelight3A.class, "limelight");
+        telemetry.setMsTransmissionInterval(11);
+        limelight.pipelineSwitch(0);
+        limelight.start();
+
+        obelisk = new Pattern(Pattern.getObeliskPatternFromTag(Limelight.getTagId(limelight.getLatestResult())));
+    }
 
 
     /**
@@ -26,8 +38,6 @@ public class VisionUtils {
             id = tag.getFiducialId(); // The ID number of the tag
            break;
         }
-
-
 
         return id;
     }
@@ -51,14 +61,14 @@ public class VisionUtils {
         return false;
     }
 
-    public static double normalizeAngleFromTicks(double position, int ticksPerRevolution)
+
+    public void updateLimelight()
     {
-        double revolutions = position / ticksPerRevolution;
-
-        double angle = revolutions * 360;
-
-        return angle / 360;
+        currResult = limelight.getLatestResult();
     }
+
+
+
 
 
 
