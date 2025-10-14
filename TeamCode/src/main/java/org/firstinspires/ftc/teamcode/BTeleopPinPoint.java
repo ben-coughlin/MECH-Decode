@@ -42,8 +42,7 @@ import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 public class BTeleopPinPoint extends RobotMasterPinpoint {
 
     PIDController autoheading = new PIDController(0.04,0.0005,0);
-
-
+    PIDController headingHold = new PIDController(0.03,0,0.0); //TODO: tune these!
     boolean isAutoHeading = false;
     boolean intakeOn = false;
     boolean circlePressedLast = false;
@@ -51,6 +50,7 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
     boolean crossPressedLast = false;
     boolean dpadUpPressedLast = false;
     boolean dpadDownPressedLast = false;
+    double targetHeading = 0.0;
 
 
 
@@ -105,6 +105,7 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
 
 
 
+
         if(limelight.currResult.isValid() && !Limelight.isTagObelisk(Limelight.getTagId(limelight.currResult)))
         {
 
@@ -117,17 +118,27 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
 
         }
 
+
+
         colorSensor.showColorSensorTelemetry(telemetry);
 
+        double currentHeadingRad = RobotPosition.worldAngle_rad;
+        double turnDeadzone = 0.05;
 
         if (gamepad1.guide){
             movement_turn = error;
             isAutoHeading = true;
         }
-        else {
-
+        else if(Math.abs(movement_turn) > turnDeadzone)
+        {
             movement_turn = gamepad1.right_stick_x;
             isAutoHeading = false;
+            targetHeading = currentHeadingRad;
+            headingHold.reset();
+        }
+        else {
+            headingHold.setReference(targetHeading);
+            movement_turn = headingHold.calculatePID(currentHeadingRad);
         }
 
         drive.applyMovementDirectionBasedFieldRelative(-gamepad1.left_stick_y, gamepad1.left_stick_x, movement_turn, isAutoHeading);
