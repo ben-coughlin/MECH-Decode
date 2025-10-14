@@ -38,6 +38,7 @@ import android.os.SystemClock;
 
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
@@ -76,7 +77,7 @@ public class DirectionDebugger extends RobotMasterPinpoint
     public void init() {
         //drive init is handled in robotmaster
       super.init();
-      odo.resetPosAndIMU();
+
 
       //this is to see if any motor is reversed
       motorDirections.put("leftFront", String.valueOf(drive.leftFront.getDirection()));
@@ -198,22 +199,15 @@ public class DirectionDebugger extends RobotMasterPinpoint
     public void deadWheelDirectionDebugger()
     {
 
-        odo.update();
+        odo.updateOdo();
 
-        Pose2D pos = odo.getPosition();
-
-        worldXPosition = pos.getX(DistanceUnit.INCH);
-        worldYPosition = pos.getY(DistanceUnit.INCH);
-        worldAngle_rad = pos.getHeading(AngleUnit.RADIANS);
-
-
+        odo.showOdoTelemetry(telemetry);
+        odo.showWorldPositionTelemetry(telemetry);
+        odo.showRawTelemetry(telemetry);
         telemetry.addLine("Parallel Dead Wheels (should increase forward)");
-        telemetry.addData("World X", worldXPosition);
-        telemetry.addData("xEncoder Raw: ", odo.getEncoderX());
-
         telemetry.addLine("Perpendicular Dead Wheels (should increase leftwards)");
-        telemetry.addData("World Y", worldYPosition);
-        telemetry.addData("yEncoder Raw: ", odo.getEncoderY());
+
+
 
 
 

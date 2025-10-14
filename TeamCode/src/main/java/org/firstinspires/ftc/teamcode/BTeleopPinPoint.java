@@ -43,13 +43,9 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
 
     PIDController autoheading = new PIDController(0.04,0.0005,0);
     PIDController headingHold = new PIDController(0.03,0,0.0); //TODO: tune these!
+    Toggle intakeToggle = new Toggle(false);
+    Toggle kickerToggle = new Toggle(false);
     boolean isAutoHeading = false;
-    boolean intakeOn = false;
-    boolean circlePressedLast = false;
-    boolean trianglePressedLast = false;
-    boolean crossPressedLast = false;
-    boolean dpadUpPressedLast = false;
-    boolean dpadDownPressedLast = false;
     double targetHeading = 0.0;
 
 
@@ -89,16 +85,10 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
     public void mainLoop() {
         super.mainLoop();
 
+        intakeToggle.updateToggle(gamepad1.circle);
+
 
         double error = 0.0;
-
-
-        ButtonPress.giveMeInputs(gamepad1.a, gamepad1.b, gamepad1.x, gamepad1.y, gamepad1.dpad_up,
-                gamepad1.dpad_down, gamepad1.dpad_right, gamepad1.dpad_left, gamepad1.right_bumper,
-                gamepad1.left_bumper, gamepad1.left_stick_button, gamepad1.right_stick_button,
-                gamepad2.a, gamepad2.b, gamepad2.x, gamepad2.y, gamepad2.dpad_up,
-                gamepad2.dpad_down, gamepad2.dpad_right, gamepad2.dpad_left, gamepad2.right_bumper,
-                gamepad2.left_bumper, gamepad2.left_stick_button, gamepad2.right_stick_button);
 
         movement_y = -gamepad1.left_stick_y;
         movement_x = gamepad1.left_stick_x;
@@ -152,17 +142,8 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
         drive.applyMovementDirectionBasedFieldRelative(-gamepad1.left_stick_y, gamepad1.left_stick_x, movement_turn, isAutoHeading);
 
 
-        trianglePressedLast = gamepad1.triangle;
-        crossPressedLast = gamepad1.cross;
 
-
-        if(gamepad1.circle && !circlePressedLast)
-        {
-            intakeOn = !intakeOn;
-        }
-        circlePressedLast = gamepad1.circle;
-
-        if(intakeOn) {
+        if(intakeToggle.getState()) {
             intakeSubsystem.turnIntakeOn();
         } else {
             intakeSubsystem.turnIntakeOff();
@@ -172,17 +153,16 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
         {
             intakeSubsystem.rotateSpindexerOneSlot();
         }
-        if(gamepad1.dpad_up && !dpadUpPressedLast)
+
+        if(kickerToggle.getState())
         {
             intakeSubsystem.turnKickerOn();
         }
-        else if(gamepad1.dpad_down && !dpadDownPressedLast)
+        else
         {
             intakeSubsystem.turnKickerOff();
         }
 
-        dpadUpPressedLast = gamepad1.dpad_up;
-        dpadDownPressedLast = gamepad1.dpad_down;
 
 
 

@@ -15,10 +15,6 @@ public class IntakeSubsystem {
     private DcMotorEx intake = null;
     private final int spindexCountsPerRev = 8192;
     private final int spindexCountsPerSlot = 2730; //TODO: tune this number
-    private final double intakePower = 1;
-    private final double kickerInit = 0.52;
-    private final double kickerMin = .52;
-    private final double kickerMax = .48;
     private int spindexerPosition = 0;
 
 
@@ -33,6 +29,7 @@ public class IntakeSubsystem {
         intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
+        double kickerInit = 0.52;
         kicker.setPosition(kickerInit);
     }
 
@@ -71,6 +68,7 @@ public class IntakeSubsystem {
 
     public void turnIntakeOn()
     {
+        double intakePower = 1;
         intake.setPower(intakePower);
     }
     public void turnIntakeOff()
@@ -79,10 +77,12 @@ public class IntakeSubsystem {
     }
     public void turnKickerOn()
     {
+        double kickerMax = .48;
         kicker.setPosition(kickerMax);
     }
     public void turnKickerOff()
     {
+        double kickerMin = .52;
         kicker.setPosition(kickerMin);
     }
 

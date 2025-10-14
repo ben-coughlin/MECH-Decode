@@ -59,7 +59,6 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
 
         //isAuto = true;
 
-        odo.resetPosAndIMU();
         clientSim = new UdpClientFieldSim(SIMULATOR_HOST, SIMULATOR_PORT);
     }
 

@@ -59,6 +59,12 @@ public class Odo {
         String data = String.format(Locale.US, "{X: %.3f, Y: %.3f, Hdeg: %.3f, Hrad: %.3f}", worldXPosition, worldYPosition, Math.toDegrees(worldAngle_rad), worldAngle_rad);
         telemetry.addData("World Position", data);
     }
+    public void showRawTelemetry(Telemetry telemetry)
+    {
+        String data = String.format(Locale.US, "{X: %d, Y: %d}", odo.getEncoderX(), odo.getEncoderY());
+        telemetry.addData("Raw Encoder Values", data);
+    }
+
 
 
 
