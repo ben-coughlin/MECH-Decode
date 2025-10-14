@@ -74,7 +74,7 @@ public final class MecanumDrivePinPoint {
         movement_y = 0;
         movement_turn = 0;
 
-        applyMovementDirectionBased();
+        drive(movement_x, movement_y, movement_turn);
     }
 
     public void applyMovementDirectionBased() {

@@ -21,9 +21,7 @@ import java.util.Locale;
 public abstract class RobotMasterPinpoint extends OpMode {
     MecanumDrivePinPoint drive = null;
 
-
-    GoBildaPinpointDriver odo; // Declare OpMode member for the Odometry Computer
-
+    Odo odo = null;
     ColorSensor colorSensor = null;
     Limelight limelight = null;
     Pattern obelisk = null;
@@ -102,10 +100,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
     @Override
     public void init() {
-        odo = hardwareMap.get(GoBildaPinpointDriver.class,"odo");
-        odo.setOffsets(178.50, -125.077, DistanceUnit.MM);
-        odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
-        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
+
 
         drive = new MecanumDrivePinPoint(hardwareMap);
         colorSensor = new ColorSensor(hardwareMap);
@@ -113,9 +108,6 @@ public abstract class RobotMasterPinpoint extends OpMode {
         intakeSubsystem = new IntakeSubsystem(hardwareMap);
 
 
-
-
-        odo.resetPosAndIMU();
     }
 
     @Override
@@ -129,61 +121,11 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
         double startLoopTime = SystemClock.uptimeMillis();
 
-        // pose update for pinpoint
-        odo.update();
+        odo.updateOdo();
+        odo.showOdoTelemetry(telemetry);
 
-        Pose2D pos = odo.getPosition();
-        String data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", pos.getX(DistanceUnit.INCH), pos.getY(DistanceUnit.INCH), pos.getHeading(AngleUnit.DEGREES));
-        telemetry.addData("Position", data);
-
-            /*
-            gets the current Velocity (x & y in mm/sec and heading in degrees/sec) and prints it.
-             */
-        String velocity = String.format(Locale.US,"{XVel: %.3f, YVel: %.3f, HVel: %.3f}", odo.getVelX(DistanceUnit.INCH), odo.getVelY(DistanceUnit.INCH), odo.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES));
-        telemetry.addData("Velocity", velocity);
-
-        worldXPosition = pos.getX(DistanceUnit.INCH);
-        worldYPosition = pos.getY(DistanceUnit.INCH);
-        worldAngle_rad = pos.getHeading(AngleUnit.RADIANS);
-
-
-        // DO NOT CHANGE THIS LINE RR
-        //SpeedOmeter.update(currentPoseVel.linearVel.y, currentPoseVel.linearVel.x, currentPoseVel.angVel);
-        // DO NOT CHANGE THIS LINE Pinpoint
-        SpeedOmeter.update(odo.getVelY(DistanceUnit.INCH), odo.getVelX(DistanceUnit.INCH), odo.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS));
-
-        telemetry.addData("Status", "Initialized");
-        telemetry.addData("X offset", odo.getXOffset(DistanceUnit.MM));
-        telemetry.addData("Y offset", odo.getYOffset(DistanceUnit.MM));
-        telemetry.addData("Device Version Number:", odo.getDeviceVersion());
-        telemetry.addData("Heading Scalar", odo.getYawScalar());
+        telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
         telemetry.update();
-
-
-        telemetry.addData("Velocity Calculation Loop Time", SystemClock.uptimeMillis() - startLoopTime);
-        telemetry.addData("Position Calculation Loop Time", SystemClock.uptimeMillis() - startLoopTime);
-
-        telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
-        telemetry.addData("World X", worldXPosition);
-        telemetry.addData("World Y", worldYPosition);
-        telemetry.addData("World Angle Rad", (worldAngle_rad));
-        telemetry.addData("World Angle Deg", Math.toDegrees(worldAngle_rad));
-
-        //       RR Vel Telemetery
-//        telemetry.addData("vel x", currentPoseVel.linearVel.x);
-//        telemetry.addData("vel y", currentPoseVel.linearVel.y);
-//        telemetry.addData("vel heading", currentPoseVel.angVel);
-
-        //  pinpoint tlelemetry
-        telemetry.addData("vel x", odo.getVelX(DistanceUnit.INCH));
-        telemetry.addData("vel y", odo.getVelY(DistanceUnit.INCH));
-        telemetry.addData("vel heading", odo.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS));
-
-//        telemetry.addData("x", pose.position.x);
-//        telemetry.addData("y", pose.position.y);
-//        telemetry.addData("heading (deg)", Math.toDegrees(pose.heading.toDouble()));
-
-        telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
         Log.i("Loop Time", String.valueOf(SystemClock.uptimeMillis() - startLoopTime));
 
     }
@@ -204,65 +146,13 @@ public abstract class RobotMasterPinpoint extends OpMode {
     @Override
     public void loop() {
         double startLoopTime = SystemClock.uptimeMillis();
-        // RR pose update
-//        PoseVelocity2d currentPoseVel = drive.updatePoseEstimate();
-//        Pose2d pose = drive.localizer.getPose();//
-
-        //pinpoint pose update
-        odo.update();
         //read everything once and only once per loop
         colorSensor.updateDetection();
         limelight.updateLimelight();
         intakeSubsystem.updateIntakeSubsystem();
-
-        Pose2D pos = odo.getPosition();
+        odo.updateOdo();
+        odo.showOdoTelemetry(telemetry);
         mainAutoLoop();
-
-        telemetry.addData("Status", "Initialized");
-        telemetry.addData("Status", odo.getDeviceStatus());
-        String data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", pos.getX(DistanceUnit.INCH), pos.getY(DistanceUnit.INCH), pos.getHeading(AngleUnit.DEGREES));
-        telemetry.addData("Position", data);
-
-            /*
-            gets the current Velocity (x & y in mm/sec and heading in degrees/sec) and prints it.
-             */
-        String velocity = String.format(Locale.US,"{XVel: %.3f, YVel: %.3f, HVel: %.3f}", odo.getVelX(DistanceUnit.INCH), odo.getVelY(DistanceUnit.INCH), odo.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES));
-        telemetry.addData("Velocity", velocity);
-        telemetry.addData("Position Calculation Loop Time", SystemClock.uptimeMillis() - startLoopTime);
-
-        worldXPosition = pos.getX(DistanceUnit.INCH);
-        worldYPosition = pos.getY(DistanceUnit.INCH);
-        worldAngle_rad = pos.getHeading(AngleUnit.RADIANS);
-
-
-        // DO NOT CHANGE THIS LINE RR
-        //SpeedOmeter.update(currentPoseVel.linearVel.y, currentPoseVel.linearVel.x, currentPoseVel.angVel);
-        // DO NOT CHANGE THIS LINE Pinpoint
-        SpeedOmeter.update(odo.getVelY(DistanceUnit.INCH), odo.getVelX(DistanceUnit.INCH), odo.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS));
-
-        telemetry.addData("Velocity Calculation Loop Time", SystemClock.uptimeMillis() - startLoopTime);
-
-
-
-        telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
-        telemetry.addData("World X", worldXPosition);
-        telemetry.addData("World Y", worldYPosition);
-        telemetry.addData("World Angle Rad", (worldAngle_rad));
-        telemetry.addData("World Angle Deg", Math.toDegrees(worldAngle_rad));
-
-        //       RR Vel Telemetery
-//        telemetry.addData("vel x", currentPoseVel.linearVel.x);
-//        telemetry.addData("vel y", currentPoseVel.linearVel.y);
-//        telemetry.addData("vel heading", currentPoseVel.angVel);
-
-        //  pinpoint tlelemetry
-        telemetry.addData("vel x", odo.getVelX(DistanceUnit.INCH));
-        telemetry.addData("vel y", odo.getVelY(DistanceUnit.INCH));
-        telemetry.addData("vel heading", odo.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS));
-
-//        telemetry.addData("x", pose.position.x);
-//        telemetry.addData("y", pose.position.y);
-//        telemetry.addData("heading (deg)", Math.toDegrees(pose.heading.toDouble()));
 
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
         telemetry.update();

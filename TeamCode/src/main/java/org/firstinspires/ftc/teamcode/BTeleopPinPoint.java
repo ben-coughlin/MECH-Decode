@@ -73,14 +73,14 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
 
     @Override
     public void start() {
-        super.start(); //what is super.start?
+        super.start();
 
 
     }
 
     @Override
     public void stop() {
-        super.stop(); //what is super.stop?
+        super.stop();
 
     }
 
