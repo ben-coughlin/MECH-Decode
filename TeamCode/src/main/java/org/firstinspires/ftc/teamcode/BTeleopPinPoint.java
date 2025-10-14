@@ -139,6 +139,7 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
         else {
             headingHold.setReference(targetHeading);
             movement_turn = headingHold.calculatePID(currentHeadingRad);
+            isAutoHeading = false;
         }
 
         drive.applyMovementDirectionBasedFieldRelative(-gamepad1.left_stick_y, gamepad1.left_stick_x, movement_turn, isAutoHeading);
