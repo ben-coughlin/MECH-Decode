@@ -126,20 +126,27 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
         double turnDeadzone = 0.05;
 
         if (gamepad1.guide){
+            //limelight auto-heading gets first priority
             movement_turn = error;
             isAutoHeading = true;
+            headingHold.reset();
+            targetHeading = currentHeadingRad;
         }
-        else if(Math.abs(movement_turn) > turnDeadzone)
+        else if(Math.abs(gamepad1.right_stick_x) > turnDeadzone)
         {
+            //if the driver is turning manually without limelight then that takes next priority
             movement_turn = gamepad1.right_stick_x;
             isAutoHeading = false;
             targetHeading = currentHeadingRad;
             headingHold.reset();
+            autoheading.reset();
         }
         else {
+            //if there's no turning at all, use PID to hold us at the same heading
             headingHold.setReference(targetHeading);
             movement_turn = headingHold.calculatePID(currentHeadingRad);
             isAutoHeading = false;
+            autoheading.reset();
         }
 
         drive.applyMovementDirectionBasedFieldRelative(-gamepad1.left_stick_y, gamepad1.left_stick_x, movement_turn, isAutoHeading);
