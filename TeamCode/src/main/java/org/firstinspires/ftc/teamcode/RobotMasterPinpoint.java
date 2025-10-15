@@ -106,6 +106,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
         colorSensor = new ColorSensor(hardwareMap);
         limelight = new Limelight(hardwareMap);
         intakeSubsystem = new IntakeSubsystem(hardwareMap);
+        odo = new Odo(hardwareMap);
 
 
     }
@@ -134,7 +135,6 @@ public abstract class RobotMasterPinpoint extends OpMode {
     public void stop()
     {
         drive.stopAllMovementDirectionBased();
-        limelight.stop();
     }
 
 

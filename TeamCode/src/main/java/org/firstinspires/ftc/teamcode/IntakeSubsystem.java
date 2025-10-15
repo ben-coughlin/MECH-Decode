@@ -9,14 +9,19 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
-public class IntakeSubsystem {
-    private CRServo spindexer = null;
-    private Servo kicker = null;
-    private DcMotorEx intake = null;
+public class IntakeSubsystem
+{
+    private final CRServo spindexer;
+    private final Servo kicker;
+    private final DcMotorEx intake;
     private final int spindexCountsPerRev = 8192;
     private final int spindexCountsPerSlot = 2730; //TODO: tune this number
     private int spindexerPosition = 0;
 
+    // State machine for spindexer rotation
+    private boolean isRotating = false;
+    private double desiredSpindexerTicks = 0;
+    private static final double SPINDEXER_POWER = 1.0;
 
 
     public IntakeSubsystem(HardwareMap hwMap)
@@ -29,14 +34,26 @@ public class IntakeSubsystem {
         intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        double kickerInit = 0.52;
-        kicker.setPosition(kickerInit);
     }
 
     public void updateIntakeSubsystem()
     {
         spindexerPosition = intake.getCurrentPosition();
+
+
+        if (isRotating)
+        {
+            if (spindexerPosition < desiredSpindexerTicks)
+            {
+                spindexer.setPower(SPINDEXER_POWER);
+            }
+            else
+            {
+                stopSpindexer();
+            }
+        }
     }
+
     public void showSpindexerTelemetry(Telemetry telemetry)
     {
         telemetry.addData("Intake Encoder Ticks ", spindexerPosition);
@@ -52,17 +69,27 @@ public class IntakeSubsystem {
 
         return angle / 360;
     }
+
     public void rotateSpindexerOneSlot()
     {
-        double desiredSpindexerTicks = spindexerPosition + spindexCountsPerSlot;
-
-        while(spindexerPosition < desiredSpindexerTicks)
+        // Only start a new rotation if one isn't already in progress.
+        if (!isRotating)
         {
-            spindexer.setPower(1);
-
+            desiredSpindexerTicks = spindexerPosition + spindexCountsPerSlot;
+            isRotating = true;
+            // The actual power setting is now handled by the updateIntakeSubsystem() method.
         }
-        spindexer.setPower(0);
+    }
 
+    /**
+     * Stops the spindexer and resets the rotation state.
+     * This can be called to manually stop a rotation or when the target is reached.
+     */
+    public void stopSpindexer()
+    {
+        spindexer.setPower(0);
+        isRotating = false;
+        desiredSpindexerTicks = 0;
     }
 
 
@@ -71,25 +98,23 @@ public class IntakeSubsystem {
         double intakePower = 1;
         intake.setPower(intakePower);
     }
+
     public void turnIntakeOff()
     {
         intake.setPower(0);
     }
-    public void turnKickerOn()
+
+    public void moveKickerVertical()
     {
-        double kickerMax = .48;
-        kicker.setPosition(kickerMax);
-    }
-    public void turnKickerOff()
-    {
-        double kickerMin = .52;
-        kicker.setPosition(kickerMin);
+        double kickerVertical = .5;
+        kicker.setPosition(kickerVertical);
     }
 
-
-
-
-
+    public void moveKickerHorizontal()
+    {
+        double kickerHorizontal = 0;
+        kicker.setPosition(kickerHorizontal);
+    }
 
 
 }

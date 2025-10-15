@@ -2,7 +2,8 @@ package org.firstinspires.ftc.teamcode;
 
 import androidx.annotation.NonNull;
 
-public class Pattern {
+public class Pattern
+{
 
     Ball spindexSlotOne;
     Ball spindexSlotTwo;
@@ -18,8 +19,9 @@ public class Pattern {
 
     /**
      * Creates a Pattern using three Ball objects
-     * @param spindexSlotOne Ball object in spindex slot one
-     * @param spindexSlotTwo Ball object in spindex slot two
+     *
+     * @param spindexSlotOne   Ball object in spindex slot one
+     * @param spindexSlotTwo   Ball object in spindex slot two
      * @param spindexSlotThree Ball object in spindex slot three
      */
 
@@ -32,6 +34,7 @@ public class Pattern {
 
     /**
      * Creates a Pattern using another Pattern object
+     *
      * @param p Pattern object that is then split into balls
      */
     public Pattern(Pattern p)
@@ -44,13 +47,14 @@ public class Pattern {
 
     /**
      * Creates the Obelisk pattern from a tag ID
+     *
      * @param tag ID of the tag
      * @return Pattern containing the balls in the correct order, returns a pattern of empty balls if the tag is not an obelisk
      */
     public static Pattern getObeliskPatternFromTag(int tag)
     {
 
-        switch(tag)
+        switch (tag)
         {
             case 21:
             {
@@ -75,10 +79,6 @@ public class Pattern {
         this.spindexSlotTwo = spindexSlotTwo;
         this.spindexSlotThree = spindexSlotThree;
     }
-
-
-
-
 
 
 }

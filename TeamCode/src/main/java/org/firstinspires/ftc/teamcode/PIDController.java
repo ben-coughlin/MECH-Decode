@@ -15,6 +15,7 @@ public class PIDController {
     private double integralMax = 1.0;
     private boolean isFirstLoop = true;
     public double[] pidConstants = new double[3];
+    private boolean useAngleWrap = false;
 
     private final ElapsedTime loop = new ElapsedTime();
 
@@ -38,6 +39,29 @@ public class PIDController {
     }
 
     /**
+     *
+     * @param kp proportional constant; controls how quickly the system responds to errors
+     * @param ki integral constant; controls how quickly the system responds to accumulated errors
+     * @param kd derivative constant; controls how the system uses the rate of change of error to predict future error
+     * @param useAngleWrap use this for circular error - finds the shortest path to the reference error
+     */
+    public PIDController(double kp, double ki, double kd, boolean useAngleWrap) {
+        this.kP = kp;
+        this.kI = ki;
+        this.kD = kd;
+
+        pidConstants[0] = 0;
+        pidConstants[1] = 0;
+        pidConstants[2] = 0;
+
+        this.useAngleWrap = useAngleWrap;
+
+        loop.reset();
+
+    }
+
+
+    /**
      * @param reference
      * Sets the reference for the error calculation - initialized to zero by default
      */
@@ -47,9 +71,9 @@ public class PIDController {
     }
 
     /**
+     * initialized to -1, 1 by default
      * @param outputMin: minimum power the pid loop can output
      * @param outputMax: maximum power
-     *                 initialized to -1, 1 by default
      */
     public void setOutputLimits(double outputMin, double outputMax) {
         this.outputMin = outputMin;
@@ -58,9 +82,9 @@ public class PIDController {
     }
 
     /**
+     * these set the integral limits to prevent the integral term from getting too large
      * @param integralMin initialized to -1
      * @param integralMax initialized to 1
-     * @note these set the integral limits to prevent the integral term from getting too large
      */
     public void setIntegralLimits(double integralMin, double integralMax) {
         this.integralMin = integralMin;
@@ -85,7 +109,13 @@ public class PIDController {
     public double calculatePID(double currentValue) {
         double loopTime = loop.milliseconds();
         loop.reset();
+
         double error = reference - currentValue;
+
+        if(useAngleWrap)
+        {
+           error =  RobotPosition.AngleWrap(error);
+        }
 
         double proportional = kP * error;
 

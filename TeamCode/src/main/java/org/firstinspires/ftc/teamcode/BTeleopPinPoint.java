@@ -35,32 +35,33 @@ import static org.firstinspires.ftc.teamcode.MovementVars.movement_y;
 
 
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 
 
 @TeleOp(name = "BTeleop PinPoint")
-public class BTeleopPinPoint extends RobotMasterPinpoint {
+public class BTeleopPinPoint extends RobotMasterPinpoint
+{
 
-    PIDController autoheading = new PIDController(0.04,0.0005,0);
-    PIDController headingHold = new PIDController(0.03,0,0.0); //TODO: tune these!
+    PIDController autoheading = new PIDController(0.04, 0.0005, 0);
+    PIDController headingHold = new PIDController(0.03, 0, 0.0, true); //TODO: tune these!
     Toggle intakeToggle = new Toggle(false);
     Toggle kickerToggle = new Toggle(false);
+
     boolean isAutoHeading = false;
     double targetHeading = 0.0;
 
 
-
     @Override
-    public void init() {
+    public void init()
+    {
         isAuto = false;
-        resetEncoders =false;
+        resetEncoders = false;
         super.init();
-
 
 
     }
 
-    public void init_loop() {
+    public void init_loop()
+    {
         super.init_loop();
 
 
@@ -68,24 +69,28 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
 
 
     @Override
-    public void start() {
+    public void start()
+    {
         super.start();
 
 
     }
 
     @Override
-    public void stop() {
+    public void stop()
+    {
         super.stop();
 
     }
 
 
     @Override
-    public void mainLoop() {
+    public void mainLoop()
+    {
         super.mainLoop();
 
         intakeToggle.updateToggle(gamepad1.circle);
+        kickerToggle.updateToggle(gamepad1.square);
 
 
         double error = 0.0;
@@ -94,9 +99,7 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
         movement_x = gamepad1.left_stick_x;
 
 
-
-
-        if(limelight.currResult.isValid() && !Limelight.isTagObelisk(Limelight.getTagId(limelight.currResult)))
+        if (limelight.currResult.isValid() && !Limelight.isTagObelisk(Limelight.getTagId(limelight.currResult)))
         {
 
             //calculate heading error
@@ -109,20 +112,21 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
         }
 
 
-
+        intakeSubsystem.showSpindexerTelemetry(telemetry);
         colorSensor.showColorSensorTelemetry(telemetry);
 
         double currentHeadingRad = RobotPosition.worldAngle_rad;
         double turnDeadzone = 0.05;
 
-        if (gamepad1.guide){
+        if (gamepad1.guide)
+        {
             //limelight auto-heading gets first priority
             movement_turn = error;
             isAutoHeading = true;
             headingHold.reset();
             targetHeading = currentHeadingRad;
         }
-        else if(Math.abs(gamepad1.right_stick_x) > turnDeadzone)
+        else if (Math.abs(gamepad1.right_stick_x) > turnDeadzone)
         {
             //if the driver is turning manually without limelight then that takes next priority
             movement_turn = gamepad1.right_stick_x;
@@ -131,7 +135,8 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
             headingHold.reset();
             autoheading.reset();
         }
-        else {
+        else
+        {
             //if there's no turning at all, use PID to hold us at the same heading
             headingHold.setReference(targetHeading);
             movement_turn = headingHold.calculatePID(currentHeadingRad);
@@ -142,31 +147,32 @@ public class BTeleopPinPoint extends RobotMasterPinpoint {
         drive.applyMovementDirectionBasedFieldRelative(-gamepad1.left_stick_y, gamepad1.left_stick_x, movement_turn, isAutoHeading);
 
 
-
-        if(intakeToggle.getState()) {
+        if (intakeToggle.getState())
+        {
             intakeSubsystem.turnIntakeOn();
-        } else {
-            intakeSubsystem.turnIntakeOff();
-        }
-
-        if(gamepad1.square)
-        {
-            intakeSubsystem.rotateSpindexerOneSlot();
-        }
-
-        if(kickerToggle.getState())
-        {
-            intakeSubsystem.turnKickerOn();
         }
         else
         {
-            intakeSubsystem.turnKickerOff();
+            intakeSubsystem.turnIntakeOff();
         }
 
+        if (gamepad1.square)
+        {
+            intakeSubsystem.rotateSpindexerOneSlot();
+        }
+        else if (gamepad1.cross)
+        {
+            intakeSubsystem.stopSpindexer();
+        }
 
-
-
-
+        if (kickerToggle.getState())
+        {
+            intakeSubsystem.moveKickerVertical();
+        }
+        else
+        {
+            intakeSubsystem.moveKickerHorizontal();
+        }
 
 
     }

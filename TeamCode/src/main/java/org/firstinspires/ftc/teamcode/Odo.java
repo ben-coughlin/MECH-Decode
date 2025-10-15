@@ -16,13 +16,15 @@ import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit
 
 import java.util.Locale;
 
-public class Odo {
+public class Odo
+{
     GoBildaPinpointDriver odo;
     Pose2D pos = null;
     long startLoopTime = 0;
+
     public Odo(HardwareMap hwMap)
     {
-        odo = hwMap.get(GoBildaPinpointDriver.class,"odo");
+        odo = hwMap.get(GoBildaPinpointDriver.class, "odo");
         odo.setOffsets(178.50, -125.077, DistanceUnit.MM);
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
@@ -49,7 +51,7 @@ public class Odo {
             /*
             gets the current Velocity (x & y in mm/sec and heading in degrees/sec) and prints it.
              */
-        String velocity = String.format(Locale.US,"{XVel: %.3f, YVel: %.3f, HVel: %.3f}", odo.getVelX(DistanceUnit.INCH), odo.getVelY(DistanceUnit.INCH), odo.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES));
+        String velocity = String.format(Locale.US, "{XVel: %.3f, YVel: %.3f, HVel: %.3f}", odo.getVelX(DistanceUnit.INCH), odo.getVelY(DistanceUnit.INCH), odo.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES));
         telemetry.addData("Odo Velocity", velocity);
     }
 
@@ -59,15 +61,12 @@ public class Odo {
         String data = String.format(Locale.US, "{X: %.3f, Y: %.3f, Hdeg: %.3f, Hrad: %.3f}", worldXPosition, worldYPosition, Math.toDegrees(worldAngle_rad), worldAngle_rad);
         telemetry.addData("World Position", data);
     }
+
     public void showRawTelemetry(Telemetry telemetry)
     {
         String data = String.format(Locale.US, "{X: %d, Y: %d}", odo.getEncoderX(), odo.getEncoderY());
         telemetry.addData("Raw Encoder Values", data);
     }
-
-
-
-
 
 
 }

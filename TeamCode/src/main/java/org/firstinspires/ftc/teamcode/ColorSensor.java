@@ -7,9 +7,10 @@ import com.qualcomm.robotcore.hardware.SwitchableLight;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
-public class ColorSensor {
+public class ColorSensor
+{
     private NormalizedRGBA colors = null;
-    private RevColorSensorV3 colorSensor;
+    private final RevColorSensorV3 colorSensor;
 
     private boolean isPurple;
     private boolean isGreen;
@@ -19,11 +20,12 @@ public class ColorSensor {
     final float gain = 2;
 
 
-    public ColorSensor (HardwareMap hwMap) {
+    public ColorSensor(HardwareMap hwMap)
+    {
         colorSensor = hwMap.get(RevColorSensorV3.class, "artifactSensor");
-        if(colorSensor instanceof SwitchableLight)
+        if (colorSensor instanceof SwitchableLight)
         {
-            ((SwitchableLight)colorSensor).enableLight(true);
+            ((SwitchableLight) colorSensor).enableLight(true);
         }
         colorSensor.setGain(gain);
     }
@@ -31,41 +33,51 @@ public class ColorSensor {
 
     public void showColorSensorTelemetry(Telemetry telemetry)
     {
-        telemetry.addData("isPurple", isPurple);
-        telemetry.addData("isGreen", isGreen);
-        telemetry.addData("Red Value", colors.red);
-        telemetry.addData("Blue Value", colors.blue);
-        telemetry.addData("Green Value", colors.green);
+        if (colors != null)
+        {
+            telemetry.addData("isPurple", isPurple);
+            telemetry.addData("isGreen", isGreen);
+            telemetry.addData("Red Value", colors.red);
+            telemetry.addData("Blue Value", colors.blue);
+            telemetry.addData("Green Value", colors.green);
+        }
+        else
+        {
+            telemetry.addData("Error", "Cannot communicate with color sensor.");
+        }
     }
+
     public void updateDetection()
     {
         colors = colorSensor.getNormalizedColors();
 
-        if (colors.red > purpleThreshold && colors.blue > purpleThreshold) {
+        if (colors.red > purpleThreshold && colors.blue > purpleThreshold)
+        {
             isPurple = true;
             isGreen = false;
         }
-        else if (colors.green > greenThreshold && colors.red < 0.0015) {
+        else if (colors.green > greenThreshold && colors.red < 0.0015)
+        {
             isGreen = true;
             isPurple = false;
         }
-        else {
+        else
+        {
             isGreen = false;
             isPurple = false;
         }
     }
 
 
-    public boolean isPurple() {
+    public boolean isPurple()
+    {
         return isPurple;
     }
 
-    public boolean isGreen() {
+    public boolean isGreen()
+    {
         return isGreen;
     }
-
-
-
 
 
 }

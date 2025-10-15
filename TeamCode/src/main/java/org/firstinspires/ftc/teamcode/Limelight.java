@@ -7,7 +7,8 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import java.util.List;
 
-public class Limelight extends RobotMasterPinpoint{
+public class Limelight extends RobotMasterPinpoint
+{
     public static final int[] obeliskAprilTagIDs = {21, 22, 23};
     public static final int redGoalID = 24;
     public static final int blueGoalID = 20;
@@ -15,7 +16,8 @@ public class Limelight extends RobotMasterPinpoint{
     LLResult currResult = null;
 
 
-    public Limelight (HardwareMap hwMap) {
+    public Limelight(HardwareMap hwMap)
+    {
         limelight = hwMap.get(Limelight3A.class, "limelight");
         telemetry.setMsTransmissionInterval(11);
         limelight.pipelineSwitch(0);
@@ -27,16 +29,19 @@ public class Limelight extends RobotMasterPinpoint{
 
     /**
      * Gets the tag ID from the latest result
+     *
      * @param result the most recent LLResult object
      * @return the ID of the tag, or -1 if no tag is detected
      */
-    public static int getTagId(LLResult result) {
+    public static int getTagId(LLResult result)
+    {
         int id = -1;
 
         List<LLResultTypes.FiducialResult> tags = result.getFiducialResults();
-        for (LLResultTypes.FiducialResult tag : tags) {
+        for (LLResultTypes.FiducialResult tag : tags)
+        {
             id = tag.getFiducialId(); // The ID number of the tag
-           break;
+            break;
         }
 
         return id;
@@ -51,10 +56,13 @@ public class Limelight extends RobotMasterPinpoint{
     {
         return tag == blueGoalID;
     }
+
     public static boolean isTagObelisk(int tag)
     {
-        for(int id : obeliskAprilTagIDs) {
-            if (tag == id) {
+        for (int id : obeliskAprilTagIDs)
+        {
+            if (tag == id)
+            {
                 return true;
             }
         }
@@ -66,15 +74,6 @@ public class Limelight extends RobotMasterPinpoint{
     {
         currResult = limelight.getLatestResult();
     }
-
-
-
-
-
-
-
-
-
 
 
 }
