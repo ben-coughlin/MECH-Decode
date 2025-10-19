@@ -19,6 +19,7 @@ public class Toggle {
      *
      * @param currentState The current state of the button (e.g., gamepad1.a).
      */
+
     public void updateToggle(boolean currentState)
     {
         if(currentState && !buttonPreviouslyPressed)

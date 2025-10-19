@@ -29,10 +29,12 @@ public class Odo
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
         odo.resetPosAndIMU();
+        odo.setPosition(new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0));
     }
 
     public void updateOdo()
     {
+        odo.update();
         startLoopTime = SystemClock.uptimeMillis();
         pos = odo.getPosition();
         worldXPosition = pos.getX(DistanceUnit.INCH);
@@ -41,6 +43,7 @@ public class Odo
         // DO NOT CHANGE THIS LINE Pinpoint
         SpeedOmeter.update(odo.getVelY(DistanceUnit.INCH), odo.getVelX(DistanceUnit.INCH), odo.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS));
     }
+
 
 
     public void showOdoTelemetry(Telemetry telemetry)

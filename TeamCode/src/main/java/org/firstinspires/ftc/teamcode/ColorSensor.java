@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.SwitchableLight;
 
@@ -10,7 +11,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 public class ColorSensor
 {
     private NormalizedRGBA colors = null;
-    private final RevColorSensorV3 colorSensor;
+    private final NormalizedColorSensor colorSensor;
 
     private boolean isPurple;
     private boolean isGreen;
@@ -22,7 +23,7 @@ public class ColorSensor
 
     public ColorSensor(HardwareMap hwMap)
     {
-        colorSensor = hwMap.get(RevColorSensorV3.class, "artifactSensor");
+        colorSensor = hwMap.get(NormalizedColorSensor.class, "color");
         if (colorSensor instanceof SwitchableLight)
         {
             ((SwitchableLight) colorSensor).enableLight(true);
@@ -51,13 +52,12 @@ public class ColorSensor
     {
         colors = colorSensor.getNormalizedColors();
 
-        if (colors.red > purpleThreshold && colors.blue > purpleThreshold)
+        if (colors.green > colors.red * 2 && colors.green > colors.blue * 2)
         {
             isPurple = true;
             isGreen = false;
         }
-        else if (colors.green > greenThreshold && colors.red < 0.0015)
-        {
+        else if (colors.green > greenThreshold && colors.red < 0.0015)        {
             isGreen = true;
             isPurple = false;
         }

@@ -34,6 +34,8 @@ public class IntakeSubsystem
         intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
+        kicker.setPosition(0.3);
+
     }
 
     public void updateIntakeSubsystem()
@@ -107,7 +109,7 @@ public class IntakeSubsystem
     public void moveKickerVertical()
     {
         double kickerVertical = .5;
-        kicker.setPosition(kickerVertical);
+       kicker.setPosition(kickerVertical);
     }
 
     public void moveKickerHorizontal()

@@ -66,6 +66,7 @@ public class DirectionDebugger extends RobotMasterPinpoint
     // Declare OpMode members.
     double MOTOR_POWER = 1.0;
     int mode = -1;
+    Odo odo = null;
 
     HashMap<String, String> motorDirections = new HashMap<>();
 
@@ -76,14 +77,14 @@ public class DirectionDebugger extends RobotMasterPinpoint
     @Override
     public void init() {
         //drive init is handled in robotmaster
-      super.init();
+      //super.init();
 
-
+    odo = new Odo(hardwareMap);
       //this is to see if any motor is reversed
-      motorDirections.put("leftFront", String.valueOf(drive.leftFront.getDirection()));
-      motorDirections.put("rightFront", String.valueOf(drive.rightFront.getDirection()));
-      motorDirections.put("leftBack", String.valueOf(drive.leftBack.getDirection()));
-      motorDirections.put("rightBack", String.valueOf(drive.rightBack.getDirection()));
+//      motorDirections.put("leftFront", String.valueOf(drive.leftFront.getDirection()));
+//      motorDirections.put("rightFront", String.valueOf(drive.rightFront.getDirection()));
+//      motorDirections.put("leftBack", String.valueOf(drive.leftBack.getDirection()));
+//      motorDirections.put("rightBack", String.valueOf(drive.rightBack.getDirection()));
 
       //without reading from i2c i can't pull dead wheel directions so you have to find them manually in the GoBildaPinpointDriver file
 
@@ -131,7 +132,7 @@ public class DirectionDebugger extends RobotMasterPinpoint
        }
        else if(mode == 1)
        {
-           motorDirectionDebugger();
+          // motorDirectionDebugger();
        }
        else if(mode == 2)
         {
