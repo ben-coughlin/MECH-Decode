@@ -45,8 +45,10 @@ public class BTeleopPinPoint extends RobotMasterPinpoint
     PIDController headingHold = new PIDController(0.03, 0, 0.0, true); //TODO: tune these!
     Toggle intakeToggle = new Toggle(false);
     Toggle kickerToggle = new Toggle(false);
+    Toggle autoAimToggle = new Toggle(true);
 
     boolean isAutoHeading = false;
+    boolean isAutoAiming = false;
     double targetHeading = 0.0;
 
 
@@ -91,6 +93,7 @@ public class BTeleopPinPoint extends RobotMasterPinpoint
 
         intakeToggle.updateToggle(gamepad1.circle);
         kickerToggle.updateToggle(gamepad1.square);
+        autoAimToggle.updateToggle(gamepad2.square);
 
 
         double error = 0.0;
@@ -98,19 +101,26 @@ public class BTeleopPinPoint extends RobotMasterPinpoint
         movement_y = -gamepad1.left_stick_y;
         movement_x = gamepad1.left_stick_x;
 
+        isAutoAiming = autoAimToggle.getState();
 
 
+        if (limelight.getCurrResult().isValid() && !Limelight.isTagObelisk(Limelight.getTagId(limelight.getCurrResult())))
+        {
+            double llError = limelight.getCurrResult().getTx();
+            turret.aimTurret(isAutoAiming, llError, gamepad2.right_stick_x);
+        }
 
 
+        turret.showAimTelemetry(telemetry);
         intakeSubsystem.showSpindexerTelemetry(telemetry);
         colorSensor.showColorSensorTelemetry(telemetry);
 
         double currentHeadingRad = RobotPosition.worldAngle_rad;
         double turnDeadzone = 0.05;
 
-         if (Math.abs(gamepad1.right_stick_x) > turnDeadzone)
+        if (Math.abs(gamepad1.right_stick_x) > turnDeadzone)
         {
-            //if the driver is turning manually then that takes  priority
+            //if the driver is turning manually then that takes priority
             movement_turn = gamepad1.right_stick_x;
             isAutoHeading = false;
             targetHeading = currentHeadingRad;

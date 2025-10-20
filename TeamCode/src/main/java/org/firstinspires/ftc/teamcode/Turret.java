@@ -4,6 +4,8 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+
 public class Turret
 {
     private final DcMotorEx turret;
@@ -21,6 +23,8 @@ public class Turret
         flywheel = hwMap.get(DcMotorEx.class, "flywheel");
         hood = hwMap.get(Servo.class, "hood");
         turret.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
+        autoAim.setReference(0);
+
 
     }
 
@@ -37,18 +41,26 @@ public class Turret
 
     }
 
-    public void aimTurret(boolean useAutoAim)
+    public void aimTurret(boolean useAutoAim, double limelightError, double manualTurnInput)
     {
+        double turretPower;
+
         if(!useAutoAim)
         {
-            return; //deal with this later!!
+            turretPower = manualTurnInput;
+            autoAim.reset();
         }
         else
         {
-
+            turretPower = autoAim.calculatePID(limelightError);
         }
 
+        turret.setPower(turretPower);
 
+    }
+    public void showAimTelemetry(Telemetry telemetry) {
+        telemetry.addData("Turret PID Power", turret.getPower());
+        telemetry.addData("Turret Position", turretPos);
     }
 
 
