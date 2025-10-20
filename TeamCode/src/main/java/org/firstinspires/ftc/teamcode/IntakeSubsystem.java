@@ -14,7 +14,7 @@ public class IntakeSubsystem
     private final CRServo spindexer;
     private final Servo kicker;
     private final DcMotorEx intake;
-    private final int spindexCountsPerRev = 8192;
+    private final int spindexCountsPerRev = 8192; //REV-11-127 through bore encoder
     private final int spindexCountsPerSlot = 2730; //TODO: tune this number
     private int spindexerPosition = 0;
 

@@ -41,7 +41,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 public class BTeleopPinPoint extends RobotMasterPinpoint
 {
 
-    PIDController autoheading = new PIDController(0.04, 0.0005, 0);
+
     PIDController headingHold = new PIDController(0.03, 0, 0.0, true); //TODO: tune these!
     Toggle intakeToggle = new Toggle(false);
     Toggle kickerToggle = new Toggle(false);
@@ -99,17 +99,7 @@ public class BTeleopPinPoint extends RobotMasterPinpoint
         movement_x = gamepad1.left_stick_x;
 
 
-        if (limelight.currResult.isValid() && !Limelight.isTagObelisk(Limelight.getTagId(limelight.currResult)))
-        {
 
-            //calculate heading error
-            double limelightX = limelight.currResult.getTx();
-            error = autoheading.calculatePID(limelightX);
-
-            gamepad1.rumble(1, 1, 20);
-
-
-        }
 
 
         intakeSubsystem.showSpindexerTelemetry(telemetry);
@@ -118,22 +108,14 @@ public class BTeleopPinPoint extends RobotMasterPinpoint
         double currentHeadingRad = RobotPosition.worldAngle_rad;
         double turnDeadzone = 0.05;
 
-        if (gamepad1.guide)
+         if (Math.abs(gamepad1.right_stick_x) > turnDeadzone)
         {
-            //limelight auto-heading gets first priority
-            movement_turn = error;
-            isAutoHeading = true;
-            headingHold.reset();
-            targetHeading = currentHeadingRad;
-        }
-        else if (Math.abs(gamepad1.right_stick_x) > turnDeadzone)
-        {
-            //if the driver is turning manually without limelight then that takes next priority
+            //if the driver is turning manually then that takes  priority
             movement_turn = gamepad1.right_stick_x;
             isAutoHeading = false;
             targetHeading = currentHeadingRad;
             headingHold.reset();
-            autoheading.reset();
+
         }
         else
         {
@@ -141,7 +123,7 @@ public class BTeleopPinPoint extends RobotMasterPinpoint
             headingHold.setReference(targetHeading);
             movement_turn = headingHold.calculatePID(currentHeadingRad);
             isAutoHeading = false;
-            autoheading.reset();
+
         }
 
         drive.applyMovementDirectionBasedFieldRelative(-gamepad1.left_stick_y, gamepad1.left_stick_x, movement_turn, isAutoHeading);
