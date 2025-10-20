@@ -13,6 +13,7 @@ public class Turret
     private final Servo hood;
     private final PIDController autoAim = new PIDController(0.005, 0, 0);
     private int turretPos;
+    private double turretPower;
     private double flywheelRPM;
     private double flywheelPower;
     private double hoodPos;
@@ -31,6 +32,7 @@ public class Turret
     public void updateTurret()
     {
         turretPos = turret.getCurrentPosition();
+        turretPower = turret.getPower();
         double flywheelVelocity = flywheel.getVelocity();
 
         hoodPos = hood.getPosition();
@@ -74,6 +76,14 @@ public class Turret
     public void setTurretPos(int turretPos)
     {
         this.turretPos = turretPos;
+    }
+    public double getTurretPower()
+    {
+        return turretPower;
+    }
+    public void setTurretPower(double v)
+    {
+        this.turretPower = turretPower;
     }
 
     public double getFlywheelRPM()

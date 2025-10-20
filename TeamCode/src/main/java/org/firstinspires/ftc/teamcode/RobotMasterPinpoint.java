@@ -26,6 +26,8 @@ public abstract class RobotMasterPinpoint extends OpMode {
     Limelight limelight = null;
     Pattern obelisk = null;
     IntakeSubsystem intakeSubsystem = null;
+    Turret turret = null;
+
 
 
     Pattern currentPattern = new Pattern(Pattern.Ball.EMPTY, Pattern.Ball.EMPTY, Pattern.Ball.EMPTY);
@@ -107,6 +109,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
         limelight = new Limelight(hardwareMap);
         intakeSubsystem = new IntakeSubsystem(hardwareMap);
         odo = new Odo(hardwareMap);
+        turret = new Turret(hardwareMap);
 
 
     }
@@ -190,6 +193,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
         odo.showOdoTelemetry(telemetry);
         intakeSubsystem.showSpindexerTelemetry(telemetry);
         colorSensor.showColorSensorTelemetry(telemetry);
+        turret.updateTurret();
 
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
         telemetry.update();
