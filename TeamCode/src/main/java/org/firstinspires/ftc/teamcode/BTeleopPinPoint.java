@@ -152,7 +152,7 @@ public class BTeleopPinPoint extends RobotMasterPinpoint
         {
             intakeSubsystem.rotateSpindexerOneSlot();
         }
-        else if (gamepad1.cross)
+        else if (gamepad1.dpad_right)
         {
             intakeSubsystem.stopSpindexer();
         }

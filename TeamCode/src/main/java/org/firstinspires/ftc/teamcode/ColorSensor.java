@@ -57,7 +57,8 @@ public class ColorSensor
             isPurple = true;
             isGreen = false;
         }
-        else if (colors.green > greenThreshold && colors.red < 0.0015)        {
+        else if (colors.green > greenThreshold && colors.red < 0.0015)
+        {
             isGreen = true;
             isPurple = false;
         }

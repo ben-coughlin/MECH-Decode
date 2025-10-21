@@ -15,7 +15,7 @@ public class IntakeSubsystem
     private final Servo kicker;
     private final DcMotorEx intake;
     private final int spindexCountsPerRev = 8192; //REV-11-127 through bore encoder
-    private final int spindexCountsPerSlot = 2730; //TODO: tune this number
+    private final int spindexCountsPerSlot = 2500; //TODO: tune this number
     private int spindexerPosition = 0;
 
     // State machine for spindexer rotation
@@ -34,7 +34,8 @@ public class IntakeSubsystem
         intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        kicker.setPosition(0.3);
+        kicker.setPosition(0);
+
 
     }
 
@@ -109,7 +110,7 @@ public class IntakeSubsystem
     public void moveKickerVertical()
     {
         double kickerVertical = .5;
-       kicker.setPosition(kickerVertical);
+      kicker.setPosition(kickerVertical);
     }
 
     public void moveKickerHorizontal()
