@@ -18,7 +18,7 @@ public class Turret
     private final DcMotorEx flywheelLeft;
     private final DcMotorEx flywheelRight;
     private final Servo hood;
-    private final PIDController autoAim = new PIDController(0.01, 0.005, 0.0005);
+    private final PIDController autoAim = new PIDController(0.03, 0.005, 0.0005);
     private int turretPos;
     private double turretPower;
     private double flywheelLeftRPM;
@@ -65,7 +65,7 @@ public class Turret
 
     }
 
-    public void aimTurret(boolean useAutoAim, double limelightError, double manualTurnInput)
+    public void aimTurret(boolean useAutoAim, boolean isTargetVisible, double limelightError, double manualTurnInput)
     {
         double turretPower;
 
@@ -74,9 +74,14 @@ public class Turret
             turretPower = manualTurnInput;
             autoAim.reset();
         }
+        if(!isTargetVisible)
+        {
+            autoAim.reset();
+            turretPower = autoAim.calculatePID(getTurretPos());
+        }
         else
         {
-            turretPower = autoAim.calculatePID(limelightError);
+            turretPower = -autoAim.calculatePID(limelightError);
         }
         llError = limelightError;
         turret.setPower(turretPower);

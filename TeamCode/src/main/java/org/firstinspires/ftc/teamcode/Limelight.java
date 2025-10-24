@@ -12,7 +12,7 @@ public class Limelight extends RobotMasterPinpoint
     public static final int[] obeliskAprilTagIDs = {21, 22, 23};
     public static final int redGoalID = 24;
     public static final int blueGoalID = 20;
-    public final Limelight3A limelight;
+    private final Limelight3A limelight;
 
     private LLResult currResult = null;
 
