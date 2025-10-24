@@ -103,14 +103,12 @@ public abstract class RobotMasterPinpoint extends OpMode {
     @Override
     public void init() {
 
-
         drive = new MecanumDrivePinPoint(hardwareMap);
         colorSensor = new ColorSensor(hardwareMap);
         limelight = new Limelight(hardwareMap);
         intakeSubsystem = new IntakeSubsystem(hardwareMap);
         odo = new Odo(hardwareMap);
         turret = new Turret(hardwareMap);
-
 
     }
 
@@ -143,18 +141,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
     @Override
     public void loop() {
-        double startLoopTime = SystemClock.uptimeMillis();
-        //read everything once and only once per loop
-        colorSensor.updateDetection();
-        limelight.updateLimelight();
-        intakeSubsystem.updateIntakeSubsystem();
-        odo.updateOdo();
-        odo.showOdoTelemetry(telemetry);
-        mainAutoLoop();
-
-        telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
-        telemetry.update();
-        Log.i("Loop Time", String.valueOf(SystemClock.uptimeMillis() - startLoopTime));
+       mainAutoLoop();
     }
 
     public void initializeStateVariables() {
@@ -190,10 +177,13 @@ public abstract class RobotMasterPinpoint extends OpMode {
         limelight.updateLimelight();
         intakeSubsystem.updateIntakeSubsystem();
         odo.updateOdo();
+        turret.updateTurret();
+
         odo.showOdoTelemetry(telemetry);
+        turret.showAimTelemetry(telemetry);
         intakeSubsystem.showSpindexerTelemetry(telemetry);
         colorSensor.showColorSensorTelemetry(telemetry);
-        turret.updateTurret();
+
 
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
         telemetry.update();

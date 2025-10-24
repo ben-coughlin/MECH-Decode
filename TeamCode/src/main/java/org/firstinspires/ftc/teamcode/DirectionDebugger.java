@@ -36,6 +36,7 @@ import static org.firstinspires.ftc.teamcode.RobotPosition.worldYPosition;
 
 import android.os.SystemClock;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -60,7 +61,7 @@ import java.util.HashMap;
  */
 
 @TeleOp(name="Direction Debugger")
-
+@Disabled
 public class DirectionDebugger extends RobotMasterPinpoint
 {
     // Declare OpMode members.

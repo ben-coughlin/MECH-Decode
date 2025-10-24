@@ -12,7 +12,7 @@ public class Limelight extends RobotMasterPinpoint
     public static final int[] obeliskAprilTagIDs = {21, 22, 23};
     public static final int redGoalID = 24;
     public static final int blueGoalID = 20;
-    private Limelight3A limelight;
+    public final Limelight3A limelight;
 
     private LLResult currResult = null;
 
@@ -23,8 +23,6 @@ public class Limelight extends RobotMasterPinpoint
         telemetry.setMsTransmissionInterval(11);
         limelight.pipelineSwitch(0);
         limelight.start();
-
-        obelisk = new Pattern(Pattern.getObeliskPatternFromTag(Limelight.getTagId(limelight.getLatestResult())));
     }
 
 

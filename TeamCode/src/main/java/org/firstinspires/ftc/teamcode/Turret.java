@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -8,24 +10,41 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 public class Turret
 {
+    private final double TURRET_TICKS_PER_DEGREE = 4.27; //gobilda 435 rpm - 5203-2402-0014
+    private final double TURRET_MIN_LIMIT_TICKS = -450;
+    private final double TURRET_MAX_LIMIT_TICKS = 450;
+
     private final DcMotorEx turret;
-    private final DcMotorEx flywheel;
+    private final DcMotorEx flywheelLeft;
+    private final DcMotorEx flywheelRight;
     private final Servo hood;
-    private final PIDController autoAim = new PIDController(0.005, 0, 0);
+    private final PIDController autoAim = new PIDController(0.01, 0.005, 0.0005);
     private int turretPos;
     private double turretPower;
-    private double flywheelRPM;
-    private double flywheelPower;
+    private double flywheelLeftRPM;
+
+    private double llError = 0;
+
+
+    private double flywheelRightRPM;
+
+    private double flywheelLeftPower;
+    private double flywheelRightPower;
     private double hoodPos;
+
 
     public Turret(HardwareMap hwMap)
     {
         turret = hwMap.get(DcMotorEx.class, "turret");
-        flywheel = hwMap.get(DcMotorEx.class, "flywheel");
+        flywheelLeft = hwMap.get(DcMotorEx.class, "flywheelLeft");
+        flywheelRight = hwMap.get(DcMotorEx.class, "flywheelRight");
         hood = hwMap.get(Servo.class, "hood");
         turret.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
+        turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        turret.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        flywheelRight.setDirection(DcMotorSimple.Direction.REVERSE);
+        turret.setDirection(DcMotorSimple.Direction.REVERSE);
         autoAim.setReference(0);
-
 
     }
 
@@ -33,13 +52,16 @@ public class Turret
     {
         turretPos = turret.getCurrentPosition();
         turretPower = turret.getPower();
-        double flywheelVelocity = flywheel.getVelocity();
+        double flywheelLeftVelocity = flywheelLeft.getVelocity();
+        double flywheelRightVelocity = flywheelRight.getVelocity();
 
         hoodPos = hood.getPosition();
-        flywheelPower = flywheel.getPower();
+        flywheelLeftPower = flywheelLeft.getPower();
+        flywheelRightPower = flywheelRight.getPower();
 
         int flywheelCountsPerRev = 8192; //REV-11-127 through bore encoder
-        flywheelRPM = (flywheelVelocity * 60 / flywheelCountsPerRev);
+        flywheelLeftRPM = (flywheelLeftVelocity * 60 / flywheelCountsPerRev);
+        flywheelRightRPM = (flywheelRightVelocity * 60 / flywheelCountsPerRev);
 
     }
 
@@ -56,17 +78,16 @@ public class Turret
         {
             turretPower = autoAim.calculatePID(limelightError);
         }
-
+        llError = limelightError;
         turret.setPower(turretPower);
-
     }
+
     public void showAimTelemetry(Telemetry telemetry) {
         telemetry.addData("Turret PID Power", turret.getPower());
         telemetry.addData("Turret Position", turretPos);
+        telemetry.addData("LLError", llError);
+
     }
-
-
-
 
     public int getTurretPos()
     {
@@ -81,24 +102,43 @@ public class Turret
     {
         return turretPower;
     }
-    public void setTurretPower(double v)
+    public void setTurretPower(double turretPower)
     {
-        this.turretPower = turretPower;
+        turret.setPower(turretPower);
     }
 
-    public double getFlywheelRPM()
+    public double getFlywheelLeftRPM()
     {
-        return flywheelRPM;
+        return flywheelLeftRPM;
     }
 
-    public double getFlywheelPower()
+    public double getFlywheelLeftPower()
     {
-        return flywheelPower;
+        return flywheelLeftPower;
     }
 
-    public void setFlywheelPower(double flywheelPower)
+    public void setFlywheelLeftPower(double flywheelLeftPower)
     {
-        this.flywheelPower = flywheelPower;
+        flywheelLeft.setPower(flywheelLeftPower);
+    }
+    public double getFlywheelRightRPM()
+    {
+        return flywheelRightRPM;
+    }
+
+    public void setFlywheelRightRPM(double flywheelRightRPM)
+    {
+        this.flywheelRightRPM = flywheelRightRPM;
+    }
+
+    public double getFlywheelRightPower()
+    {
+        return flywheelRightPower;
+    }
+
+    public void setFlywheelRightPower(double flywheelRightPower)
+    {
+        flywheelRight.setPower(flywheelRightPower);
     }
 
     public double getHoodPos()
@@ -108,6 +148,6 @@ public class Turret
 
     public void setHoodPos(double hoodPos)
     {
-        this.hoodPos = hoodPos;
+        hood.setPosition(hoodPos);
     }
 }
