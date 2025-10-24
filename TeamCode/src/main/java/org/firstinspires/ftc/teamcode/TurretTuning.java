@@ -5,8 +5,8 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@TeleOp(name = "Turret Tuning")
-@Disabled
+@TeleOp(name = "Tur8ret Tuning")
+//@Disabled
 public class TurretTuning extends LinearOpMode {
 
     // You only need to declare the Turret object here.
