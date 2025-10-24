@@ -15,7 +15,7 @@ public class IntakeSubsystem
     private final Servo kicker;
     private final DcMotorEx intake;
     private final int spindexCountsPerRev = 8192; //REV-11-127 through bore encoder
-    private final int spindexCountsPerSlot = 2730; //TODO: tune this number
+    private final int spindexCountsPerSlot = 2500; //TODO: tune this number
     private int spindexerPosition = 0;
 
     // State machine for spindexer rotation
@@ -34,7 +34,7 @@ public class IntakeSubsystem
         intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        kicker.setPosition(0.3);
+        kicker.setPosition(0.4);
 
     }
 
@@ -45,7 +45,7 @@ public class IntakeSubsystem
 
         if (isRotating)
         {
-            if (spindexerPosition < desiredSpindexerTicks)
+            if (spindexerPosition > desiredSpindexerTicks)
             {
                 spindexer.setPower(SPINDEXER_POWER);
             }
@@ -60,6 +60,7 @@ public class IntakeSubsystem
     {
         telemetry.addData("Intake Encoder Ticks ", spindexerPosition);
         telemetry.addData("Intake Encoder Angle ", normalizeAngleFromTicks(spindexerPosition, spindexCountsPerRev));
+        telemetry.addData("kicker pos", kicker.getPosition());
     }
 
 
@@ -108,15 +109,25 @@ public class IntakeSubsystem
 
     public void moveKickerVertical()
     {
-        double kickerVertical = .5;
-       kicker.setPosition(kickerVertical);
+        double kickerVertical = .2;
+      kicker.setPosition(kickerVertical);
     }
 
     public void moveKickerHorizontal()
     {
-        double kickerHorizontal = 0;
+        double kickerHorizontal = 0.4;
         kicker.setPosition(kickerHorizontal);
     }
+    public double getKickerPos()
+    {
+        return kicker.getPosition();
+    }
+    public void setKickerPos(double kickerPos)
+    {
+        kicker.setPosition(kickerPos);
+    }
+
+
 
 
 }
