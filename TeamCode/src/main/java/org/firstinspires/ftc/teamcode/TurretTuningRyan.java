@@ -1,12 +1,16 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 @TeleOp(name = "Turret Tuning Ryan")
 @Disabled
-public class TurretTuningRyan extends RobotMasterPinpoint
+public class TurretTuningRyan extends OpMode
 {
+    private Turret turret;
+    private IntakeSubsystem intakeSubsystem;
+
     Toggle kickerToggle = new Toggle(false);
     double turretPower = 0;
     double flyLeftPower = 0;
@@ -16,18 +20,17 @@ public class TurretTuningRyan extends RobotMasterPinpoint
 
     @Override
     public void init() {
-        super.init();
+        turret = new Turret(hardwareMap);
+        intakeSubsystem = new IntakeSubsystem(hardwareMap);
     }
     @Override
     public void init_loop() {
-        super.init_loop();
     }
     @Override
     public void start() {
-        super.start();
     }
     @Override
-    public void mainLoop() {
+    public void loop() {
 
         turret.updateTurret();
         kickerToggle.updateToggle(gamepad1.square);
@@ -99,6 +102,5 @@ public class TurretTuningRyan extends RobotMasterPinpoint
     }
     @Override
     public void stop(){
-        super.stop();
     }
 }
