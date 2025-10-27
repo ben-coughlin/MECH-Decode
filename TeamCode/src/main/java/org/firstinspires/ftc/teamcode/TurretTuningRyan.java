@@ -16,19 +16,18 @@ public class TurretTuningRyan extends OpMode
     double flyLeftPower = 0;
     double flyRightPower = 0;
     double kickerPos = 0;
-    boolean hasBeenActivated = false;
+    boolean turretActivated = false;
+    boolean flyRightActivated = false;
+    boolean flyLeftActivated = false;
+    boolean hoodActivated = false;
+    boolean kickerActivated = false;
 
     @Override
     public void init() {
         turret = new Turret(hardwareMap);
         intakeSubsystem = new IntakeSubsystem(hardwareMap);
     }
-    @Override
-    public void init_loop() {
-    }
-    @Override
-    public void start() {
-    }
+
     @Override
     public void loop() {
 
@@ -36,50 +35,64 @@ public class TurretTuningRyan extends OpMode
         kickerToggle.updateToggle(gamepad1.square);
 
 
-        if (gamepad1.right_bumper && !hasBeenActivated) {
+        if (gamepad1.right_bumper && !turretActivated) {
             turretPower += 0.05;
-            hasBeenActivated = true;
+            turretActivated = true;
         }
-        else if (gamepad1.left_bumper && !hasBeenActivated) {
+        else if (gamepad1.left_bumper && !turretActivated) {
             turretPower -= 0.05;
-            hasBeenActivated = true;
+            turretActivated = true;
         }
-        if (gamepad1.dpad_up && !hasBeenActivated) {
+        else if (!gamepad1.right_bumper && !gamepad1.right_bumper) {
+            turretActivated = false;
+        }
+        if (gamepad1.dpad_up && !flyLeftActivated) {
             flyLeftPower += 0.05;
-            hasBeenActivated = true;
+            flyLeftActivated = true;
         }
-        else if (gamepad1.dpad_down && !hasBeenActivated) {
+        else if (gamepad1.dpad_down && !flyLeftActivated) {
             flyLeftPower -= 0.05;
-            hasBeenActivated = true;
+            flyLeftActivated = true;
         }
-        if(gamepad1.triangle && !hasBeenActivated)
+        else if (!gamepad1.dpad_down && !gamepad1.dpad_up) {
+            flyLeftActivated = false;
+        }
+        if(gamepad1.triangle && !flyRightActivated)
         {
             flyRightPower += 0.05;
-            hasBeenActivated = true;
+            flyRightActivated = true;
         }
-        else if(gamepad1.cross && !hasBeenActivated)
+        else if(gamepad1.cross && !flyRightActivated)
         {
             flyRightPower -= 0.05;
-            hasBeenActivated = true;
+            flyRightActivated = true;
         }
-        if (gamepad1.dpad_right && !hasBeenActivated) {
+        else if(!gamepad1.triangle && !gamepad1.cross) {
+            flyRightActivated = false;
+        }
+        if(gamepad1.dpad_right && !hoodActivated) {
             turret.setHoodPos(turret.getHoodPos() + 0.05);
-            hasBeenActivated = true;
+            hoodActivated = true;
         }
-        else if (gamepad1.dpad_left && !hasBeenActivated) {
+        else if(gamepad1.dpad_left && !hoodActivated) {
             turret.setHoodPos(turret.getHoodPos() - 0.05);
-            hasBeenActivated = true;
+            hoodActivated = true;
         }
-
-        if (gamepad1.square && !hasBeenActivated)
+        else if(!gamepad1.dpad_right && !gamepad1.dpad_left) {
+            hoodActivated = false;
+        }
+        if(gamepad1.square && !kickerActivated)
         {
             kickerPos += 0.05;
-            hasBeenActivated = true;
+            kickerActivated = true;
         }
-        else if(gamepad1.circle && !hasBeenActivated)
+        else if(gamepad1.circle && !kickerActivated)
         {
             kickerPos -= 0.05;
-            hasBeenActivated = true;
+            kickerActivated = true;
+        }
+        else if(!gamepad1.square && !gamepad1.circle) {
+            kickerActivated = false;
         }
         intakeSubsystem.showSpindexerTelemetry(telemetry);
 
@@ -97,10 +110,5 @@ public class TurretTuningRyan extends OpMode
         telemetry.addData("Press Triangle on Gamepad 1 to increase Flywheel Right Power", "Press X on Gamepad 1 to decrease Flywheel Right Power");
         telemetry.addData("Press Dpad Right on Gamepad 1 to increase Hood Position", "Press Dpad Left on Gamepad 1 to decrease Hood Position");
         telemetry.update();
-
-        hasBeenActivated = false;
-    }
-    @Override
-    public void stop(){
     }
 }
