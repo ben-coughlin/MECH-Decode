@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @TeleOp(name = "Turret Tuning")
-//@Disabled
+
 public class TurretTuning extends LinearOpMode {
 
     // You only need to declare the Turret object here.
@@ -54,7 +54,7 @@ public class TurretTuning extends LinearOpMode {
             turret.updateTurret();
 
 
-            turret.aimTurret(false, 0, manualTurretPower);
+            turret.aimTurret(false, true, 0, manualTurretPower);
             turret.setFlywheelLeftPower(manualFlywheelPower);
             turret.setFlywheelRightPower(manualFlywheelPower);
 

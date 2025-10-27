@@ -104,12 +104,13 @@ public class BTeleopPinPoint extends RobotMasterPinpoint
         isAutoAiming = autoAimToggle.getState();
 
 
-        limelight.updateLimelight();
-        if (limelight.limelight.getLatestResult().isValid())
+
+        if (limelight.getCurrResult().isValid() && !VisionUtils.isTagObelisk(VisionUtils.getTagId(limelight.getCurrResult())))
         {
             // && !Limelight.isTagObelisk(Limelight.getTagId(limelight.getCurrResult()))
             double llError = limelight.getCurrResult().getTx();
-            turret.aimTurret(isAutoAiming, llError, gamepad2.right_stick_x);
+
+            turret.aimTurret(isAutoAiming, llError == 0, llError, gamepad2.right_stick_x);
         }
 
 
