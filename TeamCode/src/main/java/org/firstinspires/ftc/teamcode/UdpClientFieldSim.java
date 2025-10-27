@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 public class UdpClientFieldSim {
+    public static UdpClientFieldSim clientSim;
 
     private DatagramSocket socket;
     private InetAddress serverAddress;
@@ -178,6 +179,34 @@ public class UdpClientFieldSim {
     }
 
     /**
+     * Sends a key-value pair to be displayed in the simulator's table.
+     * Message format: "kv:key,value"
+     *
+     * @param key   The key (identifier) for the data.
+     * @param value The string representation of the value.
+     */
+    public void sendKeyValue(String key, String value) {
+        if (!isInitialized()) return;
+        if (key == null || key.trim().isEmpty()) {
+            System.err.println("UdpClientFieldSim: Key cannot be null or empty. Message not sent.");
+            return;
+        }
+        // Ensure key/value do not contain commas to avoid breaking the simple parser.
+        // A more robust format would use quoting or a different delimiter.
+        if (key.contains(",")) {
+            System.err.println("UdpClientFieldSim: Key '" + key + "' contains a comma. Replacing with underscore.");
+            key = key.replace(',', '_');
+        }
+        if (value != null && value.contains(",")) {
+            System.err.println("UdpClientFieldSim: Value '" + value + "' contains a comma. Replacing with semicolon.");
+            value = value.replace(',', ';'); // Use a different character to avoid confusion
+        }
+
+        String message = String.format("kv:%s,%s", key, value != null ? value : "");
+        sendMessage(message);
+    }
+
+    /**
      * Closes the UDP socket.
      * Should be called when the client is no longer needed to release resources.
      */
@@ -204,6 +233,20 @@ public class UdpClientFieldSim {
 
         try {
             client.sendText("Client connected! Testing new line formats.");
+            Thread.sleep(500);
+
+            client.sendKeyValue("Robot Status", "Initializing");
+            client.sendKeyValue("Target Lock", "False");
+            client.sendKeyValue("Alliance", "BLUE");
+            Thread.sleep(500);
+
+            // ... later in the main method, for example after a position update
+            client.sendPosition(10.0, 20.0, 45.0);
+            client.sendKeyValue("Robot Status", "Moving to Target");
+            Thread.sleep(500);
+
+            // ... later, update a value
+            client.sendKeyValue("Target Lock", "True");
             Thread.sleep(500);
 
             client.sendPosition(10.0, 20.0, 45.0);
