@@ -1,71 +1,85 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-@TeleOp(name = "Turret TuningRyan")
+@TeleOp(name = "Turret Tuning Ryan")
 @Disabled
-public class TurretTuningRyan extends RobotMasterPinpoint
+public class TurretTuningRyan extends OpMode
 {
+    private Turret turret;
+    private IntakeSubsystem intakeSubsystem;
+
     Toggle kickerToggle = new Toggle(false);
     double turretPower = 0;
     double flyLeftPower = 0;
     double flyRightPower = 0;
     double kickerPos = 0;
+    boolean hasBeenActivated = false;
 
     @Override
     public void init() {
-        super.init();
+        turret = new Turret(hardwareMap);
+        intakeSubsystem = new IntakeSubsystem(hardwareMap);
     }
     @Override
     public void init_loop() {
-        super.init_loop();
     }
     @Override
     public void start() {
-        super.start();
     }
     @Override
-    public void mainLoop() {
+    public void loop() {
 
         turret.updateTurret();
         kickerToggle.updateToggle(gamepad1.square);
 
 
-        if (gamepad1.right_bumper) {
+        if (gamepad1.right_bumper && !hasBeenActivated) {
             turretPower += 0.05;
+            hasBeenActivated = true;
         }
-        else if (gamepad1.left_bumper) {
-            turretPower -= 0;
+        else if (gamepad1.left_bumper && !hasBeenActivated) {
+            turretPower -= 0.05;
+            hasBeenActivated = true;
         }
-        if (gamepad1.dpad_up) {
+        if (gamepad1.dpad_up && !hasBeenActivated) {
             flyLeftPower += 0.05;
+            hasBeenActivated = true;
         }
-        else if (gamepad1.dpad_down) {
+        else if (gamepad1.dpad_down && !hasBeenActivated) {
             flyLeftPower -= 0.05;
+            hasBeenActivated = true;
         }
-        if(gamepad1.triangle)
+        if(gamepad1.triangle && !hasBeenActivated)
         {
             flyRightPower += 0.05;
+            hasBeenActivated = true;
         }
-        else if(gamepad1.cross)
+        else if(gamepad1.cross && !hasBeenActivated)
         {
             flyRightPower -= 0.05;
+            hasBeenActivated = true;
         }
-        if (gamepad1.dpad_right) {
+        if (gamepad1.dpad_right && !hasBeenActivated) {
             turret.setHoodPos(turret.getHoodPos() + 0.05);
+            hasBeenActivated = true;
         }
-        else if (gamepad1.dpad_left) {
+        else if (gamepad1.dpad_left && !hasBeenActivated) {
             turret.setHoodPos(turret.getHoodPos() - 0.05);
+            hasBeenActivated = true;
         }
 
-        if (gamepad1.square)
+        if (gamepad1.square && !hasBeenActivated)
         {
             kickerPos += 0.05;
+            hasBeenActivated = true;
         }
-        else if(gamepad1.circle)
+        else if(gamepad1.circle && !hasBeenActivated)
         {
-            kickerPos += 0.05;
+            kickerPos -= 0.05;
+            hasBeenActivated = true;
         }
         intakeSubsystem.showSpindexerTelemetry(telemetry);
 
@@ -83,9 +97,10 @@ public class TurretTuningRyan extends RobotMasterPinpoint
         telemetry.addData("Press Triangle on Gamepad 1 to increase Flywheel Right Power", "Press X on Gamepad 1 to decrease Flywheel Right Power");
         telemetry.addData("Press Dpad Right on Gamepad 1 to increase Hood Position", "Press Dpad Left on Gamepad 1 to decrease Hood Position");
         telemetry.update();
+
+        hasBeenActivated = false;
     }
     @Override
     public void stop(){
-        super.stop();
     }
 }
