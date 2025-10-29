@@ -18,7 +18,7 @@ public class Turret
     private final DcMotorEx flywheelLeft;
     private final DcMotorEx flywheelRight;
     private final Servo hood;
-    private final PIDController autoAim = new PIDController(0.03, 0.005, 0.0005);
+     final PIDController autoAim = new PIDController(0.023, 0.001, 0.3);
     private int turretPos;
     private double turretPower;
     private double flywheelLeftRPM;
@@ -65,25 +65,21 @@ public class Turret
 
     }
 
-    public void aimTurret(boolean useAutoAim, boolean isTargetVisible, double limelightError, double manualTurnInput)
+    public void aimTurret(boolean useAutoAim, double limelightError, double manualTurnInput)
     {
         double turretPower;
 
-        if(!useAutoAim)
+        if(useAutoAim)
+        {
+            llError = limelightError;
+            turretPower = -autoAim.calculatePID(limelightError);
+        }
+        else
         {
             turretPower = manualTurnInput;
             autoAim.reset();
         }
-        if(!isTargetVisible)
-        {
-            autoAim.reset();
-            turretPower = autoAim.calculatePID(getTurretPos());
-        }
-        else
-        {
-            turretPower = -autoAim.calculatePID(limelightError);
-        }
-        llError = limelightError;
+
         turret.setPower(turretPower);
     }
 
@@ -91,7 +87,6 @@ public class Turret
         telemetry.addData("Turret PID Power", turret.getPower());
         telemetry.addData("Turret Position", turretPos);
         telemetry.addData("LLError", llError);
-
     }
 
     public int getTurretPos()
@@ -135,7 +130,6 @@ public class Turret
     {
         this.flywheelRightRPM = flywheelRightRPM;
     }
-
     public double getFlywheelRightPower()
     {
         return flywheelRightPower;
@@ -145,7 +139,6 @@ public class Turret
     {
         flywheelRight.setPower(flywheelRightPower);
     }
-
     public double getHoodPos()
     {
         return hoodPos;
@@ -155,4 +148,11 @@ public class Turret
     {
         hood.setPosition(hoodPos);
     }
+    public void setFlywheelPower(double flywheelPower)
+    {
+        setFlywheelRightPower(flywheelPower);
+        setFlywheelLeftPower(flywheelPower);
+    }
+
 }
+

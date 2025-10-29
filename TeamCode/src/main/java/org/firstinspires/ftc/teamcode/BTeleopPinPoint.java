@@ -35,16 +35,28 @@ import static org.firstinspires.ftc.teamcode.MovementVars.movement_y;
 
 
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 
 @TeleOp(name = "BTeleop PinPoint")
 public class BTeleopPinPoint extends RobotMasterPinpoint
 {
 
+    //state machines!!
+    enum TeleopStates{
+        IDLE,
+        DEBUG,
+        INTAKE,
+        FIRE_BALL,
+        OUTTAKE,
 
+    }
+
+    private TeleopStates currState = TeleopStates.IDLE;
+    private ElapsedTime stateTimer = new ElapsedTime();
     PIDController headingHold = new PIDController(0.03, 0, 0.0, true); //TODO: tune these!
-    Toggle intakeToggle = new Toggle(false);
-    Toggle kickerToggle = new Toggle(false);
+    Toggle circleToggle = new Toggle(false);
+    Toggle squareToggle = new Toggle(false);
     Toggle autoAimToggle = new Toggle(true);
 
     boolean isAutoHeading = false;
@@ -91,30 +103,14 @@ public class BTeleopPinPoint extends RobotMasterPinpoint
     {
         super.mainLoop();
 
-        intakeToggle.updateToggle(gamepad1.circle);
-        kickerToggle.updateToggle(gamepad1.square);
+        //toggles - - - - - - - - - -
+        circleToggle.updateToggle(gamepad1.circle);
+        squareToggle.updateToggle(gamepad1.square);
         autoAimToggle.updateToggle(gamepad2.square);
 
-
-        double error = 0.0;
-
+        //driving stuff - - - - - - - - - - -
         movement_y = -gamepad1.left_stick_y;
         movement_x = gamepad1.left_stick_x;
-
-        isAutoAiming = autoAimToggle.getState();
-
-
-
-        if (limelight.getCurrResult().isValid() && !VisionUtils.isTagObelisk(VisionUtils.getTagId(limelight.getCurrResult())))
-        {
-            // && !Limelight.isTagObelisk(Limelight.getTagId(limelight.getCurrResult()))
-            double llError = limelight.getCurrResult().getTx();
-
-            turret.aimTurret(isAutoAiming, llError == 0, llError, gamepad2.right_stick_x);
-        }
-
-
-
 
         double currentHeadingRad = RobotPosition.worldAngle_rad;
         double turnDeadzone = 0.05;
@@ -140,35 +136,98 @@ public class BTeleopPinPoint extends RobotMasterPinpoint
         drive.applyMovementDirectionBasedFieldRelative(-gamepad1.left_stick_y, gamepad1.left_stick_x, movement_turn, isAutoHeading);
 
 
-        if (intakeToggle.getState())
+
+        //limelight  - - - - - - - - - - - -
+        isAutoAiming = autoAimToggle.getState();
+
+        if (limelight.getCurrResult() != null && limelight.getCurrResult().isValid() && !VisionUtils.isTagObelisk(VisionUtils.getTagId(limelight.getCurrResult())))
         {
-            intakeSubsystem.turnIntakeOn();
+            double llError = limelight.getCurrResult().getTx();
+
+            turret.aimTurret(isAutoAiming, llError, gamepad2.right_stick_x);
         }
         else
         {
-            intakeSubsystem.turnIntakeOff();
+            turret.aimTurret(false, 0, gamepad2.right_stick_x);
         }
 
-        if (gamepad1.dpad_left)
+
+        switch(currState)
         {
-            intakeSubsystem.rotateSpindexerOneSlot();
-        }
-        else if (gamepad1.dpad_right)
-        {
-            intakeSubsystem.stopSpindexer();
-        }
+            case IDLE:
+                turret.setFlywheelPower(0);
+                intakeSubsystem.turnIntakeOff();
+                intakeSubsystem.stopSpindexer();
+                intakeSubsystem.moveKickerHorizontal();
 
-        if (kickerToggle.getState())
-        {
-            intakeSubsystem.moveKickerVertical();
+                if(circleToggle.getState())
+                {
+                    resetStateVars();
+                    currState = TeleopStates.INTAKE;
+                }
+                if(squareToggle.getState())
+                {
+                    resetStateVars();
+                    currState = TeleopStates.FIRE_BALL;
+                }
+
+                if(gamepad1.dpad_down)
+                {
+                    resetStateVars();
+                    currState = TeleopStates.OUTTAKE;
+                }
+                break;
+
+            case INTAKE:
+                intakeSubsystem.turnIntakeOn();
+                if(!circleToggle.getState())
+                {
+                    //intakeSubsystem.rotateSpindexerOneSlot();
+                    intakeSubsystem.turnIntakeOff();
+                   currState = TeleopStates.IDLE;
+
+                }
+
+                break;
+            case FIRE_BALL:
+
+                turret.setFlywheelPower(1);
+                if(stateTimer.seconds() >= 5)
+                {
+                    intakeSubsystem.moveKickerVertical();
+
+                }
+                if(stateTimer.seconds() >= 5.5)
+                {
+                    intakeSubsystem.moveKickerHorizontal();
+
+                }
+                if(!squareToggle.getState())
+                {
+                    turret.setFlywheelPower(0);
+                    currState = TeleopStates.IDLE;
+                }
+
+                break;
+            case OUTTAKE:
+                intakeSubsystem.outtake();
+                if(stateTimer.seconds() >= 1)
+                {
+                    intakeSubsystem.turnIntakeOff();
+                    currState = TeleopStates.IDLE;
+                }
+
+                telemetry.addData("Robot State", currState.toString());
+                telemetry.addData("State Timer (s)", "%.2f", stateTimer.seconds());
         }
-        else
-        {
-            intakeSubsystem.moveKickerHorizontal();
-        }
-
-
-
 
     }
+
+    public void resetStateVars()
+    {
+        stateTimer.reset();
+    }
+
+
+
 }

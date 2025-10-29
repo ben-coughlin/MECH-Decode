@@ -101,6 +101,11 @@ public class IntakeSubsystem
         double intakePower = 1;
         intake.setPower(intakePower);
     }
+    public void outtake()
+    {
+        intake.setPower(-1);
+    }
+
 
     public void turnIntakeOff()
     {
@@ -109,7 +114,7 @@ public class IntakeSubsystem
 
     public void moveKickerVertical()
     {
-        double kickerVertical = .2;
+        double kickerVertical = 0.05;
       kicker.setPosition(kickerVertical);
     }
 

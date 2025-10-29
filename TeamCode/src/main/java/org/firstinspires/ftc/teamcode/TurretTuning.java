@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -54,7 +53,7 @@ public class TurretTuning extends LinearOpMode {
             turret.updateTurret();
 
 
-            turret.aimTurret(false, true, 0, manualTurretPower);
+            turret.aimTurret(false, 0, manualTurretPower);
             turret.setFlywheelLeftPower(manualFlywheelPower);
             turret.setFlywheelRightPower(manualFlywheelPower);
 

@@ -26,7 +26,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
 
     private static final String SIMULATOR_HOST = "192.168.43.22";
     private static final int SIMULATOR_PORT = 7777;
-    public static UdpClientFieldSim clientSim;
+
 
     public enum progStates {
 
@@ -59,7 +59,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
 
         //isAuto = true;
 
-        clientSim = new UdpClientFieldSim(SIMULATOR_HOST, SIMULATOR_PORT);
+
     }
 
     private int timeDelay = 0;

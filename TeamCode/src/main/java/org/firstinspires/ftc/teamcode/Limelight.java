@@ -79,10 +79,5 @@ public class Limelight extends RobotMasterPinpoint
         return currResult;
     }
 
-    public void setCurrResult(LLResult currResult)
-    {
-        this.currResult = currResult;
-    }
-
 
 }

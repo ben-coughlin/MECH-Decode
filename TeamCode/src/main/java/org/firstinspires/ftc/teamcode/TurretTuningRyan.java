@@ -5,7 +5,6 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 @TeleOp(name = "Turret Tuning Ryan")
-@Disabled
 public class TurretTuningRyan extends OpMode
 {
     private Turret turret;
@@ -105,6 +104,7 @@ public class TurretTuningRyan extends OpMode
         telemetry.addData("Current Flywheel Left Power", turret.getFlywheelLeftPower());
         telemetry.addData("Current Flywheel Right Power", turret.getFlywheelRightPower());
         telemetry.addData("Current Hood Position", turret.getHoodPos());
+        telemetry.addData("Current Kicker Position", kickerPos);
         telemetry.addData("Press right bumper on Gamepad 1 to increase Turret Power", "Press Left Bumper on Gamepad 1 to decrease Turret Power");
         telemetry.addData("Press Dpad Up on Gamepad 1 to increase Flywheel Left Power", "Press Dpad Down on Gamepad 1 to decrease Flywheel Left Power");
         telemetry.addData("Press Triangle on Gamepad 1 to increase Flywheel Right Power", "Press X on Gamepad 1 to decrease Flywheel Right Power");

@@ -10,13 +10,7 @@ import android.util.Log;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
-
 import java.util.ArrayList;
-import java.util.Locale;
 
 public abstract class RobotMasterPinpoint extends OpMode {
     MecanumDrivePinPoint drive = null;
@@ -28,9 +22,11 @@ public abstract class RobotMasterPinpoint extends OpMode {
     IntakeSubsystem intakeSubsystem = null;
     Turret turret = null;
 
+    Pattern spindexer = new Pattern(Pattern.Ball.EMPTY, Pattern.Ball.EMPTY, Pattern.Ball.EMPTY);
 
-
-    Pattern currentPattern = new Pattern(Pattern.Ball.EMPTY, Pattern.Ball.EMPTY, Pattern.Ball.EMPTY);
+    private UdpClientFieldSim client;
+    private UdpClientPlot clientPlot;
+    private boolean DEBUG = false;
 
     public boolean isAuto = false;
     public static boolean resetEncoders = false;
@@ -110,6 +106,12 @@ public abstract class RobotMasterPinpoint extends OpMode {
         odo = new Odo(hardwareMap);
         turret = new Turret(hardwareMap);
 
+        client = new UdpClientFieldSim("192.168.43.83", 7777);
+        clientPlot = new UdpClientPlot("192.168.43.83", 7778);
+
+        clientPlot.sendYLimits(SystemClock.uptimeMillis(), 0.5, 0);
+        clientPlot.sendYUnits(SystemClock.uptimeMillis() + 1, "PID");
+
     }
 
     @Override
@@ -171,7 +173,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
     public void mainLoop() {
 
-        double startLoopTime = SystemClock.uptimeMillis();
+        long startLoopTime = SystemClock.uptimeMillis();
         //read everything once and only once per loop
         colorSensor.updateDetection();
         limelight.updateLimelight();
@@ -185,10 +187,22 @@ public abstract class RobotMasterPinpoint extends OpMode {
         colorSensor.showColorSensorTelemetry(telemetry);
 
 
+        clientPlot.sendLineY(startLoopTime, turret.autoAim.getProportional(), 1);
+        clientPlot.sendLineY(startLoopTime, turret.autoAim.getDerivative(), 2);
+        clientPlot.sendLineY(startLoopTime, turret.autoAim.getIntegral(), 3);
+
+
+
+
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
         telemetry.update();
         Log.i("Loop Time", String.valueOf(SystemClock.uptimeMillis() - startLoopTime));
     }
+
+
+
+
+
 
 
 }
