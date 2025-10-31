@@ -28,7 +28,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
     private static final int SIMULATOR_PORT = 7777;
 
 
-    public enum progStates {
+    private enum progStates {
 
         driveForward,
         strafeLeft,
@@ -90,7 +90,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
     private boolean hasGrabbedPixels = false;
 
     private double cutOffTime = 22.5;
-    private String currentState = String.valueOf(AutoTemplate.progStates.values()[AutoTemplate.programStage]);
+    private String currentState = String.valueOf(AutoSummerPinPoint.progStates.values()[AutoSummerPinPoint.programStage]);
 
     private boolean past5In = false;
 

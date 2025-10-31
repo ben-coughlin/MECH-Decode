@@ -34,25 +34,29 @@ import static org.firstinspires.ftc.teamcode.MovementVars.movement_x;
 import static org.firstinspires.ftc.teamcode.MovementVars.movement_y;
 
 
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import android.os.SystemClock;
+
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import java.util.ArrayList;
 
-@TeleOp(name = "BTeleop PinPoint")
-public class BTeleopPinPoint extends RobotMasterPinpoint
+
+@com.qualcomm.robotcore.eventloop.opmode.TeleOp(name = "TeleOp")
+public class TeleOp extends RobotMasterPinpoint
 {
 
     //state machines!!
-    enum TeleopStates{
+    enum progStates{
         IDLE,
         DEBUG,
-        INTAKE,
+        STOP,
+        SHOOT_PREP,
+        READY_TO_SHOOT,
         FIRE_BALL,
         OUTTAKE,
 
     }
 
-    private TeleopStates currState = TeleopStates.IDLE;
     private ElapsedTime stateTimer = new ElapsedTime();
     PIDController headingHold = new PIDController(0.03, 0, 0.0, true); //TODO: tune these!
     Toggle circleToggle = new Toggle(false);
@@ -102,6 +106,9 @@ public class BTeleopPinPoint extends RobotMasterPinpoint
     public void mainLoop()
     {
         super.mainLoop();
+        String currentState = progStates.values()[programStage].name();
+        debugKeyValues.put("Superstructure State", currentState);
+        telemetry.addData("Superstructure State", currentState);
 
         //toggles - - - - - - - - - -
         circleToggle.updateToggle(gamepad1.circle);
@@ -152,80 +159,108 @@ public class BTeleopPinPoint extends RobotMasterPinpoint
         }
 
 
-        switch(currState)
-        {
-            case IDLE:
-                turret.setFlywheelPower(0);
-                intakeSubsystem.turnIntakeOff();
-                intakeSubsystem.stopSpindexer();
-                intakeSubsystem.moveKickerHorizontal();
 
-                if(circleToggle.getState())
-                {
-                    resetStateVars();
-                    currState = TeleopStates.INTAKE;
-                }
-                if(squareToggle.getState())
-                {
-                    resetStateVars();
-                    currState = TeleopStates.FIRE_BALL;
-                }
-
-                if(gamepad1.dpad_down)
-                {
-                    resetStateVars();
-                    currState = TeleopStates.OUTTAKE;
-                }
-                break;
-
-            case INTAKE:
-                intakeSubsystem.turnIntakeOn();
-                if(!circleToggle.getState())
-                {
-                    //intakeSubsystem.rotateSpindexerOneSlot();
-                    intakeSubsystem.turnIntakeOff();
-                   currState = TeleopStates.IDLE;
-
-                }
-
-                break;
-            case FIRE_BALL:
-
-                turret.setFlywheelPower(1);
-                if(stateTimer.seconds() >= 5)
-                {
-                    intakeSubsystem.moveKickerVertical();
-
-                }
-                if(stateTimer.seconds() >= 5.5)
-                {
-                    intakeSubsystem.moveKickerHorizontal();
-
-                }
-                if(!squareToggle.getState())
-                {
-                    turret.setFlywheelPower(0);
-                    currState = TeleopStates.IDLE;
-                }
-
-                break;
-            case OUTTAKE:
-                intakeSubsystem.outtake();
-                if(stateTimer.seconds() >= 1)
-                {
-                    intakeSubsystem.turnIntakeOff();
-                    currState = TeleopStates.IDLE;
-                }
-
-                telemetry.addData("Robot State", currState.toString());
-                telemetry.addData("State Timer (s)", "%.2f", stateTimer.seconds());
+        if (programStage == progStates.IDLE.ordinal()) {
+            if (gamepad1.dpad_up) {
+                nextStage(progStates.SHOOT_PREP.ordinal());
+            }
+            else if (gamepad1.circle) {
+                nextStage(progStates.OUTTAKE.ordinal());
+            }
         }
 
-    }
+        if (programStage == progStates.READY_TO_SHOOT.ordinal()) {
+            //
+            if (gamepad1.dpad_down) {
+                nextStage(progStates.FIRE_BALL.ordinal());
+            }
+            // cancels the shot
+            else if (gamepad1.right_bumper) {
+                nextStage(progStates.IDLE.ordinal());
+            }
+        }
+        //estop
+        if (gamepad1.left_bumper) {
+            nextStage(progStates.STOP.ordinal());
+        }
 
-    public void resetStateVars()
-    {
-        stateTimer.reset();
+
+
+
+
+        //safe home state
+        if (programStage == progStates.IDLE.ordinal()) {
+            if (stageFinished) {
+                initializeStateVariables();
+            }
+            turret.setFlywheelPower(0);
+            intakeSubsystem.turnIntakeOff();
+            intakeSubsystem.stopSpindexer();
+            intakeSubsystem.moveKickerHorizontal();
+        }
+        if (programStage == progStates.SHOOT_PREP.ordinal()) {
+            if (stageFinished) {
+                initializeStateVariables();
+                turret.setFlywheelPower(1);
+            }
+
+            if (SystemClock.uptimeMillis() - stateStartTime > 5000) {
+                nextStage(progStates.READY_TO_SHOOT.ordinal());
+            }
+        }
+
+        if (programStage == progStates.READY_TO_SHOOT.ordinal()) {
+            if (stageFinished) {
+                initializeStateVariables();
+            }
+            turret.setFlywheelPower(1);
+
+        }
+
+        if (programStage == progStates.FIRE_BALL.ordinal()) {
+            if (stageFinished) {
+                initializeStateVariables();
+                intakeSubsystem.moveKickerVertical();
+            }
+
+
+            if (SystemClock.uptimeMillis() - stateStartTime > 500) {
+                intakeSubsystem.moveKickerHorizontal();
+                nextStage(progStates.READY_TO_SHOOT.ordinal());
+            }
+        }
+
+        if (programStage == progStates.OUTTAKE.ordinal()) {
+            if (stageFinished) {
+
+                initializeStateVariables();
+            }
+
+            intakeSubsystem.outtake();
+            if(stateTimer.seconds() >= 1)
+            {
+                intakeSubsystem.turnIntakeOff();
+                nextStage(progStates.IDLE.ordinal());
+            }
+
+
+        }
+
+
+        //kills everything
+        if (programStage == progStates.STOP.ordinal()) {
+            if (stageFinished) {
+
+                initializeStateVariables();
+            }
+            drive.stopAllMovementDirectionBased();
+            intakeSubsystem.turnIntakeOff();
+            intakeSubsystem.stopSpindexer();
+            intakeSubsystem.moveKickerHorizontal();
+            turret.setFlywheelPower(0);
+
+        }
+
     }
 
 

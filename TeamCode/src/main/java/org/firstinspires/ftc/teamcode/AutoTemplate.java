@@ -16,7 +16,7 @@ public class AutoTemplate extends RobotMasterPinpoint {
     private final double SCALE_FACTOR = 1.0;
 
     //this enum is the master list of all states that should be executed
-    public enum progStates {
+    private enum progStates {
 
         driveForward,
         strafeLeft,
@@ -50,16 +50,16 @@ public class AutoTemplate extends RobotMasterPinpoint {
 
     }
 
-    private String currentState = String.valueOf(progStates.values()[AutoTemplate.programStage]);
-
     @Override
     public void mainLoop() {
+
+        String currentState = progStates.values()[programStage].name();
 
 
         telemetry.addData("Superstructure State", currentState);
         telemetry.addData("Path State", programStage);
-        System.out.println("Superstructure State: " + currentState);
-        System.out.println("Path State: " + programStage);
+       debugKeyValues.put("Superstructure State", currentState);
+       debugKeyValues.put("Path State", String.valueOf(programStage));
 
         if (programStage == progStates.driveForward.ordinal()) {
             if (stageFinished) {

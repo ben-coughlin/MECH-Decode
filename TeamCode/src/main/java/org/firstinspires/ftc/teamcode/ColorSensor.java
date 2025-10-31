@@ -21,7 +21,7 @@ public class ColorSensor
     final double purpleThreshold = 0.003;
     final double greenThreshold = 0.002;
     final float gain = 2;
-    final float[] hsvValues = new float[3];
+    private final float[] hsvValues = new float[3];
 
 
     public ColorSensor(HardwareMap hwMap)
@@ -80,16 +80,11 @@ public class ColorSensor
         }
     }
 
-
-    public boolean isPurple()
+    public float[] getHsvValues()
     {
-        return isPurple;
+        return hsvValues;
     }
 
-    public boolean isGreen()
-    {
-        return isGreen;
-    }
 
 
 }

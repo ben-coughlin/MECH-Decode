@@ -11,29 +11,35 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public abstract class RobotMasterPinpoint extends OpMode {
-    MecanumDrivePinPoint drive = null;
 
+    //hardware - - - - - -
+    MecanumDrivePinPoint drive = null;
     Odo odo = null;
     ColorSensor colorSensor = null;
     Limelight limelight = null;
     Pattern obelisk = null;
     IntakeSubsystem intakeSubsystem = null;
     Turret turret = null;
+    Spindexer spindexer = null;
 
-    Pattern spindexer = new Pattern(Pattern.Ball.EMPTY, Pattern.Ball.EMPTY, Pattern.Ball.EMPTY);
-
+    // ftcsim stuff - - - - - - - -
     private UdpClientFieldSim client;
     private UdpClientPlot clientPlot;
-    private boolean DEBUG = false;
 
+    private boolean DEBUGGING = false;
+    //global keyvalue store
+    public HashMap<String, String> debugKeyValues = new HashMap<>();
+
+    //misc
     public boolean isAuto = false;
     public static boolean resetEncoders = false;
 
 
 
-//clocks
+    //clocks
 
     ElapsedTime runtime = new ElapsedTime();
 
@@ -41,8 +47,6 @@ public abstract class RobotMasterPinpoint extends OpMode {
     //////// STATE MACHINE STUFF BELOW DO NOT TOUCH ////////
     public boolean stageFinished = true;
     public long stateStartTime = 0;
-
-    public long programStartTime = 0;//time the program starts
     public static int programStage = 0;
 
     /**
@@ -52,25 +56,13 @@ public abstract class RobotMasterPinpoint extends OpMode {
     public double stateStartingY = 0;
     public double stateStartingAngle_rad = 0;
 
-    private final boolean DEBUGGING = false;
-
-    private boolean inDebugState = false;
 
     //holds the stage we are going to next
     int nextStage = 0;
 
     public void nextStage(int ordinal) {
         nextStage = ordinal;
-        //waits for a if on debug mode
-        if (!DEBUGGING) {
-            incrementStage();
-            inDebugState = false;
-        }
-
-        //go into debug mode
-        if (DEBUGGING) {
-            inDebugState = true;
-        }
+        incrementStage();
     }
 
     /**
@@ -85,15 +77,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
         programStage = nextStage;
         stageFinished = true;
     }
-    ///////////////////////////////
 
-    public ArrayList<CurvePoint> mirrorPoints(ArrayList<CurvePoint> points) {
-        ArrayList<CurvePoint> newPoints = new ArrayList<>();
-        for (CurvePoint point : points) {
-            newPoints.add(new CurvePoint(-point.x, point.y, point.moveSpeed, point.turnSpeed, point.followDistance, point.pointLength, point.slowDownTurnRadians, point.slowDownTurnRadians));
-        }
-        return newPoints;
-    }
 
 
     @Override
@@ -105,12 +89,14 @@ public abstract class RobotMasterPinpoint extends OpMode {
         intakeSubsystem = new IntakeSubsystem(hardwareMap);
         odo = new Odo(hardwareMap);
         turret = new Turret(hardwareMap);
+        spindexer = new Spindexer(hardwareMap, colorSensor);
 
-        client = new UdpClientFieldSim("192.168.43.83", 7777);
-        clientPlot = new UdpClientPlot("192.168.43.83", 7778);
+        if(gamepad1.options)
+        {
+            DEBUGGING = true;
+            initDebugTools();
+        }
 
-        clientPlot.sendYLimits(SystemClock.uptimeMillis(), 0.5, 0);
-        clientPlot.sendYUnits(SystemClock.uptimeMillis() + 1, "PID");
 
     }
 
@@ -137,13 +123,15 @@ public abstract class RobotMasterPinpoint extends OpMode {
     @Override
     public void stop()
     {
+        clientPlot.close();
+        client.close();
         drive.stopAllMovementDirectionBased();
     }
 
 
     @Override
     public void loop() {
-       mainAutoLoop();
+       mainLoop();
     }
 
     public void initializeStateVariables() {
@@ -155,20 +143,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
         stageFinished = false;
     }
 
-    private void mainAutoLoop() {
-        if (inDebugState) {
-            drive.stopAllMovementDirectionBased();
-            // ControlMovement(); CHANGE THIS
 
-            telemetry.addLine("in debug state");
-            if (gamepad1.a) {
-                incrementStage();
-                inDebugState = false;
-            }
-        } else {
-            mainLoop();
-        }
-    }
 
 
     public void mainLoop() {
@@ -180,24 +155,47 @@ public abstract class RobotMasterPinpoint extends OpMode {
         intakeSubsystem.updateIntakeSubsystem();
         odo.updateOdo();
         turret.updateTurret();
+        spindexer.update();
 
         odo.showOdoTelemetry(telemetry);
         turret.showAimTelemetry(telemetry);
         intakeSubsystem.showSpindexerTelemetry(telemetry);
         colorSensor.showColorSensorTelemetry(telemetry);
 
-
-        clientPlot.sendLineY(startLoopTime, turret.autoAim.getProportional(), 1);
-        clientPlot.sendLineY(startLoopTime, turret.autoAim.getDerivative(), 2);
-        clientPlot.sendLineY(startLoopTime, turret.autoAim.getIntegral(), 3);
-
-
-
-
+        if(DEBUGGING)
+        {
+            addDebugTelemetry(startLoopTime);
+        }
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
         telemetry.update();
         Log.i("Loop Time", String.valueOf(SystemClock.uptimeMillis() - startLoopTime));
     }
+
+    /**
+     * adds debug telemetry when in debug mode - we don't want this normally bc of loop times
+     */
+    private void addDebugTelemetry(long startLoopTime)
+    {
+
+        for(String k : debugKeyValues.keySet())
+        {
+            client.sendKeyValue(k, debugKeyValues.get(k));
+        }
+
+        clientPlot.sendLineY(startLoopTime, turret.autoAim.getProportional(), 1);
+        clientPlot.sendLineY(startLoopTime, turret.autoAim.getDerivative(), 2);
+        clientPlot.sendLineY(startLoopTime, turret.autoAim.getIntegral(), 3);
+    }
+    private void initDebugTools()
+    {
+        client = new UdpClientFieldSim("192.168.43.83", 7777);
+        clientPlot = new UdpClientPlot("192.168.43.83", 7778);
+
+        clientPlot.sendYLimits(SystemClock.uptimeMillis(), 0.5, 0);
+        clientPlot.sendYUnits(SystemClock.uptimeMillis() + 1, "PID");
+    }
+
+
 
 
 
