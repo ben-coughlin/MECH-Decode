@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 @TeleOp(name = "Turret Tuning Ryan")
+@Disabled
 public class TurretTuningRyan extends OpMode
 {
     private Turret turret;
@@ -93,7 +94,7 @@ public class TurretTuningRyan extends OpMode
         else if(!gamepad1.square && !gamepad1.circle) {
             kickerActivated = false;
         }
-        intakeSubsystem.showSpindexerTelemetry(telemetry);
+
 
         turret.setTurretPower(turretPower);
         turret.setFlywheelLeftPower(flyLeftPower);

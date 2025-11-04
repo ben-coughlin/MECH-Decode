@@ -10,7 +10,7 @@ import android.util.Log;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import java.util.ArrayList;
+
 import java.util.HashMap;
 
 public abstract class RobotMasterPinpoint extends OpMode {
@@ -20,7 +20,6 @@ public abstract class RobotMasterPinpoint extends OpMode {
     Odo odo = null;
     ColorSensor colorSensor = null;
     Limelight limelight = null;
-    Pattern obelisk = null;
     IntakeSubsystem intakeSubsystem = null;
     Turret turret = null;
     Spindexer spindexer = null;
@@ -48,6 +47,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
     public boolean stageFinished = true;
     public long stateStartTime = 0;
     public static int programStage = 0;
+    public String currentState;
 
     /**
      * STATE STARTING VARIABLES
@@ -123,8 +123,6 @@ public abstract class RobotMasterPinpoint extends OpMode {
     @Override
     public void stop()
     {
-        clientPlot.close();
-        client.close();
         drive.stopAllMovementDirectionBased();
     }
 
@@ -152,20 +150,21 @@ public abstract class RobotMasterPinpoint extends OpMode {
         //read everything once and only once per loop
         colorSensor.updateDetection();
         limelight.updateLimelight();
-        intakeSubsystem.updateIntakeSubsystem();
         odo.updateOdo();
         turret.updateTurret();
         spindexer.update();
 
         odo.showOdoTelemetry(telemetry);
         turret.showAimTelemetry(telemetry);
-        intakeSubsystem.showSpindexerTelemetry(telemetry);
         colorSensor.showColorSensorTelemetry(telemetry);
+        spindexer.showTelemetry(telemetry);
+        spindexer.intakeNewBall();
 
         if(DEBUGGING)
         {
             addDebugTelemetry(startLoopTime);
         }
+        telemetry.addData("Superstructure State", currentState);
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
         telemetry.update();
         Log.i("Loop Time", String.valueOf(SystemClock.uptimeMillis() - startLoopTime));
@@ -182,9 +181,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
             client.sendKeyValue(k, debugKeyValues.get(k));
         }
 
-        clientPlot.sendLineY(startLoopTime, turret.autoAim.getProportional(), 1);
-        clientPlot.sendLineY(startLoopTime, turret.autoAim.getDerivative(), 2);
-        clientPlot.sendLineY(startLoopTime, turret.autoAim.getIntegral(), 3);
+
     }
     private void initDebugTools()
     {

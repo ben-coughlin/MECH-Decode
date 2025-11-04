@@ -10,7 +10,6 @@ public class TurretTuning extends LinearOpMode {
 
     // You only need to declare the Turret object here.
     private Turret turret;
-    private IntakeSubsystem intakeSubsystem;
 
     // A timer can be useful for seeing loop times.
     private final ElapsedTime runtime = new ElapsedTime();
@@ -20,7 +19,7 @@ public class TurretTuning extends LinearOpMode {
         // Initialization code goes here, before waitForStart().
         // Create an instance of your Turret subsystem.
         turret = new Turret(hardwareMap);
-        intakeSubsystem = new IntakeSubsystem(hardwareMap);
+        IntakeSubsystem intakeSubsystem = new IntakeSubsystem(hardwareMap);
 
         // Constants for slow, controlled movement.
         final double TURRET_MANUAL_SPEED = 1;  // Reduced speed for fine control

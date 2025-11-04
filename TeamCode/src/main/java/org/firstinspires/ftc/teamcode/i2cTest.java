@@ -24,6 +24,7 @@ package org.firstinspires.ftc.teamcode;
 import android.graphics.Color;
 
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
@@ -46,6 +47,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
  * See the sensor's product page: https://www.gobilda.com/pinpoint-odometry-computer-imu-sensor-fusion-for-2-wheel-odometry/
  */
 @TeleOp(name = "i2c tester", group = "Sensor")
+@Disabled
 public class i2cTest extends OpMode {
     // Create an instance of the sensor
     GoBildaPinpointDriver pinpoint;

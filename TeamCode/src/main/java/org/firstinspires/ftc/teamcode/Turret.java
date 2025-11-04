@@ -18,7 +18,7 @@ public class Turret
     private final DcMotorEx flywheelLeft;
     private final DcMotorEx flywheelRight;
     private final Servo hood;
-     final PIDController autoAim = new PIDController(0.023, 0.001, 0.3);
+    final PIDFController autoAim = new PIDFController(0.01, 0, 0.001, 0.05);
     private int turretPos;
     private double turretPower;
     private double flywheelLeftRPM;
@@ -60,27 +60,47 @@ public class Turret
         flywheelRightPower = flywheelRight.getPower();
 
         int flywheelCountsPerRev = 8192; //REV-11-127 through bore encoder
-        flywheelLeftRPM = (flywheelLeftVelocity * 60 / flywheelCountsPerRev);
-        flywheelRightRPM = (flywheelRightVelocity * 60 / flywheelCountsPerRev);
+        flywheelLeftRPM = (flywheelLeftVelocity / flywheelCountsPerRev) * 60;
+        flywheelRightRPM = (flywheelRightVelocity / flywheelCountsPerRev) * 60;
 
     }
 
     public void aimTurret(boolean useAutoAim, double limelightError, double manualTurnInput)
     {
-        double turretPower;
+        double calculatedPower;
 
         if(useAutoAim)
         {
             llError = limelightError;
-            turretPower = -autoAim.calculatePID(limelightError);
+
+            // If the error is > 180 degrees, it's shorter to go the other way.
+            if (llError > 180) {
+                llError -= 360;
+            } else if (llError < -180) {
+                llError += 360;
+            }
+
+            calculatedPower = -autoAim.calculatePIDF(llError);
         }
         else
         {
-            turretPower = manualTurnInput;
+
+            calculatedPower = manualTurnInput;
             autoAim.reset();
         }
 
-        turret.setPower(turretPower);
+
+        int currentPosition = turret.getCurrentPosition();
+
+        if (currentPosition >= TURRET_MAX_LIMIT_TICKS && calculatedPower > 0) {
+            turret.setPower(0);
+        }
+        else if (currentPosition <= TURRET_MIN_LIMIT_TICKS && calculatedPower < 0) {
+            turret.setPower(0);
+        }
+        else {
+            turret.setPower(calculatedPower);
+        }
     }
 
     public void showAimTelemetry(Telemetry telemetry) {
