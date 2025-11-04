@@ -57,8 +57,8 @@ public class TeleOp extends RobotMasterPinpoint
 
     }
 
-    private ElapsedTime stateTimer = new ElapsedTime();
-    PIDFController headingHold = new PIDFController(0.03, 0, 0.0); //TODO: tune these!
+    private final ElapsedTime stateTimer = new ElapsedTime();
+    PIDFController headingHold = new PIDFController(0.03, 0, 0.0);
     Toggle circleToggle = new Toggle(false);
     Toggle squareToggle = new Toggle(false);
     Toggle autoAimToggle = new Toggle(true);
@@ -254,22 +254,15 @@ public class TeleOp extends RobotMasterPinpoint
         if (programStage == progStates.ROTATE_AFTER_SHOT.ordinal()) {
             if (stageFinished) {
                 initializeStateVariables();
-                turret.setFlywheelPower(1); // Keep the flywheel spinning
-                spindexer.rotateToNextSlot(); // Command the rotation
+                turret.setFlywheelPower(1);
+                spindexer.rotateToNextSlot();
             }
 
 
             if (spindexer.isAtTargetPosition()) {
-                //
                 nextStage(progStates.READY_TO_SHOOT.ordinal());
             }
 
-            // Optional safety timeout
-            if (SystemClock.uptimeMillis() - stateStartTime > 1500) {
-                // If rotation takes too long, escape to prevent getting stuck
-                spindexer.stopSpindexer();
-                nextStage(progStates.IDLE.ordinal());
-            }
         }
 
         if (programStage == progStates.OUTTAKE.ordinal()) {
@@ -296,7 +289,6 @@ public class TeleOp extends RobotMasterPinpoint
             spindexer.intakeNewBall();
 
         }
-
 
 
         //kills everything

@@ -13,6 +13,11 @@ public class Limelight extends RobotMasterPinpoint
     public static final int redGoalID = 24;
     public static final int blueGoalID = 20;
     private final Limelight3A limelight;
+    private static double distance;
+    private static final double CAMERA_HEIGHT_INCHES = 12.0; // (h1)
+    private static final double GOAL_APRILTAG_HEIGHT_INCHES = 24.0; // (h2)
+    private static final double CAMERA_MOUNTING_ANGLE_DEGREES = 15.0; // (a1)
+
 
     private LLResult currResult = null;
 
@@ -39,7 +44,7 @@ public class Limelight extends RobotMasterPinpoint
         List<LLResultTypes.FiducialResult> tags = result.getFiducialResults();
         for (LLResultTypes.FiducialResult tag : tags)
         {
-            id = tag.getFiducialId(); // The ID number of the tag
+            id = tag.getFiducialId(); // the ID number of the tag
             break;
         }
 
@@ -68,15 +73,52 @@ public class Limelight extends RobotMasterPinpoint
         return false;
     }
 
+    /**
+     * Calculates the horizontal distance to the first detected AprilTag using trigonometry.
+     * Formula: d = (h2 - h1) / tan(a1 + a2)
+     * @param result The latest LLResult from the Limelight.
+     * @return The horizontal distance to the AprilTag in inches, or a default value if no tag is seen.
+     */
+    public double getDistanceToTag(LLResult result) {
+        if (result != null && result.isValid()) {
+            // Get the vertical angle (ty) to the target from the Limelight. This is 'a2'.
+            double ty_degrees = result.getTy();
+
+
+            // Convert angles from degrees to radians for Math.tan()
+            double a1_radians = Math.toRadians(CAMERA_MOUNTING_ANGLE_DEGREES);
+            double a2_radians = Math.toRadians(ty_degrees);
+
+            // Calculate height difference
+            double heightDifference = GOAL_APRILTAG_HEIGHT_INCHES - CAMERA_HEIGHT_INCHES;
+
+            // Calculate the distance using the formula
+
+            return heightDifference / Math.tan(a1_radians + a2_radians);
+        }
+        return -1; // Return -1 or another indicator that no tag was found
+    }
+
+
 
     public void updateLimelight()
     {
         currResult = limelight.getLatestResult();
+
+        int tagId = getTagId(currResult);
+
+        // Check if the detected tag is a goal
+        if (isTagRedGoal(tagId) || isTagBlueGoal(tagId)) {
+             distance = getDistanceToTag(currResult);
+        }
     }
 
     public LLResult getCurrResult()
     {
         return currResult;
+    }
+    public static double getDistance() {
+        return distance;
     }
 
 

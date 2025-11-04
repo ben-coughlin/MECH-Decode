@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
+
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -31,7 +32,12 @@ public class Turret
     private double flywheelLeftPower;
     private double flywheelRightPower;
     private double hoodPos;
-
+    private final double[][] launchAngleLookupTable = {
+            { 24, 0.3 },   // At 24 inches, servo position is 0.3
+            { 36, 0.4 },   // At 36 inches, servo position is 0.4
+            { 48, 0.55 },  // At 48 inches, servo position is 0.55
+            { 60, 0.7 }    // At 60 inches, servo position is 0.7 //todo: tune
+    };
 
     public Turret(HardwareMap hwMap)
     {
@@ -62,6 +68,11 @@ public class Turret
         int flywheelCountsPerRev = 8192; //REV-11-127 through bore encoder
         flywheelLeftRPM = (flywheelLeftVelocity / flywheelCountsPerRev) * 60;
         flywheelRightRPM = (flywheelRightVelocity / flywheelCountsPerRev) * 60;
+
+        if (Limelight.getDistance() > 0) {
+            double servoPosition = getServoPositionFromDistance(Limelight.getDistance());
+            hood.setPosition(servoPosition);
+        }
 
     }
 
@@ -103,10 +114,43 @@ public class Turret
         }
     }
 
+    /**
+     * Uses the lookup table and linear interpolation to find the correct servo position.
+     * @param distance The current distance to the target.
+     * @return The calculated servo position.
+     */
+    public double getServoPositionFromDistance(double distance) {
+        if (distance <= launchAngleLookupTable[0][0]) {
+            return launchAngleLookupTable[0][1];
+        }
+        if (distance >= launchAngleLookupTable[launchAngleLookupTable.length - 1][0]) {
+            return launchAngleLookupTable[launchAngleLookupTable.length - 1][1];
+        }
+
+
+        for (int i = 0; i < launchAngleLookupTable.length - 1; i++) {
+            double[] lowerBound = launchAngleLookupTable[i];
+            double[] upperBound = launchAngleLookupTable[i+1];
+
+            if (distance >= lowerBound[0] && distance <= upperBound[0]) {
+                double distanceRange = upperBound[0] - lowerBound[0];
+                double servoRange = upperBound[1] - lowerBound[1];
+                double distanceRatio = (distance - lowerBound[0]) / distanceRange;
+
+                return lowerBound[1] + (distanceRatio * servoRange);
+            }
+        }
+
+        return 0.5;
+    }
+
     public void showAimTelemetry(Telemetry telemetry) {
         telemetry.addData("Turret PID Power", turret.getPower());
         telemetry.addData("Turret Position", turretPos);
         telemetry.addData("LLError", llError);
+        telemetry.addData("Distance to Goal", "%.2f inches", Limelight.getDistance());
+        telemetry.addData("Servo Position", "%.2f", hood.getPosition());
+
     }
 
     public int getTurretPos()
@@ -163,7 +207,6 @@ public class Turret
     {
         return hoodPos;
     }
-
     public void setHoodPos(double hoodPos)
     {
         hood.setPosition(hoodPos);

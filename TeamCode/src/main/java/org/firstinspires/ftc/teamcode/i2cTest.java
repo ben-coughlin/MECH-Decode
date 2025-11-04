@@ -49,7 +49,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 @TeleOp(name = "i2c tester", group = "Sensor")
 @Disabled
 public class i2cTest extends OpMode {
-    // Create an instance of the sensor
     GoBildaPinpointDriver pinpoint;
     NormalizedColorSensor colorSensor;
 

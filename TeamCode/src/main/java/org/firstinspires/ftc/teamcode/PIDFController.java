@@ -4,11 +4,11 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class PIDFController {
 
-    private double kP, kI, kD, kF; // Added kF for Feedforward
-    private double p_error, i_error, d_error;
+    private double kP, kI, kD, kF;
+    private double pError, iError, dError;
     private double setpoint;
-    private double last_error;
-    private double output_min, output_max;
+    private double prevError;
+    private double outputMin, outputMax;
     private final ElapsedTime timer;
 
     /**
@@ -22,14 +22,14 @@ public class PIDFController {
         kP = Kp;
         kI = Ki;
         kD = Kd;
-        kF = Kf; // Initialize kF
-        p_error = 0.0;
-        i_error = 0.0;
-        d_error = 0.0;
+        kF = Kf;
+        pError = 0.0;
+        iError = 0.0;
+        dError = 0.0;
         setpoint = 0.0;
-        last_error = 0.0;
-        output_min = -1.0;
-        output_max = 1.0;
+        prevError = 0.0;
+        outputMin = -1.0;
+        outputMax = 1.0;
         timer = new ElapsedTime();
     }
 
@@ -37,28 +37,27 @@ public class PIDFController {
      * Overloaded constructor for a standard PID controller (kF defaults to 0).
      */
     public PIDFController(double Kp, double Ki, double Kd) {
-        this(Kp, Ki, Kd, 0.0); // Call the main constructor with kF as 0
+        this(Kp, Ki, Kd, 0.0);
     }
 
     public double calculatePIDF(double current_value) {
         // Calculate P
-        p_error = setpoint - current_value;
+        pError = setpoint - current_value;
 
         // Calculate I
-        i_error += p_error * timer.seconds();
+        iError += pError * timer.seconds();
 
         // Calculate D
-        d_error = (p_error - last_error) / timer.seconds();
+        dError = (pError - prevError) / timer.seconds();
 
-        // Reset timer and update last_error
+
         timer.reset();
-        last_error = p_error;
+        prevError = pError;
 
-        // Calculate the total output, now including the feedforward term
-        double output = (kP * p_error) + (kI * i_error) + (kD * d_error) + (kF * Math.signum(p_error));
 
-        // Clamp the output to the defined min/max
-        return Math.max(output_min, Math.min(output, output_max));
+        double output = (kP * pError) + (kI * iError) + (kD * dError) + (kF * Math.signum(pError));
+
+        return Math.max(outputMin, Math.min(output, outputMax));
     }
 
     public void setReference(double sp) {
@@ -66,8 +65,8 @@ public class PIDFController {
     }
 
     public void setOutputLimits(double min, double max) {
-        output_min = min;
-        output_max = max;
+        outputMin = min;
+        outputMax = max;
     }
 
     public void setGains(double Kp, double Ki, double Kd, double Kf) {
@@ -79,12 +78,12 @@ public class PIDFController {
 
     // Overloaded setGains for just PID
     public void setGains(double Kp, double Ki, double Kd) {
-        setGains(Kp, Ki, Kd, this.kF); // Keep existing kF
+        setGains(Kp, Ki, Kd, this.kF);
     }
 
     public void reset() {
-        i_error = 0.0;
-        last_error = p_error;
+        iError = 0.0;
+        prevError = pError;
         timer.reset();
     }
 }
