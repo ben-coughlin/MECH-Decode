@@ -26,6 +26,7 @@ public class TurretTuningRyan extends OpMode
     public void init() {
         turret = new Turret(hardwareMap);
         intakeSubsystem = new IntakeSubsystem(hardwareMap);
+        intakeSubsystem.setKickerPos(0);
     }
 
     @Override
