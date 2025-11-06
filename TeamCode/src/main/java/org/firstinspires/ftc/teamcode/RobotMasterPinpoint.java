@@ -11,6 +11,10 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+
 import java.util.HashMap;
 
 public abstract class RobotMasterPinpoint extends OpMode {
@@ -23,6 +27,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
     IntakeSubsystem intakeSubsystem = null;
     Turret turret = null;
     Spindexer spindexer = null;
+    PoseFusion pose = new PoseFusion();
 
     // ftcsim stuff - - - - - - - -
     private UdpClientFieldSim client;
@@ -90,6 +95,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
         odo = new Odo(hardwareMap);
         turret = new Turret(hardwareMap);
         spindexer = new Spindexer(hardwareMap, colorSensor);
+        pose.reset(new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.RADIANS, 0));
 
         if(gamepad1.options)
         {
@@ -145,8 +151,16 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
 
     public void mainLoop() {
-
         long startLoopTime = SystemClock.uptimeMillis();
+        //sensor fusion stuff - atm we're just testing with this
+        pose.update(odo.pos);
+        Pose2D fusedPose = pose.getPoseEstimate();
+        telemetry.addData("Fused X", fusedPose.getX(DistanceUnit.INCH));
+        telemetry.addData("Fused Y", fusedPose.getY(DistanceUnit.INCH));
+        telemetry.addData("Fused Heading", "%.2f rad  |  %.2f deg",
+                fusedPose.getHeading(AngleUnit.RADIANS),
+                fusedPose.getHeading(AngleUnit.DEGREES));
+
         //read everything once and only once per loop
         colorSensor.updateDetection();
         limelight.updateLimelight();
@@ -162,7 +176,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
         if(DEBUGGING)
         {
-            addDebugTelemetry(startLoopTime);
+            addDebugTelemetry();
         }
         telemetry.addData("Superstructure State", currentState);
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
@@ -173,7 +187,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
     /**
      * adds debug telemetry when in debug mode - we don't want this normally bc of loop times
      */
-    private void addDebugTelemetry(long startLoopTime)
+    private void addDebugTelemetry()
     {
 
         for(String k : debugKeyValues.keySet())

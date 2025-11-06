@@ -31,7 +31,7 @@ public class Spindexer {
     private int currentSlot = 0;
     private double targetPositionTicks = 0;
     private boolean isHoldingPosition = true;
-    private boolean intakeCycleComplete = true; // NEW: Flag to manage one ball per intake command.
+    private boolean intakeCycleComplete = true;
 
     public Spindexer(HardwareMap hwMap, ColorSensor colorSensor) {
         spindexerServo = hwMap.get(CRServo.class, "spindexer");
@@ -45,34 +45,28 @@ public class Spindexer {
 
         // Configure the PID controller
         spindexerController.setReference(0);
-        spindexerController.setOutputLimits(-1.0, 1.0); // Set correct output limits
+        spindexerController.setOutputLimits(-1.0, 1.0);
     }
 
-    // NEW METHOD: Call this from TeleOp when the intake trigger is first pressed.
     public void startIntakeCycle() {
         intakeCycleComplete = false;
     }
-
 
     /**
      * Call this continuously in your main OpMode loop.
      * This is the core of the state-based PID control.
      */
     public void update() {
-        // If we are in a holding state, ensure the motor is off and do nothing else.
         if (isHoldingPosition) {
-            stopSpindexer();
+            spindexerServo.setPower(0);
             return;
         }
 
-        // If we are not holding, run the PIDF logic.
         int currentPosition = encoder.getCurrentPosition();
         double error = targetPositionTicks - currentPosition;
 
-        // Check if we have reached the target.
         if (Math.abs(error) <= POSITION_TOLERANCE) {
             stopSpindexer();
-            isHoldingPosition = true; // Switch to holding state.
             return;
         }
 
@@ -84,10 +78,8 @@ public class Spindexer {
      * Rotates the spindexer to the next logical slot.
      */
     public void rotateToNextSlot() {
-        // Release the hold to allow movement.
         isHoldingPosition = false;
 
-        // Calculate new target and reset the controller for a clean start.
         currentSlot = (currentSlot + 1) % 3;
         targetPositionTicks = currentSlot * TICKS_PER_SLOT;
         spindexerController.setReference(targetPositionTicks);
@@ -96,9 +88,13 @@ public class Spindexer {
 
     /**
      * Immediately stops all spindexer movement and enters a holding state.
+     * This is now the ONLY method that should stop the motor.
      */
     public void stopSpindexer() {
-        // Set the holding flag. The update() loop will handle shutting the motor off.
+        targetPositionTicks = encoder.getCurrentPosition();
+        spindexerController.setReference(targetPositionTicks);
+        spindexerController.reset();
+        spindexerServo.setPower(0);
         isHoldingPosition = true;
     }
 
@@ -124,8 +120,8 @@ public class Spindexer {
 
         if (detectedColor != Pattern.Ball.EMPTY) {
             updateSlot(currentSlot, detectedColor);
-            rotateToNextSlot(); // This is a safe place to command a rotation.
-            intakeCycleComplete = true; // Mark the cycle as complete to prevent re-triggering.
+            rotateToNextSlot();
+            intakeCycleComplete = true;
         }
     }
 
@@ -178,7 +174,7 @@ public class Spindexer {
         telemetry.addData("Position Error", "%.2f", error);
         telemetry.addData("Servo Power", "%.2f", spindexerServo.getPower());
         telemetry.addData("Is Holding Position?", isAtTargetPosition());
-        telemetry.addData("Intake Cycle Complete?", intakeCycleComplete); // ADDED: Telemetry for new flag
+        telemetry.addData("Intake Cycle Complete?", intakeCycleComplete);
         telemetry.addLine();
         telemetry.addLine("--- Spindexer Inventory ---");
         telemetry.addData("Current Logical Slot", currentSlot);
@@ -188,4 +184,8 @@ public class Spindexer {
                 currentInventory.spindexSlotTwo,
                 currentInventory.spindexSlotThree);
     }
+    public boolean intakeCycleIsComplete() {
+        return intakeCycleComplete;
+    }
+
 }

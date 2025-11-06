@@ -5,6 +5,8 @@ import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+
 import java.util.List;
 
 public class Limelight extends RobotMasterPinpoint
@@ -14,12 +16,12 @@ public class Limelight extends RobotMasterPinpoint
     public static final int blueGoalID = 20;
     private final Limelight3A limelight;
     private static double distance;
-    private static final double CAMERA_HEIGHT_INCHES = 12.0; // (h1)
-    private static final double GOAL_APRILTAG_HEIGHT_INCHES = 24.0; // (h2)
-    private static final double CAMERA_MOUNTING_ANGLE_DEGREES = 15.0; // (a1)
+    private static final double CAMERA_HEIGHT_INCHES = 13.53; // (h1)
+    private static final double GOAL_APRILTAG_HEIGHT_INCHES = 29.0; // (h2)
+    private static final double CAMERA_MOUNTING_ANGLE_DEGREES = 22.0; // (a1)
 
-
-    private LLResult currResult = null;
+    private static LLResult currResult = null;
+    private static long currLatency = 0;
 
 
     public Limelight(HardwareMap hwMap)
@@ -111,15 +113,18 @@ public class Limelight extends RobotMasterPinpoint
         if (isTagRedGoal(tagId) || isTagBlueGoal(tagId)) {
              distance = getDistanceToTag(currResult);
         }
+        currLatency = limelight.getTimeSinceLastUpdate();
     }
 
-    public LLResult getCurrResult()
+    public static LLResult getCurrResult()
     {
         return currResult;
     }
     public static double getDistance() {
         return distance;
     }
+    public static Pose3D getPose() {return currResult.getBotpose();}
+    public static long getCurrLatency() {return currLatency;}
 
 
 }

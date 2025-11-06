@@ -16,8 +16,8 @@
   | A (Cross) | Unassigned | - | | 
   | Left Bumper | Emergency Stop | - | Enters STOP state | 
   | Right Bumper| Cancel Shot | - | Returns from READY_TO_SHOOT to IDLE | 
-  | Left Trigger| Enter INTAKE state | - | (This is an analog axis) | 
-  | Right Trigger| Unassigned | - | (This is an analog axis) | 
+  | Right Trigger| Enter INTAKE state | - | (This is an analog axis) | 
+  | Left Trigger| Unassigned | - | (This is an analog axis) | 
   | Left Stick Button| Unassigned | - | | 
   | Right Stick Button| Unassigned | - | | 
   | Touchpad | Unassigned | - | | 

@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 public class Toggle {
-    private boolean state = false;
+    private boolean state ;
 
     private boolean buttonPreviouslyPressed = false;
 

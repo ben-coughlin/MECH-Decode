@@ -36,7 +36,14 @@ import static org.firstinspires.ftc.teamcode.MovementVars.movement_y;
 
 import android.os.SystemClock;
 
+import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import org.opencv.core.Mat;
 
 
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name = "TeleOp")
@@ -58,14 +65,19 @@ public class TeleOp extends RobotMasterPinpoint
     }
 
     private final ElapsedTime stateTimer = new ElapsedTime();
-    PIDFController headingHold = new PIDFController(0.03, 0, 0.0);
+    PIDFController headingHold = new PIDFController(0.03, 0, 0.0001);
     Toggle circleToggle = new Toggle(false);
     Toggle squareToggle = new Toggle(false);
     Toggle autoAimToggle = new Toggle(true);
+    Toggle intakeToggle = new Toggle(false);
+
 
     boolean isAutoHeading = false;
     boolean isAutoAiming = false;
     double targetHeading = 0.0;
+
+
+
 
 
     @Override
@@ -114,6 +126,8 @@ public class TeleOp extends RobotMasterPinpoint
         circleToggle.updateToggle(gamepad1.circle);
         squareToggle.updateToggle(gamepad1.square);
         autoAimToggle.updateToggle(gamepad2.square);
+        intakeToggle.updateToggle(gamepad1.right_trigger > 0.1);
+
 
         //driving stuff - - - - - - - - - - -
         movement_y = -gamepad1.left_stick_y;
@@ -135,7 +149,8 @@ public class TeleOp extends RobotMasterPinpoint
         {
             //if there's no turning at all, use PID to hold us at the same heading
             headingHold.setReference(targetHeading);
-            movement_turn = headingHold.calculatePIDF(currentHeadingRad);
+            double error = headingHold.calculatePIDF(currentHeadingRad);
+            movement_turn = (error < Math.toRadians(1)) ? Math.toRadians(0) : error;
             isAutoHeading = false;
 
         }
@@ -149,13 +164,15 @@ public class TeleOp extends RobotMasterPinpoint
 
         if (limelight.getCurrResult() != null && limelight.getCurrResult().isValid() && !VisionUtils.isTagObelisk(VisionUtils.getTagId(limelight.getCurrResult())))
         {
-            double llError = limelight.getCurrResult().getTx();
+            LLResult result = limelight.getCurrResult();
+            double llError = result.getTx();
 
-            turret.aimTurret(isAutoAiming, llError, gamepad2.right_stick_x);
+            turret.aimTurret(isAutoAiming, llError, gamepad2.right_stick_x, limelight.getDistanceToTag(result));
         }
         else
         {
-            turret.aimTurret(false, 0, gamepad2.right_stick_x);
+            //use 999 to ensure that we default to the safer, long range aim controller
+            turret.aimTurret(false, 0, gamepad2.right_stick_x, 999);
         }
 
 
@@ -181,12 +198,13 @@ public class TeleOp extends RobotMasterPinpoint
         }
 
         // --- INTAKE CONTROLS ---
-        if (gamepad1.right_trigger > 0.1) {
-            if (programStage != progStates.INTAKE.ordinal()) {
-                nextStage(progStates.INTAKE.ordinal());
-                spindexer.startIntakeCycle();
-            }
-        } else { // WHEN the trigger is RELEASED
+
+
+        if (intakeToggle.getState()) {
+            nextStage(progStates.INTAKE.ordinal());
+            spindexer.startIntakeCycle();
+        }
+        else { // WHEN the trigger is RELEASED
             if (programStage == progStates.INTAKE.ordinal()) {
                 nextStage(progStates.IDLE.ordinal());
             }
@@ -258,8 +276,8 @@ public class TeleOp extends RobotMasterPinpoint
                 spindexer.rotateToNextSlot();
             }
 
-
-            if (spindexer.isAtTargetPosition()) {
+            if (spindexer.isAtTargetPosition() &&
+                    Math.abs(spindexer.getCurrentEncoderPosition() - spindexer.getTargetPosition()) < 100) {
                 nextStage(progStates.READY_TO_SHOOT.ordinal());
             }
 
@@ -271,15 +289,11 @@ public class TeleOp extends RobotMasterPinpoint
                 initializeStateVariables();
                 intakeSubsystem.outtake();
             }
-
-
             if(stateTimer.seconds() >= 1)
             {
                 intakeSubsystem.turnIntakeOff();
                 nextStage(progStates.IDLE.ordinal());
             }
-
-
         }
         if (programStage == progStates.INTAKE.ordinal()) {
             if (stageFinished) {
@@ -288,8 +302,10 @@ public class TeleOp extends RobotMasterPinpoint
             }
             spindexer.intakeNewBall();
 
+            if (spindexer.isAtTargetPosition() && spindexer.intakeCycleIsComplete()) {
+                nextStage(progStates.IDLE.ordinal());
+            }
         }
-
 
         //kills everything
         if (programStage == progStates.STOP.ordinal()) {
