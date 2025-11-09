@@ -1,15 +1,13 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.CRServo;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 /**
- * A smart spindexer subsystem that manages its inventory using the Pattern class.
- * Controlled by a CR Servo and a separate through-bore encoder, using a PID loop for precision.
+ * A smart spindexer subsystem that uses a CR Servo with an external encoder and PIDF control.
+ * Handles automatic rotation, color-based detection, and inventory management.
  */
 public class Spindexer {
 
@@ -19,185 +17,198 @@ public class Spindexer {
     private final ColorSensor colorSensor;
 
     // --- Control ---
-    private final PIDFController spindexerController = new PIDFController(0.0002, 0, 0.00008, 0.08);
+    private final PIDFController pid = new PIDFController(0.0002, 0, 0.00008, 0.08);
 
     // --- Constants ---
-    private static final double TICKS_PER_REVOLUTION = 8192.0;
-    private static final double TICKS_PER_SLOT = TICKS_PER_REVOLUTION / 3.0;
+    private static final double TICKS_PER_REV = 8192.0;
+    private static final double TICKS_PER_SLOT = TICKS_PER_REV / 3.0;
     private static final int POSITION_TOLERANCE = 30;
 
-    // --- State and Inventory ---
-    private final Pattern currentInventory;
+    // --- State ---
+    private final Pattern inventory;
     private int currentSlot = 0;
-    private double targetPositionTicks = 0;
-    private boolean isHoldingPosition = true;
-    private boolean intakeCycleComplete = true;
+    private double targetTicks = 0;
+    private boolean holdingPosition = true;
+    private boolean intakeCycleActive = false;
+    private boolean ballDetectedThisCycle = false;
 
     public Spindexer(HardwareMap hwMap, ColorSensor colorSensor) {
-        spindexerServo = hwMap.get(CRServo.class, "spindexer");
-        encoder = hwMap.get(DcMotorEx.class, "intake");
-
-        encoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        encoder.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
+        this.spindexerServo = hwMap.get(CRServo.class, "spindexer");
+        this.encoder = hwMap.get(DcMotorEx.class, "intake");
         this.colorSensor = colorSensor;
-        this.currentInventory = new Pattern(Pattern.Ball.EMPTY, Pattern.Ball.EMPTY, Pattern.Ball.EMPTY);
 
-        // Configure the PID controller
-        spindexerController.setReference(0);
-        spindexerController.setOutputLimits(-1.0, 1.0);
+        encoder.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+        encoder.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+
+        inventory = new Pattern(Pattern.Ball.EMPTY, Pattern.Ball.EMPTY, Pattern.Ball.EMPTY);
+
+        pid.setReference(0);
+        pid.setOutputLimits(-1.0, 1.0);
     }
 
-    public void startIntakeCycle() {
-        intakeCycleComplete = false;
-    }
 
-    /**
-     * Call this continuously in your main OpMode loop.
-     * This is the core of the state-based PID control.
-     */
     public void update() {
-
-
-        int currentPosition = encoder.getCurrentPosition();
-        double error = targetPositionTicks - currentPosition;
-
+        double currentPos = encoder.getCurrentPosition();
+        double error = targetTicks - currentPos;
 
         if (Math.abs(error) <= POSITION_TOLERANCE) {
-            stopSpindexer();
-            return;
-        }
-        spindexerServo.setPower(spindexerController.calculatePIDF(currentPosition));
-    }
-
-    /**
-     * Rotates the spindexer to the next logical slot.
-     */
-    public void rotateToNextSlot() {
-        isHoldingPosition = false;
-
-        currentSlot = (currentSlot + 1) % 3;
-        targetPositionTicks = currentSlot * TICKS_PER_SLOT;
-        spindexerController.setReference(targetPositionTicks);
-        spindexerController.reset();
-    }
-
-    // In Spindexer.java
-
-    /**
-     * Sets the power of the spindexer motor for manual control.
-     * Automatically disables automatic sorting if manual input is given.
-     * @param button the state of the manual input
-     */
-    public void setManualPower(boolean button) {
-        if (button) {
-           rotateToNextSlot();
-        } else if (!button) {
-            stopSpindexer();
+            stopAndHold();
+        } else {
+            double output = pid.calculatePIDF(currentPos);
+            spindexerServo.setPower(output);
+            holdingPosition = false;
         }
     }
 
 
-    /**
-     * Immediately stops all spindexer movement and enters a holding state.
-     * This is now the ONLY method that should stop the motor.
-     */
-    public void stopSpindexer() {
-        targetPositionTicks = encoder.getCurrentPosition();
-        spindexerController.setReference(targetPositionTicks);
-        spindexerController.reset();
-        spindexerServo.setPower(0);
-        isHoldingPosition = true;
+    public void startIntakeCycle() {
+        if (!intakeCycleActive) {
+            intakeCycleActive = true;
+            ballDetectedThisCycle = false;
+        }
     }
 
-    /**
-     * DECOUPLED: This method now ONLY updates the inventory.
-     * The decision to rotate must be made separately in your TeleOp logic.
-     * This prevents race conditions.
-     */
-    public void recordShotBall() {
-        updateSlot(currentSlot, Pattern.Ball.EMPTY);
-    }
-
-    /**
-     * MODIFIED: Checks for a new ball and rotates, but only runs once per intake cycle.
-     */
     public void intakeNewBall() {
-        // We can only intake if the spindexer is holding, the slot is empty, AND an intake cycle has been commanded.
-        if (!isAtTargetPosition() || getBallInShootingPosition() != Pattern.Ball.EMPTY || !intakeCycleComplete) {
-            return;
-        }
+        if (!intakeCycleActive || !isAtTargetPosition() || ballDetectedThisCycle) return;
 
-        Pattern.Ball detectedColor = detectBallColor();
+        Pattern.Ball detected = detectBallColor();
 
-        if (detectedColor != Pattern.Ball.EMPTY) {
-            updateSlot(currentSlot, detectedColor);
-            rotateToNextSlot();
-            intakeCycleComplete = true;
+        if (detected != Pattern.Ball.EMPTY) {
+            // Update the current slot with the detected ball color
+            updateSlot(currentSlot, detected);
+            ballDetectedThisCycle = true;
+
+            int targetSlot = getPreferredSlotForColor(detected);
+
+            // If the current slot is not the preferred one, rotate there
+            if (currentSlot != targetSlot) {
+                rotateToSlot(targetSlot);
+            }
+
+            // Mark intake complete so it doesn't retrigger
+            intakeCycleActive = false;
         }
     }
 
-    /**
-     * Checks if the spindexer is settled at its target position.
-     * @return true if the spindexer is stopped and holding its position.
-     */
+
+    public boolean intakeCycleIsComplete() {
+        return !intakeCycleActive;
+    }
+
+    public void recordShotBall()
+    {
+        updateSlot(currentSlot, Pattern.Ball.EMPTY);
+        rotateToSlot(getPreferredSlotForColor(Pattern.Ball.EMPTY));
+    }
+
+
+    // ------------------------------------------------------------------------
+    // Rotation Logic
+    // ------------------------------------------------------------------------
+    private void rotateToNextSlot() {
+        holdingPosition = false;
+        currentSlot = (currentSlot + 1) % 3;
+        targetTicks = currentSlot * TICKS_PER_SLOT;
+        pid.setReference(targetTicks);
+        pid.reset();
+    }
+
+    private void stopAndHold() {
+        targetTicks = encoder.getCurrentPosition();
+        pid.setReference(targetTicks);
+        pid.reset();
+        spindexerServo.setPower(0);
+        holdingPosition = true;
+    }
+
+    // ------------------------------------------------------------------------
+    // Utility and Accessors
+    // ------------------------------------------------------------------------
     public boolean isAtTargetPosition() {
-        // The system is considered "at target" only when it is in the holding state.
-        return isHoldingPosition;
+        return holdingPosition;
     }
-
-    public Pattern getCurrentInventory() { return currentInventory; }
-    public int getCurrentEncoderPosition() { return encoder.getCurrentPosition(); }
-    public double getTargetPosition() { return targetPositionTicks; }
 
     public Pattern.Ball getBallInShootingPosition() {
         switch (currentSlot) {
-            case 0: return currentInventory.spindexSlotOne;
-            case 1: return currentInventory.spindexSlotTwo;
-            case 2: return currentInventory.spindexSlotThree;
-            default: return Pattern.Ball.EMPTY;
+            case 0:
+                return inventory.spindexSlotOne;
+            case 1:
+                return inventory.spindexSlotTwo;
+            case 2:
+                return inventory.spindexSlotThree;
+            default:
+                return Pattern.Ball.EMPTY;
         }
     }
 
-    private void updateSlot(int slot, Pattern.Ball newBall) {
-        if (slot == 0) currentInventory.spindexSlotOne = newBall;
-        if (slot == 1) currentInventory.spindexSlotTwo = newBall;
-        if (slot == 2) currentInventory.spindexSlotThree = newBall;
+    public void updateSlot(int slot, Pattern.Ball newBall) {
+        switch (slot) {
+            case 0:
+                inventory.spindexSlotOne = newBall;
+                break;
+            case 1:
+                inventory.spindexSlotTwo = newBall;
+                break;
+            case 2:
+                inventory.spindexSlotThree = newBall;
+                break;
+        }
     }
 
     private Pattern.Ball detectBallColor() {
         float[] hsv = colorSensor.getHsvValues();
         float hue = hsv[0];
-        float saturation = hsv[1];
-        if (hue > 90 && hue < 190 && saturation > 0.5) {
+        float sat = hsv[1];
+
+        if (hue > 90 && hue < 190 && sat > 0.5) {
             return Pattern.Ball.GREEN;
-        } else if ((hue > 220 && hue < 300) && saturation > 0.5) {
+        } else if (hue > 220 && hue < 300 && sat > 0.5) {
             return Pattern.Ball.PURPLE;
         } else {
             return Pattern.Ball.EMPTY;
         }
     }
 
-    public void showTelemetry(Telemetry telemetry) {
-        telemetry.addLine("--- Spindexer Tuning ---");
-        telemetry.addData("Target Ticks", "%.2f", getTargetPosition());
-        telemetry.addData("Current Ticks", getCurrentEncoderPosition());
-        double error = getTargetPosition() - getCurrentEncoderPosition();
-        telemetry.addData("Position Error", "%.2f", error);
-        telemetry.addData("Servo Power", "%.2f", spindexerServo.getPower());
-        telemetry.addData("Is Holding Position?", isAtTargetPosition());
-        telemetry.addData("Intake Cycle Complete?", intakeCycleComplete);
-        telemetry.addLine();
-        telemetry.addLine("--- Spindexer Inventory ---");
-        telemetry.addData("Current Logical Slot", currentSlot);
-        telemetry.addData("Ball in Chamber", getBallInShootingPosition());
-        telemetry.addData("Spindexer Inventory", "[%s] [%s] [%s]",
-                currentInventory.spindexSlotOne,
-                currentInventory.spindexSlotTwo,
-                currentInventory.spindexSlotThree);
-    }
-    public boolean intakeCycleIsComplete() {
-        return intakeCycleComplete;
+    private void rotateToSlot(int slot) {
+        holdingPosition = false;
+        currentSlot = slot;
+        targetTicks = slot * TICKS_PER_SLOT;
+        pid.setReference(targetTicks);
+        pid.reset();
     }
 
+    private int getPreferredSlotForColor(Pattern.Ball color) {
+        switch (color) {
+            case GREEN:
+                if (inventory.spindexSlotOne == Pattern.Ball.EMPTY) return 0;
+                else if (inventory.spindexSlotTwo == Pattern.Ball.EMPTY) return 1;
+                else return 2;
+            case PURPLE:
+                if (inventory.spindexSlotThree == Pattern.Ball.EMPTY) return 2;
+                else if (inventory.spindexSlotTwo == Pattern.Ball.EMPTY) return 1;
+                else return 0;
+            default:
+                // fallback: first available empty slot
+                if (inventory.spindexSlotOne == Pattern.Ball.EMPTY) return 0;
+                if (inventory.spindexSlotTwo == Pattern.Ball.EMPTY) return 1;
+                if (inventory.spindexSlotThree == Pattern.Ball.EMPTY) return 2;
+                return currentSlot;
+        }
+    }
+
+
+    public void showTelemetry(Telemetry telemetry) {
+        telemetry.addLine("--- Spindexer ---");
+        telemetry.addData("Current Slot", currentSlot);
+        telemetry.addData("Target Pos", "%.1f", targetTicks);
+        telemetry.addData("Encoder Pos", "%.1f", encoder.getCurrentPosition());
+        telemetry.addData("At Target?", isAtTargetPosition());
+        telemetry.addData("Holding", holdingPosition);
+        telemetry.addData("Intake Active", intakeCycleActive);
+        telemetry.addData("Detected This Cycle", ballDetectedThisCycle);
+        telemetry.addData("Inventory", "[%s] [%s] [%s]",
+                inventory.spindexSlotOne,
+                inventory.spindexSlotTwo,
+                inventory.spindexSlotThree);
+    }
 }

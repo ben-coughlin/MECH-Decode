@@ -196,22 +196,10 @@ public class TeleOp extends RobotMasterPinpoint
                 nextStage(progStates.IDLE.ordinal());
             }
         }
-
-        // --- INTAKE CONTROLS ---
-
-
-        if (intakeToggle.getState()) {
-            nextStage(progStates.INTAKE.ordinal());
-            spindexer.startIntakeCycle();
-        }
-        else { // WHEN the trigger is RELEASED
-            if (programStage == progStates.INTAKE.ordinal()) {
-                nextStage(progStates.IDLE.ordinal());
-            }
-        }
         //estop
         if (gamepad1.left_bumper) {
-            nextStage(progStates.STOP.ordinal());
+            //nextStage(progStates.STOP.ordinal());
+            // i don't like this state so for now disabled
         }
 
 
@@ -225,7 +213,6 @@ public class TeleOp extends RobotMasterPinpoint
 
                 turret.setFlywheelPower(0);
                 intakeSubsystem.turnIntakeOff();
-                spindexer.stopSpindexer();
                 intakeSubsystem.moveKickerHorizontal();
                 intakeSubsystem.setKickerPos(0.37);
             }
@@ -237,7 +224,7 @@ public class TeleOp extends RobotMasterPinpoint
                 turret.setFlywheelPower(1);
             }
 
-            if (SystemClock.uptimeMillis() - stateStartTime > 5000) {
+            if (SystemClock.uptimeMillis() - stateStartTime > 4000) {
                 nextStage(progStates.READY_TO_SHOOT.ordinal());
             }
         }
@@ -265,19 +252,6 @@ public class TeleOp extends RobotMasterPinpoint
             }
             if (SystemClock.uptimeMillis() - stateStartTime > 500) {
                 spindexer.recordShotBall();
-                nextStage(progStates.ROTATE_AFTER_SHOT.ordinal());
-            }
-
-        }
-        if (programStage == progStates.ROTATE_AFTER_SHOT.ordinal()) {
-            if (stageFinished) {
-                initializeStateVariables();
-                turret.setFlywheelPower(1);
-                spindexer.rotateToNextSlot();
-            }
-
-            if (spindexer.isAtTargetPosition() &&
-                    Math.abs(spindexer.getCurrentEncoderPosition() - spindexer.getTargetPosition()) < 100) {
                 nextStage(progStates.READY_TO_SHOOT.ordinal());
             }
 
@@ -299,10 +273,13 @@ public class TeleOp extends RobotMasterPinpoint
             if (stageFinished) {
                 initializeStateVariables();
                 intakeSubsystem.turnIntakeOn();
+                spindexer.startIntakeCycle();
             }
+
             spindexer.intakeNewBall();
 
             if (spindexer.isAtTargetPosition() && spindexer.intakeCycleIsComplete()) {
+                intakeSubsystem.turnIntakeOff();
                 nextStage(progStates.IDLE.ordinal());
             }
         }
@@ -315,7 +292,6 @@ public class TeleOp extends RobotMasterPinpoint
             }
             drive.stopAllMovementDirectionBased();
             intakeSubsystem.turnIntakeOff();
-            spindexer.stopSpindexer();
             intakeSubsystem.moveKickerHorizontal();
             turret.setFlywheelPower(0);
 
