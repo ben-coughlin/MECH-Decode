@@ -152,14 +152,6 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
     public void mainLoop() {
         long startLoopTime = SystemClock.uptimeMillis();
-        //sensor fusion stuff - atm we're just testing with this
-        pose.update(odo.pos);
-        Pose2D fusedPose = pose.getPoseEstimate();
-        telemetry.addData("Fused X", fusedPose.getX(DistanceUnit.INCH));
-        telemetry.addData("Fused Y", fusedPose.getY(DistanceUnit.INCH));
-        telemetry.addData("Fused Heading", "%.2f rad  |  %.2f deg",
-                fusedPose.getHeading(AngleUnit.RADIANS),
-                fusedPose.getHeading(AngleUnit.DEGREES));
 
         //read everything once and only once per loop
         colorSensor.updateDetection();
@@ -167,6 +159,15 @@ public abstract class RobotMasterPinpoint extends OpMode {
         odo.updateOdo();
         turret.updateTurret();
         spindexer.update();
+
+        //sensor fusion stuff - atm we're just testing with this
+        pose.update(odo.pos, Math.toRadians(turret.getTurretDeg()));
+        Pose2D fusedPose = pose.getPoseEstimate();
+        telemetry.addData("Fused X", fusedPose.getX(DistanceUnit.INCH));
+        telemetry.addData("Fused Y", fusedPose.getY(DistanceUnit.INCH));
+        telemetry.addData("Fused Heading", "%.2f rad  |  %.2f deg",
+                fusedPose.getHeading(AngleUnit.RADIANS),
+                fusedPose.getHeading(AngleUnit.DEGREES));
 
         odo.showOdoTelemetry(telemetry);
         turret.showAimTelemetry(telemetry);

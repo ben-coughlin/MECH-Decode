@@ -11,7 +11,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 public class Turret
 {
-    private final double TURRET_TICKS_PER_DEGREE = 4.27; //gobilda 435 rpm - 5203-2402-0014
+    private final double TURRET_TICKS_PER_DEGREE = 2.563; // 384.5 PPR encoder with 2.4:1 gear reduction (48/20 gears)
     private final double TURRET_MIN_LIMIT_TICKS = -450;
     private final double TURRET_MAX_LIMIT_TICKS = 450;
 
@@ -21,14 +21,14 @@ public class Turret
     private final DcMotorEx flywheelLeft;
     private final DcMotorEx flywheelRight;
     private final Servo hood;
-    private final PIDFController autoaimClose = new PIDFController(0.012, 0, 0.001, 0.05);
+    private final PIDFController autoaimClose = new PIDFController(0.011, 0, 0.001, 0.05);
 
     private final PIDFController autoAimFar = new PIDFController(0.008, 0, 0, 0.05); // Lower P-gain and zero D-gain are key
 
-    private final PIDFController activeAutoAimController;
+    private  PIDFController activeAutoAimController;
     private static final double GAIN_SCHEDULING_DISTANCE_THRESHOLD = 72.0;
 
-    private int turretPos;
+    private double turretDeg;
     private double turretPower;
     private double flywheelLeftRPM;
     private double llError = 0;
@@ -71,7 +71,7 @@ public class Turret
 
     public void updateTurret()
     {
-        turretPos = turret.getCurrentPosition();
+        turretDeg = turret.getCurrentPosition() / TURRET_TICKS_PER_DEGREE;
         turretPower = turret.getPower();
 
         double flywheelLeftVelocity = flywheelLeft.getVelocity();
@@ -133,7 +133,7 @@ public class Turret
         if(useAutoAim)
         {
 
-            PIDFController activeAutoAimController;
+
             if (distance < GAIN_SCHEDULING_DISTANCE_THRESHOLD && distance > 0) {
                 activeAutoAimController = autoaimClose;
             } else {
@@ -226,7 +226,7 @@ public class Turret
 
     public void showAimTelemetry(Telemetry telemetry) {
         telemetry.addData("Turret PID Power", turret.getPower());
-        telemetry.addData("Turret Position", turretPos);
+        telemetry.addData("Turret Degrees", turretDeg);
         telemetry.addData("LLError", llError);
         telemetry.addData("Distance to Goal", "%.2f inches", Limelight.getDistance());
         telemetry.addData("Servo Position", "%.2f", hood.getPosition());
@@ -234,8 +234,7 @@ public class Turret
         telemetry.addData("Flywheel Right RPM", "%.2f", getFlywheelRightRPM());
     }
 
-    public int getTurretPos() { return turretPos; }
-    public void setTurretPos(int turretPos) { this.turretPos = turretPos; }
+    public double getTurretDeg() { return turretDeg; }
     public double getTurretPower() { return turretPower; }
     public void setTurretPower(double turretPower) { turret.setPower(turretPower); }
     public double getFlywheelLeftRPM() { return flywheelLeftRPM; }

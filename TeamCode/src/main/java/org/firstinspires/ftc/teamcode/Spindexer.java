@@ -19,12 +19,12 @@ public class Spindexer {
     private final ColorSensor colorSensor;
 
     // --- Control ---
-    private final PIDFController spindexerController = new PIDFController(0.0003, 0, 0.00008, 0.08);
+    private final PIDFController spindexerController = new PIDFController(0.0002, 0, 0.00008, 0.08);
 
     // --- Constants ---
     private static final double TICKS_PER_REVOLUTION = 8192.0;
     private static final double TICKS_PER_SLOT = TICKS_PER_REVOLUTION / 3.0;
-    private static final int POSITION_TOLERANCE = 50;
+    private static final int POSITION_TOLERANCE = 30;
 
     // --- State and Inventory ---
     private final Pattern currentInventory;
@@ -57,20 +57,16 @@ public class Spindexer {
      * This is the core of the state-based PID control.
      */
     public void update() {
-        if (isHoldingPosition) {
-            spindexerServo.setPower(0);
-            return;
-        }
+
 
         int currentPosition = encoder.getCurrentPosition();
         double error = targetPositionTicks - currentPosition;
+
 
         if (Math.abs(error) <= POSITION_TOLERANCE) {
             stopSpindexer();
             return;
         }
-
-
         spindexerServo.setPower(spindexerController.calculatePIDF(currentPosition));
     }
 
@@ -85,6 +81,22 @@ public class Spindexer {
         spindexerController.setReference(targetPositionTicks);
         spindexerController.reset();
     }
+
+    // In Spindexer.java
+
+    /**
+     * Sets the power of the spindexer motor for manual control.
+     * Automatically disables automatic sorting if manual input is given.
+     * @param button the state of the manual input
+     */
+    public void setManualPower(boolean button) {
+        if (button) {
+           rotateToNextSlot();
+        } else if (!button) {
+            stopSpindexer();
+        }
+    }
+
 
     /**
      * Immediately stops all spindexer movement and enters a holding state.
@@ -112,7 +124,7 @@ public class Spindexer {
      */
     public void intakeNewBall() {
         // We can only intake if the spindexer is holding, the slot is empty, AND an intake cycle has been commanded.
-        if (!isAtTargetPosition() || getBallInShootingPosition() != Pattern.Ball.EMPTY || intakeCycleComplete) {
+        if (!isAtTargetPosition() || getBallInShootingPosition() != Pattern.Ball.EMPTY || !intakeCycleComplete) {
             return;
         }
 

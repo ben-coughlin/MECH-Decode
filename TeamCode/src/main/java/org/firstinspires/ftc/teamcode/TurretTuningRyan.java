@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -102,7 +101,7 @@ public class TurretTuningRyan extends OpMode
         turret.setFlywheelRightPower(flyRightPower);
         intakeSubsystem.setKickerPos(kickerPos);
 
-        telemetry.addData("Current Turret Position", turret.getTurretPos());
+        telemetry.addData("Current Turret Position", turret.getTurretDeg());
         telemetry.addData("Current Flywheel Left Power", turret.getFlywheelLeftPower());
         telemetry.addData("Current Flywheel Right Power", turret.getFlywheelRightPower());
         telemetry.addData("Current Hood Position", turret.getHoodPos());

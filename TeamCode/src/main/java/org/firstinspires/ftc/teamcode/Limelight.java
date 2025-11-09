@@ -22,6 +22,7 @@ public class Limelight extends RobotMasterPinpoint
 
     private static LLResult currResult = null;
     private static long currLatency = 0;
+    private static double tx;
 
 
     public Limelight(HardwareMap hwMap)
@@ -106,6 +107,7 @@ public class Limelight extends RobotMasterPinpoint
     public void updateLimelight()
     {
         currResult = limelight.getLatestResult();
+        tx = currResult.getTx();
 
         int tagId = getTagId(currResult);
 
@@ -125,6 +127,7 @@ public class Limelight extends RobotMasterPinpoint
     }
     public static Pose3D getPose() {return currResult.getBotpose();}
     public static long getCurrLatency() {return currLatency;}
+    public static double getTx(){return tx; }
 
 
 }

@@ -13,7 +13,7 @@
   | Y (Triangle)| Unassigned | - | | 
   | X (Square) | Unassigned | - | | 
   | B (Circle) | Enter OUTTAKE state | - | Runs outtake for 1 second | 
-  | A (Cross) | Unassigned | - | | 
+  | A (Cross) | spins spindexer | - | | 
   | Left Bumper | Emergency Stop | - | Enters STOP state | 
   | Right Bumper| Cancel Shot | - | Returns from READY_TO_SHOOT to IDLE | 
   | Right Trigger| Enter INTAKE state | - | (This is an analog axis) | 

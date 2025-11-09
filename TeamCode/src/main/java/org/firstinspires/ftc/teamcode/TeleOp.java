@@ -161,10 +161,10 @@ public class TeleOp extends RobotMasterPinpoint
 
         //limelight  - - - - - - - - - - - -
         isAutoAiming = autoAimToggle.getState();
+        LLResult result = limelight.getCurrResult();
 
-        if (limelight.getCurrResult() != null && limelight.getCurrResult().isValid() && !VisionUtils.isTagObelisk(VisionUtils.getTagId(limelight.getCurrResult())))
+        if (result != null && result.isValid() && !VisionUtils.isTagObelisk(VisionUtils.getTagId(result)))
         {
-            LLResult result = limelight.getCurrResult();
             double llError = result.getTx();
 
             turret.aimTurret(isAutoAiming, llError, gamepad2.right_stick_x, limelight.getDistanceToTag(result));
