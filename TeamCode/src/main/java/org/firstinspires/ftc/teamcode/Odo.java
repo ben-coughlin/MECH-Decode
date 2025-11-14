@@ -37,11 +37,16 @@ public class Odo
         odo.update();
         startLoopTime = SystemClock.uptimeMillis();
         pos = odo.getPosition();
+        /* this is commented because we're using pose fusion for x/y, heading passes straight through but that's handled in the class itself
         worldXPosition = pos.getX(DistanceUnit.INCH);
         worldYPosition = pos.getY(DistanceUnit.INCH);
         worldAngle_rad = pos.getHeading(AngleUnit.RADIANS);
+
+         */
         // DO NOT CHANGE THIS LINE Pinpoint
         SpeedOmeter.update(odo.getVelY(DistanceUnit.INCH), odo.getVelX(DistanceUnit.INCH), odo.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS));
+
+
     }
 
 

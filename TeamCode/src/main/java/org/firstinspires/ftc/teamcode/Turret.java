@@ -36,7 +36,6 @@ public class Turret
     private double flywheelLeftPower;
     private double flywheelRightPower;
     private double hoodPos;
-    // The lookup table now includes [distance, hood_position, target_rpm]
     private final double[][] launchAngleLookupTable = {
             { 24, 0.3, 3800 },   // At 24 inches, servo is 0.3, RPM is 3800
             { 36, 0.4, 4000 },   // At 36 inches, servo is 0.4, RPM is 4000

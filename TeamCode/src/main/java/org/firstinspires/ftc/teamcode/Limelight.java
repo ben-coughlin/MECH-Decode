@@ -7,11 +7,14 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 
+import java.util.HashMap;
 import java.util.List;
 
 public class Limelight extends RobotMasterPinpoint
 {
     public static final int[] obeliskAprilTagIDs = {21, 22, 23};
+    public final HashMap<Integer, Pattern> idToPatternList= new HashMap<>();
+    public static int currObeliskAprilTag;
     public static final int redGoalID = 24;
     public static final int blueGoalID = 20;
     private final Limelight3A limelight;
@@ -27,10 +30,16 @@ public class Limelight extends RobotMasterPinpoint
 
     public Limelight(HardwareMap hwMap)
     {
+        idToPatternList.put(21, new Pattern(Pattern.Ball.GREEN, Pattern.Ball.PURPLE, Pattern.Ball.PURPLE));
+        idToPatternList.put(22, new Pattern(Pattern.Ball.PURPLE, Pattern.Ball.GREEN, Pattern.Ball.PURPLE));
+        idToPatternList.put(23, new Pattern(Pattern.Ball.PURPLE, Pattern.Ball.PURPLE, Pattern.Ball.GREEN));
+
         limelight = hwMap.get(Limelight3A.class, "limelight");
         telemetry.setMsTransmissionInterval(11);
         limelight.pipelineSwitch(0);
         limelight.start();
+
+
     }
 
 
@@ -87,19 +96,15 @@ public class Limelight extends RobotMasterPinpoint
             // Get the vertical angle (ty) to the target from the Limelight. This is 'a2'.
             double ty_degrees = result.getTy();
 
-
-            // Convert angles from degrees to radians for Math.tan()
+            // Convert angles from degrees to radians
             double a1_radians = Math.toRadians(CAMERA_MOUNTING_ANGLE_DEGREES);
             double a2_radians = Math.toRadians(ty_degrees);
 
-            // Calculate height difference
             double heightDifference = GOAL_APRILTAG_HEIGHT_INCHES - CAMERA_HEIGHT_INCHES;
-
-            // Calculate the distance using the formula
 
             return heightDifference / Math.tan(a1_radians + a2_radians);
         }
-        return -1; // Return -1 or another indicator that no tag was found
+        return -1;
     }
 
 
@@ -117,6 +122,21 @@ public class Limelight extends RobotMasterPinpoint
         }
         currLatency = limelight.getTimeSinceLastUpdate();
     }
+    public Pattern updateObelisk(boolean canObeliskBeChanged)
+    {
+        int tagId = getTagId(currResult);
+
+        if(isTagObelisk(tagId) && canObeliskBeChanged)
+        {
+            currObeliskAprilTag = tagId;
+            return null;
+        }
+
+          return idToPatternList.get(currObeliskAprilTag);
+
+
+    }
+
 
     public static LLResult getCurrResult()
     {

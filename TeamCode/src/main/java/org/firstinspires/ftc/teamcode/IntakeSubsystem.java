@@ -14,6 +14,7 @@ public class IntakeSubsystem
 
     private final Servo kicker;
     private final DcMotorEx intake;
+    public static boolean isIntakeRunning;
 
 
     public IntakeSubsystem(HardwareMap hwMap)
@@ -47,6 +48,8 @@ public class IntakeSubsystem
     {
         double intakePower = 1;
         intake.setPower(intakePower);
+        isIntakeRunning = true;
+
     }
     public void outtake()
     {
@@ -57,6 +60,7 @@ public class IntakeSubsystem
     public void turnIntakeOff()
     {
         intake.setPower(0);
+        isIntakeRunning = false;
     }
 
     public void moveKickerVertical()

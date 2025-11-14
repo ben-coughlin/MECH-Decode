@@ -1,10 +1,14 @@
 package org.firstinspires.ftc.teamcode;
 
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import static org.firstinspires.ftc.teamcode.RobotPosition.worldAngle_rad;
+import static org.firstinspires.ftc.teamcode.RobotPosition.worldXPosition;
+import static org.firstinspires.ftc.teamcode.RobotPosition.worldYPosition;
 
 /**
  * Lightweight sensor fusion filter combining odometry and Limelight pose estimates.
@@ -30,7 +34,7 @@ public class PoseFusion {
      * @param odomPose The robot's current pose from odometry.
      * @param turretAngleRad The turret's current angle in radians relative to the robot's front.
      */
-    public void update(Pose2D odomPose, double turretAngleRad) {
+    public void calculateFusedPose(Pose2D odomPose, double turretAngleRad) {
         Pose3D limePose3D = Limelight.getPose();
         long llLatency = Limelight.getCurrLatency();
 
@@ -90,6 +94,16 @@ public class PoseFusion {
         }
     }
 
+    public void applyFusedPose()
+    {
+        worldXPosition = fusedPose.getX(DistanceUnit.INCH);
+        worldYPosition = fusedPose.getY(DistanceUnit.INCH);
+        worldAngle_rad = fusedPose.getHeading(AngleUnit.RADIANS);
+
+    }
+
+
+
 
 
     /** Returns the current fused pose. */
@@ -115,4 +129,14 @@ public class PoseFusion {
         this.limelightWeight = limeWeight;
         this.limelightHeadingWeight = limeHeadingWeight;
     }
+    public void showPoseFusionTelemetry(Telemetry telemetry)
+    {
+
+        telemetry.addData("Fused X", fusedPose.getX(DistanceUnit.INCH));
+        telemetry.addData("Fused Y", fusedPose.getY(DistanceUnit.INCH));
+        telemetry.addData("Fused Heading", "%.2f rad  |  %.2f deg",
+                fusedPose.getHeading(AngleUnit.RADIANS),
+                fusedPose.getHeading(AngleUnit.DEGREES));
+    }
+
 }

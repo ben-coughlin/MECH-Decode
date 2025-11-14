@@ -21,7 +21,7 @@
   | Left Stick Button| Unassigned | - | | 
   | Right Stick Button| Unassigned | - | | 
   | Touchpad | Unassigned | - | | 
-  | PS Button | Unassigned | - | |]
+  | PS Button/Guide | Unassigned | - | |]
 
   **Gamepad 2 (Operator)**
   | Button / Axis | Current Action | Planned Action (if any) | Notes | 
@@ -35,7 +35,7 @@
   | DPad-Left | Unassigned | - | | 
   | DPad-Right | Unassigned | - | | 
   | Y (Triangle)| Unassigned | - | | 
-  | X (Square) | Toggle Turret Auto-Aim | - | Toggles the isAutoAiming boolean | 
+  | X (Square) |  | - |  | 
   | B (Circle) | Unassigned | - | | 
   | A (Cross) | Unassigned | - | | 
   | Left Bumper | Unassigned | - | | 
@@ -45,5 +45,5 @@
   | Left Stick Button| Unassigned | - | | 
   | Right Stick Button| Unassigned | - | | 
   | Touchpad | Unassigned | - | | 
-  | PS Button | Unassigned | - | |
+  | PS Button/Guide | Toggle Auto-Aim | - | |
 

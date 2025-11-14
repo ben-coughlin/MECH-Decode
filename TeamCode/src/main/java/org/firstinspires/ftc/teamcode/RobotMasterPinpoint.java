@@ -28,6 +28,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
     Turret turret = null;
     Spindexer spindexer = null;
     PoseFusion pose = new PoseFusion();
+    Pattern obelisk = null;
 
     // ftcsim stuff - - - - - - - -
     private UdpClientFieldSim client;
@@ -97,6 +98,8 @@ public abstract class RobotMasterPinpoint extends OpMode {
         spindexer = new Spindexer(hardwareMap, colorSensor);
         pose.reset(new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.RADIANS, 0));
 
+
+
         if(gamepad1.options)
         {
             DEBUGGING = true;
@@ -113,6 +116,8 @@ public abstract class RobotMasterPinpoint extends OpMode {
         double startLoopTime = SystemClock.uptimeMillis();
 
         odo.updateOdo();
+        limelight.updateLimelight();
+        limelight.updateObelisk(true);
         odo.showOdoTelemetry(telemetry);
 
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
@@ -124,7 +129,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
     @Override
     public void start() {
         programStage = 0;
-
+        obelisk = limelight.updateObelisk(false);
     }
     @Override
     public void stop()
@@ -159,28 +164,27 @@ public abstract class RobotMasterPinpoint extends OpMode {
         odo.updateOdo();
         turret.updateTurret();
         spindexer.update();
+        pose.calculateFusedPose(odo.pos, Math.toRadians(turret.getTurretDeg()));
+        pose.applyFusedPose();
 
-        //sensor fusion stuff - atm we're just testing with this
-        pose.update(odo.pos, Math.toRadians(turret.getTurretDeg()));
-        Pose2D fusedPose = pose.getPoseEstimate();
-        telemetry.addData("Fused X", fusedPose.getX(DistanceUnit.INCH));
-        telemetry.addData("Fused Y", fusedPose.getY(DistanceUnit.INCH));
-        telemetry.addData("Fused Heading", "%.2f rad  |  %.2f deg",
-                fusedPose.getHeading(AngleUnit.RADIANS),
-                fusedPose.getHeading(AngleUnit.DEGREES));
-
+        pose.showPoseFusionTelemetry(telemetry);
         odo.showOdoTelemetry(telemetry);
         turret.showAimTelemetry(telemetry);
         colorSensor.showColorSensorTelemetry(telemetry);
         spindexer.showTelemetry(telemetry);
         spindexer.intakeNewBall();
 
-        if(DEBUGGING)
-        {
-            addDebugTelemetry();
-        }
+        telemetry.addData("Obelisk", "[%s] [%s] [%s]",
+                obelisk.spindexSlotOne,
+                obelisk.spindexSlotTwo,
+                obelisk.spindexSlotThree);
+
         telemetry.addData("Superstructure State", currentState);
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
+        if(DEBUGGING)
+        {
+            addDebugData();
+        }
         telemetry.update();
         Log.i("Loop Time", String.valueOf(SystemClock.uptimeMillis() - startLoopTime));
     }
@@ -188,13 +192,15 @@ public abstract class RobotMasterPinpoint extends OpMode {
     /**
      * adds debug telemetry when in debug mode - we don't want this normally bc of loop times
      */
-    private void addDebugTelemetry()
+    private void addDebugData()
     {
 
         for(String k : debugKeyValues.keySet())
         {
             client.sendKeyValue(k, debugKeyValues.get(k));
         }
+
+        client.sendPosition(worldXPosition, worldYPosition, Math.toDegrees(worldAngle_rad));
 
 
     }

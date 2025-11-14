@@ -69,7 +69,7 @@ public class Spindexer {
     }
 
     public void intakeNewBall() {
-        if (!intakeCycleActive || !isAtTargetPosition() || ballDetectedThisCycle) return;
+        if (!IntakeSubsystem.isIntakeRunning|| !isAtTargetPosition() || ballDetectedThisCycle) return;
 
         Pattern.Ball detected = detectBallColor();
 
@@ -80,12 +80,10 @@ public class Spindexer {
 
             int targetSlot = getPreferredSlotForColor(detected);
 
-            // If the current slot is not the preferred one, rotate there
             if (currentSlot != targetSlot) {
                 rotateToSlot(targetSlot);
             }
 
-            // Mark intake complete so it doesn't retrigger
             intakeCycleActive = false;
         }
     }
@@ -97,14 +95,50 @@ public class Spindexer {
 
     public void recordShotBall()
     {
+
         updateSlot(currentSlot, Pattern.Ball.EMPTY);
-        rotateToSlot(getPreferredSlotForColor(Pattern.Ball.EMPTY));
+        rotateToNextFullSlot();
+    }
+    public void rotateToNextFullSlot() {
+        Pattern.Ball[] slots = {
+                inventory.spindexSlotOne,
+                inventory.spindexSlotTwo,
+                inventory.spindexSlotThree
+        };
+
+        //
+        for (int i = 0; i <= 2; i++) {
+            int slotToCheck = (currentSlot + i) % 3;
+
+            if (slots[slotToCheck] != Pattern.Ball.EMPTY) {
+                rotateToSlot(slotToCheck);
+                return;
+            }
+        }
+
+    }
+    public void rotateToNextEmptySlot() {
+        Pattern.Ball[] slots = {
+                inventory.spindexSlotOne,
+                inventory.spindexSlotTwo,
+                inventory.spindexSlotThree
+        };
+
+        //
+        for (int i = 0; i <= 2; i++) {
+            int slotToCheck = (currentSlot + i) % 3;
+
+            if (slots[slotToCheck] == Pattern.Ball.EMPTY) {
+                rotateToSlot(slotToCheck);
+                return;
+            }
+        }
+
     }
 
 
-    // ------------------------------------------------------------------------
-    // Rotation Logic
-    // ------------------------------------------------------------------------
+
+
     private void rotateToNextSlot() {
         holdingPosition = false;
         currentSlot = (currentSlot + 1) % 3;
@@ -112,6 +146,7 @@ public class Spindexer {
         pid.setReference(targetTicks);
         pid.reset();
     }
+
 
     private void stopAndHold() {
         targetTicks = encoder.getCurrentPosition();
@@ -121,9 +156,6 @@ public class Spindexer {
         holdingPosition = true;
     }
 
-    // ------------------------------------------------------------------------
-    // Utility and Accessors
-    // ------------------------------------------------------------------------
     public boolean isAtTargetPosition() {
         return holdingPosition;
     }
