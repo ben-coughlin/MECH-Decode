@@ -41,12 +41,14 @@ public abstract class RobotMasterPinpoint extends OpMode {
     //misc
     public boolean isAuto = false;
     public static boolean resetEncoders = false;
+    double lastHeading = 0;
 
 
 
     //clocks
 
     ElapsedTime runtime = new ElapsedTime();
+    long lastLoopTime = System.nanoTime();
 
 
     //////// STATE MACHINE STUFF BELOW DO NOT TOUCH ////////
@@ -96,7 +98,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
         odo = new Odo(hardwareMap);
         turret = new Turret(hardwareMap);
         spindexer = new Spindexer(hardwareMap, colorSensor);
-        pose.reset(new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.RADIANS, 0));
+
 
 
 
@@ -158,16 +160,24 @@ public abstract class RobotMasterPinpoint extends OpMode {
     public void mainLoop() {
         long startLoopTime = SystemClock.uptimeMillis();
 
+        long now = System.nanoTime();
+        double dt = (now - lastLoopTime) * 1e-9; // seconds
+        lastLoopTime = now;
+
         //read everything once and only once per loop
         colorSensor.updateDetection();
         limelight.updateLimelight();
         odo.updateOdo();
         turret.updateTurret();
         spindexer.update();
-        pose.calculateFusedPose(odo.pos, Math.toRadians(turret.getTurretDeg()));
-        pose.applyFusedPose();
 
-        pose.showPoseFusionTelemetry(telemetry);
+        pose.predict(odo.getVelocityComponents()[0], odo.getVelocityComponents()[1], (odo.getHeading() - lastHeading) / dt, dt);
+        pose.updateFromLimelight(limelight.getPose(), Math.toRadians(turret.getTurretDeg()), limelight.getCurrLatency());
+        pose.updateMotionComponents();
+        lastHeading = odo.getHeading();
+
+
+        pose.displayPoseTelemetry(telemetry, pose, odo.getVelocityComponents()[0], odo.getVelocityComponents()[1], (odo.getHeading() - lastHeading) / dt);
         odo.showOdoTelemetry(telemetry);
         turret.showAimTelemetry(telemetry);
         colorSensor.showColorSensorTelemetry(telemetry);

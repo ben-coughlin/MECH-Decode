@@ -21,6 +21,7 @@ public class Odo
     GoBildaPinpointDriver odo;
     Pose2D pos = null;
     long startLoopTime = 0;
+    private final double[] velocityComponents = new double[3];
 
     public Odo(HardwareMap hwMap)
     {
@@ -37,6 +38,11 @@ public class Odo
         odo.update();
         startLoopTime = SystemClock.uptimeMillis();
         pos = odo.getPosition();
+
+        velocityComponents[0] = odo.getVelX(DistanceUnit.INCH);
+        velocityComponents[1] = odo.getVelY(DistanceUnit.INCH);
+        velocityComponents[2] = odo.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS);
+
         /* this is commented because we're using pose fusion for x/y, heading passes straight through but that's handled in the class itself
         worldXPosition = pos.getX(DistanceUnit.INCH);
         worldYPosition = pos.getY(DistanceUnit.INCH);
@@ -47,8 +53,20 @@ public class Odo
         SpeedOmeter.update(odo.getVelY(DistanceUnit.INCH), odo.getVelX(DistanceUnit.INCH), odo.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS));
 
 
+
     }
 
+    /**
+     *
+     * @return an array of doubles containing the x (0), y (1), and heading (2) (rads) velocities in that order
+     */
+    public double[] getVelocityComponents() {
+        return velocityComponents;
+    }
+    public double getHeading()
+    {
+        return odo.getHeading(AngleUnit.RADIANS);
+    }
 
 
     public void showOdoTelemetry(Telemetry telemetry)

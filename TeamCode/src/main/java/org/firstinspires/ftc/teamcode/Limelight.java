@@ -145,9 +145,8 @@ public class Limelight extends RobotMasterPinpoint
     public static double getDistance() {
         return distance;
     }
-    public static Pose3D getPose() {return currResult.getBotpose();}
-    public static long getCurrLatency() {return currLatency;}
-    public static double getTx(){return tx; }
+    public Pose3D getPose() {return currResult.getBotpose();}
+    public  long getCurrLatency() {return currLatency;}
 
 
 }
