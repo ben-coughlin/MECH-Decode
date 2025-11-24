@@ -28,7 +28,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
     Turret turret = null;
     Spindexer spindexer = null;
     PoseFusion pose = new PoseFusion();
-    Pattern obelisk = null;
+    static Pattern obelisk = null;
 
     // ftcsim stuff - - - - - - - -
     private UdpClientFieldSim client;
@@ -119,7 +119,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
         odo.updateOdo();
         limelight.updateLimelight();
-        //limelight.updateObelisk(true);
+        limelight.updateObelisk(true);
         odo.showOdoTelemetry(telemetry);
 
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);

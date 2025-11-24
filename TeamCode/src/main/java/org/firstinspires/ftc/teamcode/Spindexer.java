@@ -5,7 +5,10 @@ import android.util.Log;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.Range;
+
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+
 
 /**
  * A smart spindexer subsystem that uses a CR Servo with an external encoder and PIDF control.
@@ -24,7 +27,7 @@ public class Spindexer {
     // --- Constants ---
     private static final double TICKS_PER_REV = 8192.0;
     private static final double TICKS_PER_SLOT = (TICKS_PER_REV / 3.0);
-    private static final int POSITION_TOLERANCE = 30;
+    private static final int POSITION_TOLERANCE = 40;
 
     // --- State ---
     private final Pattern inventory;
@@ -33,6 +36,7 @@ public class Spindexer {
     private boolean holdingPosition = true;
     private boolean intakeCycleActive = false;
     private boolean ballDetectedThisCycle = false;
+    private int nudgeOffset = 0;
 
     public Spindexer(HardwareMap hwMap, ColorSensor colorSensor) {
         this.spindexerServo = hwMap.get(CRServo.class, "spindexer");
@@ -53,11 +57,14 @@ public class Spindexer {
         double currentPos = encoder.getCurrentPosition();
         double error = targetTicks - currentPos;
 
+        double output = pid.calculatePIDF(currentPos);
+        output = Range.clip(output, -1, 1);
+        spindexerServo.setPower(output);
+
         if (Math.abs(error) <= POSITION_TOLERANCE) {
-            stopAndHold();
+            spindexerServo.setPower(0);
+            holdingPosition = true;
         } else {
-            double output = pid.calculatePIDF(currentPos);
-            spindexerServo.setPower(output);
             holdingPosition = false;
         }
     }
@@ -164,20 +171,67 @@ public class Spindexer {
 
     }
 
+    public void chooseShotColor(Pattern.Ball desiredColor)
+    {
+        if(desiredColor == Pattern.Ball.GREEN)
+        {
+            rotateToNextGreenSlot();
+        }
+        else if(desiredColor == Pattern.Ball.PURPLE)
+        {
+            rotateToNextPurpleSlot();
+        }
+    }
+    public void rotateToNextGreenSlot() {
+        Pattern.Ball[] slots = {
+                inventory.spindexSlotOne,
+                inventory.spindexSlotTwo,
+                inventory.spindexSlotThree
+        };
 
+        //
+        for (int i = 0; i <= 2; i++) {
+            int slotToCheck = (currentSlot + i) % 3;
 
+            if (slots[slotToCheck] == Pattern.Ball.GREEN && slotToCheck != currentSlot) {
+                Log.i("Spindexer", "rotating to next green slot" + slotToCheck);
+                rotateToSlot(slotToCheck);
+                return;
+            }
+        }
+
+    }
+    public void rotateToNextPurpleSlot() {
+        Pattern.Ball[] slots = {
+                inventory.spindexSlotOne,
+                inventory.spindexSlotTwo,
+                inventory.spindexSlotThree
+        };
+
+        //
+        for (int i = 0; i <= 2; i++) {
+            int slotToCheck = (currentSlot + i) % 3;
+
+            if (slots[slotToCheck] == Pattern.Ball.PURPLE && slotToCheck != currentSlot) {
+                Log.i("Spindexer", "rotating to next purple slot" + slotToCheck);
+                rotateToSlot(slotToCheck);
+                return;
+            }
+        }
+
+    }
 
     private void rotateToNextSlot() {
         holdingPosition = false;
         currentSlot = (currentSlot + 1) % 3;
-        targetTicks = currentSlot * TICKS_PER_SLOT;
+        targetTicks = currentSlot * TICKS_PER_SLOT + nudgeOffset;
         pid.setReference(targetTicks);
         pid.reset();
     }
 
 
     private void stopAndHold() {
-        targetTicks = encoder.getCurrentPosition();
+        targetTicks = encoder.getCurrentPosition() + nudgeOffset;
         pid.setReference(targetTicks);
         pid.reset();
         spindexerServo.setPower(0);
@@ -218,12 +272,14 @@ public class Spindexer {
 
 
     private void rotateToSlot(int slot) {
-        Log.i("Spindexer", "rotating to slot" + slot);
-        holdingPosition = false;
-        currentSlot = slot;
-        targetTicks = slot * TICKS_PER_SLOT;
-        pid.setReference(targetTicks);
-        pid.reset();
+
+           Log.i("Spindexer", "rotating to slot" + slot);
+           holdingPosition = false;
+           currentSlot = slot;
+           targetTicks = slot * TICKS_PER_SLOT + nudgeOffset;
+           pid.setReference(targetTicks);
+           pid.reset();
+
     }
 
     private int getPreferredSlotForColor(Pattern.Ball color) {
@@ -244,6 +300,22 @@ public class Spindexer {
                 return currentSlot;
         }
     }
+    public void nudgeLeft() {
+        nudgeOffset -= 25;
+        holdingPosition = false;
+        pid.setReference(targetTicks + nudgeOffset);
+        pid.reset();
+    }
+
+    public void nudgeRight() {
+        nudgeOffset += 25;
+        holdingPosition = false; // allow PID to move
+        pid.setReference(targetTicks + nudgeOffset);
+        pid.reset();
+    }
+
+
+
 
 
     public void showTelemetry(Telemetry telemetry) {

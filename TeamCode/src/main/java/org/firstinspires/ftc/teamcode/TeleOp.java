@@ -71,6 +71,7 @@ public class TeleOp extends RobotMasterPinpoint
     boolean isAutoHeading = false;
     boolean isAutoAiming = false;
     double targetHeading = 0.0;
+    public boolean wasBallIntakeSuccessful;
 
 
 
@@ -119,6 +120,11 @@ public class TeleOp extends RobotMasterPinpoint
         debugKeyValues.put("Superstructure State", currentState);
 
 
+        if(wasBallIntakeSuccessful)
+        {
+            gamepad1.rumble(50);
+            wasBallIntakeSuccessful = false;
+        }
         //toggles - - - - - - - - - -
         circleToggle.updateToggle(gamepad1.circle);
         squareToggle.updateToggle(gamepad1.square);
@@ -126,7 +132,7 @@ public class TeleOp extends RobotMasterPinpoint
         intakeToggle.updateToggle(gamepad1.right_trigger > 0.1);
 
 
-        //driving stuff - - - - - - - - - - -
+                            //driving stuff - - - - - - - - - - -
         movement_y = -gamepad1.left_stick_y;
         movement_x = gamepad1.left_stick_x;
 
@@ -148,7 +154,7 @@ public class TeleOp extends RobotMasterPinpoint
             headingHold.setReference(targetHeading);
             double error = headingHold.calculatePIDF(currentHeadingRad);
             movement_turn = (error < Math.toRadians(2)) ? Math.toRadians(0) : error;
-            isAutoHeading = false;
+            isAutoHeading = true;
 
         }
 
@@ -158,7 +164,7 @@ public class TeleOp extends RobotMasterPinpoint
 
         //limelight  - - - - - - - - - - - -
         isAutoAiming = autoAimToggle.getState();
-        LLResult result = limelight.getCurrResult();
+        LLResult result = Limelight.getCurrResult();
 
         if (result != null && result.isValid() && !VisionUtils.isTagObelisk(VisionUtils.getTagId(result)))
         {
@@ -172,19 +178,38 @@ public class TeleOp extends RobotMasterPinpoint
             turret.aimTurret(false, 0, gamepad2.right_stick_x, 999);
         }
 
+        if(gamepad2.dpad_left)
+        {
+            spindexer.nudgeLeft();
+        }
+        else if(gamepad2.dpad_right)
+        {
+            spindexer.nudgeRight();
+        }
+
+
 
 
         if (programStage == progStates.IDLE.ordinal()) {
             if (gamepad1.dpad_up) {
                 nextStage(progStates.SHOOT_PREP.ordinal());
             }
-            else if (gamepad1.circle) {
+            else if (gamepad1.left_trigger > 0.1) {
                 nextStage(progStates.OUTTAKE.ordinal());
             }
         }
 
         if (programStage == progStates.READY_TO_SHOOT.ordinal()) {
-            //
+
+            if(gamepad2.left_bumper)
+            {
+                spindexer.chooseShotColor(Pattern.Ball.PURPLE);
+            }
+            else if(gamepad2.right_bumper)
+            {
+                spindexer.chooseShotColor(Pattern.Ball.GREEN);
+            }
+
             if (gamepad1.dpad_down) {
                 nextStage(progStates.FIRE_BALL.ordinal());
             }
@@ -236,6 +261,7 @@ public class TeleOp extends RobotMasterPinpoint
             if (stageFinished) {
                 initializeStateVariables();
                 gamepad1.rumble(1, 1, 200);
+                gamepad2.rumble(1, 1, 200);
                 turret.turnOnFlywheel();
             }
         }

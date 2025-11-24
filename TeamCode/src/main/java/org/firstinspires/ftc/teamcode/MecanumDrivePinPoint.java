@@ -129,21 +129,16 @@ public final class MecanumDrivePinPoint {
     public void applyMovementDirectionBasedFieldRelative(double forward, double right, double rotate, boolean isAutoHeading) {
 
 
-        // First, convert direction being asked to drive to polar coordinates
         double theta = Math.atan2(forward, right);
         double r = Math.hypot(right, forward);
 
-        // Second, rotate angle by the angle the robot is pointing
-        theta = AngleUnit.normalizeRadians(theta - worldAngle_rad);
+        theta -= RobotPosition.worldAngle_rad;
+        theta = AngleUnit.normalizeRadians(theta);
 
-        if(!isAutoHeading) {
-            // Third, convert back to cartesian only if we aren't using the autoheading
+        if(isAutoHeading) {
              forward = r * Math.sin(theta);
              right = r * Math.cos(theta);
         }
-
-
-        // Finally, call the drive method with robot relative forward and right amounts
         drive(forward, right, rotate);
     }
 

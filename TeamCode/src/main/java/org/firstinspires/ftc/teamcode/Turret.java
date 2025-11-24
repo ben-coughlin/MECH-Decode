@@ -1,12 +1,15 @@
 package org.firstinspires.ftc.teamcode;
 
 
+import android.util.Log;
+
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
@@ -22,39 +25,35 @@ public class Turret
     private final DcMotorEx flywheelLeft;
     private final DcMotorEx flywheelRight;
     private final Servo hood;
-    private final VoltageSensor voltageSensor;
-    private final PIDFController autoAimClose = new PIDFController(0.012, 0, 0.0012, 0.06);
-    private final PIDFController autoAimFar = new PIDFController(0.0065, 0, 0.0008, 0.05);
-    private final PIDFController flywheelPIDF = new PIDFController(0.0008, 0, 0.0001, 0.00018); //todo: tuneeee
+    private final PIDFController autoAimClose = new PIDFController(0.02, 0, 0.0019, 0.08);
+    private final PIDFController autoAimFar = new PIDFController(0.0065, 0, 0.0009, 0.06);
     private  PIDFController activeAutoAimController;
-
     private static final double GAIN_SCHEDULING_DISTANCE_THRESHOLD = 72.0;
-
     private double turretDeg;
     private double turretPower;
     private double llError = 0;
-    private double flywheelPower;
     private double hoodPos;
     private double currRPM;
-    private double targetRPM;
+    private double targetPower;
+
 
 
     private final double[][] launchAngleLookupTable = {
-            { 20, 0.01, 4200},   // At 20 inches, servo is 0.01, % power is 80
-            { 36, 0.08, 4680},
-            { 48, 0.105, 5550 },
-            { 60, 0.155, 6000 },
-            { 65, 0.210, 6000 },
-            { 110, 0.83, 6000 }   //todo: tune
+            { 20, 0.01, 0.7},   // At 20 inches, servo is 0.01, power is 0.7
+            { 36, 0.08, 0.78},
+            { 48, 0.11, 0.85 },
+            { 60, 0.155, 0.9 },
+            { 65, 0.290,  0.92},
+            { 72, 0.34, 1 },
+            { 110, 0.83, 1 }   //todo: tune
     };
 
     public Turret(HardwareMap hwMap)
     {
         turret = hwMap.get(DcMotorEx.class, "turret");
-        flywheelLeft = hwMap.get(DcMotorEx.class, "flywheelLeft"); //todo: REMEMBER WHICH PORT THE ENCODER IS IN!!! also check that voltage sensor
+        flywheelLeft = hwMap.get(DcMotorEx.class, "flywheelLeft");
         flywheelRight = hwMap.get(DcMotorEx.class, "flywheelRight");
         hood = hwMap.get(Servo.class, "hood");
-        voltageSensor = hwMap.get(VoltageSensor.class, "Control Hub");
 
         turret.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
         turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -66,8 +65,8 @@ public class Turret
 
         flywheelLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         flywheelRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        flywheelLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        flywheelRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        flywheelLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        flywheelRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         activeAutoAimController = autoAimClose;
         autoAimFar.setReference(0);
@@ -85,53 +84,13 @@ public class Turret
 
 
         double currentDistance = Limelight.getDistance();
-        if (currentDistance > 0) {
-            hood.setPosition(getServoPositionFromDistance(currentDistance));
-            targetRPM = getRPMFromDistance(currentDistance);
-        }
-        updateFlywheel();
+        hood.setPosition(getServoPositionFromDistance(currentDistance));
+        targetPower = getPowerFromDistance(currentDistance);
+        
 
         hoodPos = hood.getPosition();
-        flywheelPower = flywheelLeft.getPower();
 
     }
-
-
-    public double setPowerFromRPM(double rpm)
-    {
-        return rpm / 6000;
-    }
-
-    public void setFlywheelPower(double flywheelPower)
-    {
-        flywheelLeft.setPower(flywheelPower);
-        flywheelRight.setPower(flywheelPower);
-    }
-
-    public void turnOnFlywheel()
-    {
-        setFlywheelPower(flywheelPower);
-    }
-    public void turnOffFlywheel()
-    {
-        setFlywheelPower(0);
-    }
-
-
-    public void updateFlywheel() {
-        double voltage = voltageSensor.getVoltage();
-
-        double kF_comp = flywheelPIDF.getF() * (12.0 / voltage);
-        flywheelPIDF.setF(kF_comp);
-
-        flywheelPIDF.setReference(targetRPM);
-
-        flywheelPower = flywheelPIDF.calculatePIDF(currRPM);
-
-    }
-
-
-
 
 
     /**
@@ -148,19 +107,17 @@ public class Turret
         if(useAutoAim)
         {
 
-
             if (distance < GAIN_SCHEDULING_DISTANCE_THRESHOLD && distance > 0) {
                 activeAutoAimController = autoAimClose;
             } else {
                 activeAutoAimController = autoAimFar;
             }
 
+            if (limelightError > 180) limelightError -= 360;
+            else if (limelightError < -180) limelightError += 360;
+
             llError = limelightError;
-
-            if (llError > 180) llError -= 360;
-            else if (llError < -180) llError += 360;
-
-            calculatedPower = -activeAutoAimController.calculatePIDF(llError);
+            calculatedPower = -activeAutoAimController.calculatePIDF(limelightError);
         }
         else
         {
@@ -180,9 +137,24 @@ public class Turret
             turret.setPower(calculatedPower);
         }
 
-
-
     }
+
+
+    public void setFlywheelPower(double flywheelPower)
+    {
+        flywheelLeft.setPower(flywheelPower);
+        flywheelRight.setPower(flywheelPower);
+    }
+
+    public void turnOnFlywheel()
+    {
+        setFlywheelPower(targetPower);
+    }
+    public void turnOffFlywheel()
+    {
+        setFlywheelPower(0);
+    }
+
 
     /**
      * Uses the lookup table and linear interpolation to find the correct servo position.
@@ -214,11 +186,11 @@ public class Turret
     }
 
     /**
-     * Uses the lookup table and linear interpolation to find the correct target RPM.
+     * Uses the lookup table and linear interpolation to find the correct target power.
      * @param distance The current distance to the target.
-     * @return The calculated target RPM.
+     * @return The calculated target power.
      */
-    public double getRPMFromDistance(double distance) {
+    public double getPowerFromDistance(double distance) {
         if (distance <= launchAngleLookupTable[0][0]) {
             return launchAngleLookupTable[0][2];
         }
@@ -232,26 +204,26 @@ public class Turret
 
             if (distance >= lowerBound[0] && distance <= upperBound[0]) {
                 double distanceRange = upperBound[0] - lowerBound[0];
-                double rpmRange = upperBound[2] - lowerBound[2];
+                double powerRange = upperBound[2] - lowerBound[2];
                 double distanceRatio = (distance - lowerBound[0]) / distanceRange;
 
-                return lowerBound[2] + (distanceRatio * rpmRange);
+                return lowerBound[2] + (distanceRatio * powerRange);
             }
         }
 
-        return 6000; //full send if this fails
+        return 1; //full send if this fails
     }
 
     public void showAimTelemetry(Telemetry telemetry) {
         telemetry.addLine("--- Aim ---");
         telemetry.addData("Turret PID Power", turret.getPower());
         telemetry.addData("Turret Degrees", turretDeg);
-        telemetry.addData("LLError", llError);
+        telemetry.addData("LLErr", llError);
         telemetry.addData("Distance to Goal", "%.2f inches", Limelight.getDistance());
-        telemetry.addData("Target RPM", getRPMFromDistance(Limelight.getDistance()));
         telemetry.addData("Interpolated Servo Position", "%.2f", getServoPositionFromDistance(Limelight.getDistance()));
         telemetry.addData("Flywheel Current RPM", "%.2f", currRPM);
-       // telemetry.addData("Flywheel Velocity" , "%.2f", flywheelLeft.getVelocity());
+        telemetry.addData("Flywheel Calculated Power", targetPower);
+
 
     }
 
