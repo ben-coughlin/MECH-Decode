@@ -102,8 +102,6 @@ public class TurretTuningRyan extends OpMode
         intakeSubsystem.setKickerPos(kickerPos);
 
         telemetry.addData("Current Turret Position", turret.getTurretDeg());
-        telemetry.addData("Current Flywheel Left Power", turret.getFlywheelLeftPower());
-        telemetry.addData("Current Flywheel Right Power", turret.getFlywheelRightPower());
         telemetry.addData("Current Hood Position", turret.getHoodPos());
         telemetry.addData("Current Kicker Position", kickerPos);
         telemetry.addData("Press right bumper on Gamepad 1 to increase Turret Power", "Press Left Bumper on Gamepad 1 to decrease Turret Power");

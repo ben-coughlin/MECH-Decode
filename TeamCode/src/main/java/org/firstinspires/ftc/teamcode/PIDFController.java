@@ -81,6 +81,12 @@ public class PIDFController {
         setGains(Kp, Ki, Kd, this.kF);
     }
 
+    public void setF(double kF) { this.kF = kF; }
+
+    public double getF() { return kF; }
+
+
+
     public void reset() {
         iError = 0.0;
         prevError = pError;
