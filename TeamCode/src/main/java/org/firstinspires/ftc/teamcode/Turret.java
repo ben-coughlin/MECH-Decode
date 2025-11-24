@@ -1,13 +1,21 @@
 package org.firstinspires.ftc.teamcode;
 
 
+import android.graphics.PixelFormat;
+
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+
+import java.util.Base64;
 
 public class Turret
 {
@@ -21,26 +29,35 @@ public class Turret
     private final DcMotorEx flywheelLeft;
     private final DcMotorEx flywheelRight;
     private final Servo hood;
-    private final PIDFController autoaimClose = new PIDFController(0.011, 0, 0.001, 0.05);
+    private final PIDFController autoaimClose = new PIDFController(0.012, 0, 0.001, 0.06);
 
-    private final PIDFController autoAimFar = new PIDFController(0.008, 0, 0, 0.05); // Lower P-gain and zero D-gain are key
+    private final PIDFController autoAimFar = new PIDFController(0.006, 0, 0, 0.05);
+    private final PIDFController flywheel = new PIDFController(0.0005, 0, 0, 0.00017);
+
 
     private  PIDFController activeAutoAimController;
+    private final VoltageSensor battVoltage;
     private static final double GAIN_SCHEDULING_DISTANCE_THRESHOLD = 72.0;
 
     private double turretDeg;
     private double turretPower;
-    private double flywheelLeftRPM;
     private double llError = 0;
-    private double flywheelRightRPM;
     private double flywheelLeftPower;
     private double flywheelRightPower;
+
     private double hoodPos;
+    private double currRPM;
+    private double targetRPM;
+
+
+
     private final double[][] launchAngleLookupTable = {
-            { 24, 0.3, 3800 },   // At 24 inches, servo is 0.3, RPM is 3800
-            { 36, 0.4, 4000 },   // At 36 inches, servo is 0.4, RPM is 4000
-            { 48, 0.55, 4200 },  // At 48 inches, servo is 0.55, RPM is 4200
-            { 60, 0.7, 4500 }    // At 60 inches, servo is 0.7, RPM is 4500 //todo: tune
+            { 20, 0.01, 4200},   // At 20 inches, servo is 0.01, % power is 80
+            { 36, 0.08, 4680},
+            { 48, 0.105, 5550 },
+            { 60, 0.155, 6000 },
+            { 65, 0.210, 6000 },
+            { 110, 0.83, 6000 }   //todo: tune
     };
 
     public Turret(HardwareMap hwMap)
@@ -49,6 +66,9 @@ public class Turret
         flywheelLeft = hwMap.get(DcMotorEx.class, "flywheelLeft");
         flywheelRight = hwMap.get(DcMotorEx.class, "flywheelRight");
         hood = hwMap.get(Servo.class, "hood");
+
+
+        battVoltage = hwMap.voltageSensor.iterator().next();
 
         turret.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
         turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -60,63 +80,64 @@ public class Turret
 
         flywheelLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         flywheelRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        flywheelLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        flywheelRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        flywheelLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        flywheelRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        flywheel.setOutputLimits(0, 1);
+
 
         activeAutoAimController = autoaimClose;
         autoAimFar.setReference(0);
         autoaimClose.setReference(0);
+
     }
+
 
     public void updateTurret()
     {
         turretDeg = turret.getCurrentPosition() / TURRET_TICKS_PER_DEGREE;
         turretPower = turret.getPower();
 
-        double flywheelLeftVelocity = flywheelLeft.getVelocity();
-        double flywheelRightVelocity = flywheelRight.getVelocity();
+
+      //  double degreesPerSecond = flywheelLeft.getVelocity();
+        currRPM = 4000;
+
+        // 2. Set the PIDF reference to our target
+        flywheel.setReference(targetRPM);
+
+        // 3. Calculate the power needed using your PIDF controller
+        double calculatedPower = flywheel.calculatePIDF(currRPM);
+
+        flywheelLeft.setPower(calculatedPower);
+        flywheelRight.setPower(calculatedPower);
+
+
+
+       double currentDistance = Limelight.getDistance();
+        if (currentDistance > 0) {
+            hood.setPosition(getServoPositionFromDistance(currentDistance));
+        }
+
 
         hoodPos = hood.getPosition();
         flywheelLeftPower = flywheelLeft.getPower();
         flywheelRightPower = flywheelRight.getPower();
-
-        flywheelLeftRPM = (flywheelLeftVelocity / FLYWHEEL_TICKS_PER_REVOLUTION) * 60;
-        flywheelRightRPM = (flywheelRightVelocity / FLYWHEEL_TICKS_PER_REVOLUTION) * 60;
-
-
-        /*
-        if (Limelight.getDistance() > 0) {
-            double servoPosition = getServoPositionFromDistance(Limelight.getDistance());
-            hood.setPosition(servoPosition);
-        }
-        */
     }
 
-    /**
-     * Sets the target velocity of both flywheel motors.
-     * @param rpm The desired target RPM.
-     */
-    public void setFlywheelRPM(double rpm) {
-        double ticksPerSecond = (rpm * FLYWHEEL_TICKS_PER_REVOLUTION) / 60.0;
-        flywheelLeft.setVelocity(ticksPerSecond);
-        flywheelRight.setVelocity(ticksPerSecond);
+
+
+
+    public void turnOnFlywheel() {
+        targetRPM = getRPMFromDistance(Limelight.getDistance());
     }
 
-    // This method is now primarily for stopping the flywheel or for manual overrides.
-    public void setFlywheelPower(double flywheelPower)
+
+    public void turnOffFlywheel()
     {
-        // If stopping, use setVelocity(0) for a more definitive stop in RUN_USING_ENCODER mode.
-        if (flywheelPower == 0) {
-            setFlywheelRPM(0);
-        } else {
-
-            flywheelLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            flywheelRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            flywheelLeft.setPower(flywheelPower);
-            flywheelRight.setPower(flywheelPower);
-        }
+        // To turn off, just set the target RPM to 0. The PIDF will spin it down.
+        targetRPM = 0;
+        flywheelLeft.setPower(0); // Also command power to 0 for an immediate stop.
+        flywheelRight.setPower(0);
     }
-
 
     /**
      * Aims the turret using either auto-aim or manual input, and selects PIDF gains based on distance.
@@ -191,7 +212,7 @@ public class Turret
             }
         }
 
-        return 0.5;
+        return 0.5; //safety if we have issues
     }
 
     /**
@@ -200,47 +221,67 @@ public class Turret
      * @return The calculated target RPM.
      */
     public double getRPMFromDistance(double distance) {
+        double rpm;
+
         if (distance <= launchAngleLookupTable[0][0]) {
-            return launchAngleLookupTable[0][2];
-        }
-        if (distance >= launchAngleLookupTable[launchAngleLookupTable.length - 1][0]) {
-            return launchAngleLookupTable[launchAngleLookupTable.length - 1][2];
-        }
+            rpm = launchAngleLookupTable[0][2];
+        } else if (distance >= launchAngleLookupTable[launchAngleLookupTable.length - 1][0]) {
+            rpm = launchAngleLookupTable[launchAngleLookupTable.length - 1][2];
+        } else {
+            rpm = 6000;
 
-        for (int i = 0; i < launchAngleLookupTable.length - 1; i++) {
-            double[] lowerBound = launchAngleLookupTable[i];
-            double[] upperBound = launchAngleLookupTable[i+1];
+            for (int i = 0; i < launchAngleLookupTable.length - 1; i++) {
+                double[] lowerBound = launchAngleLookupTable[i];
+                double[] upperBound = launchAngleLookupTable[i+1];
 
-            if (distance >= lowerBound[0] && distance <= upperBound[0]) {
-                double distanceRange = upperBound[0] - lowerBound[0];
-                double rpmRange = upperBound[2] - lowerBound[2];
-                double distanceRatio = (distance - lowerBound[0]) / distanceRange;
+                if (distance >= lowerBound[0] && distance <= upperBound[0]) {
+                    double distanceRange = upperBound[0] - lowerBound[0];
+                    double powerRange = upperBound[2] - lowerBound[2];
+                    double distanceRatio = (distance - lowerBound[0]) / distanceRange;
 
-                return lowerBound[2] + (distanceRatio * rpmRange);
+                    rpm = lowerBound[2] + (distanceRatio * powerRange);
+                    break;
+                }
             }
         }
 
-        return 6000; //full send if this fails
+        double currentVoltage = battVoltage.getVoltage();
+
+        if (currentVoltage < 10.0) {
+            return rpm;
+        }
+
+        final double NOMINAL_VOLTAGE = 12.0;
+        double compensationFactor = NOMINAL_VOLTAGE / currentVoltage;
+
+        return rpm * compensationFactor;
     }
 
+    public double convertRPMToDegreesPerSec(double rpm)
+    {
+        return rpm * 6;
+    }
+
+
     public void showAimTelemetry(Telemetry telemetry) {
+        telemetry.addLine("--- Aim ---");
         telemetry.addData("Turret PID Power", turret.getPower());
         telemetry.addData("Turret Degrees", turretDeg);
         telemetry.addData("LLError", llError);
         telemetry.addData("Distance to Goal", "%.2f inches", Limelight.getDistance());
-        telemetry.addData("Servo Position", "%.2f", hood.getPosition());
-        telemetry.addData("Flywheel Left RPM", "%.2f", getFlywheelLeftRPM());
-        telemetry.addData("Flywheel Right RPM", "%.2f", getFlywheelRightRPM());
+        telemetry.addData("Target RPM", getRPMFromDistance(Limelight.getDistance()));
+        telemetry.addData("Interpolated Servo Position", "%.2f", getServoPositionFromDistance(Limelight.getDistance()));
+        telemetry.addData("Flywheel Current RPM", "%.2f", currRPM);
+       // telemetry.addData("Flywheel Velocity" , "%.2f", flywheelLeft.getVelocity());
+
     }
 
     public double getTurretDeg() { return turretDeg; }
     public double getTurretPower() { return turretPower; }
     public void setTurretPower(double turretPower) { turret.setPower(turretPower); }
-    public double getFlywheelLeftRPM() { return flywheelLeftRPM; }
+    public double getFlywheelRPM() { return currRPM; }
     public double getFlywheelLeftPower() { return flywheelLeftPower; }
     public void setFlywheelLeftPower(double flywheelLeftPower) { flywheelLeft.setPower(flywheelLeftPower); }
-    public double getFlywheelRightRPM() { return flywheelRightRPM; }
-    public void setFlywheelRightRPM(double flywheelRightRPM) { this.flywheelRightRPM = flywheelRightRPM; }
     public double getFlywheelRightPower() { return flywheelRightPower; }
     public void setFlywheelRightPower(double flywheelRightPower) { flywheelRight.setPower(flywheelRightPower); }
     public double getHoodPos() { return hoodPos; }

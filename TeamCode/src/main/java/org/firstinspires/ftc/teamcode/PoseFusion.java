@@ -232,16 +232,17 @@ public class PoseFusion {
      */
     public void displayPoseTelemetry(Telemetry telemetry, PoseFusion ekf, double vx, double vy, double omega) {
         Pose2D fused = ekf.getPose();
+        telemetry.addLine("--- PoseFusion ---");
 
         // Fused EKF pose
-        telemetry.addData("Fused X", "%.2f in", fused.getX(DistanceUnit.INCH));
-        telemetry.addData("Fused Y", "%.2f in", fused.getY(DistanceUnit.INCH));
-        telemetry.addData("Fused Heading", "%.2f deg", Math.toDegrees(fused.getHeading(AngleUnit.RADIANS)));
+        telemetry.addData("Fused X",  fused.getX(DistanceUnit.INCH));
+        telemetry.addData("Fused Y",  fused.getY(DistanceUnit.INCH));
+        telemetry.addData("Fused Heading deg",  Math.toDegrees(fused.getHeading(AngleUnit.RADIANS)));
 
         // Velocities
-        telemetry.addData("Vel X", "%.2f in/s", vx);
-        telemetry.addData("Vel Y", "%.2f in/s", vy);
-        telemetry.addData("Omega", "%.2f deg/s", Math.toDegrees(omega));
+        telemetry.addData("Vel X",  vx);
+        telemetry.addData("Vel Y",  vy);
+        telemetry.addData("Omega deg/s",  Math.toDegrees(omega));
 
     }
 

@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.util.Log;
+
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -21,7 +23,7 @@ public class Spindexer {
 
     // --- Constants ---
     private static final double TICKS_PER_REV = 8192.0;
-    private static final double TICKS_PER_SLOT = TICKS_PER_REV / 3.0;
+    private static final double TICKS_PER_SLOT = (TICKS_PER_REV / 3.0);
     private static final int POSITION_TOLERANCE = 30;
 
     // --- State ---
@@ -65,24 +67,22 @@ public class Spindexer {
         if (!intakeCycleActive) {
             intakeCycleActive = true;
             ballDetectedThisCycle = false;
+            Log.i("Spindexer", "Intake cycle started");
         }
     }
 
     public void intakeNewBall() {
         if (!IntakeSubsystem.isIntakeRunning|| !isAtTargetPosition() || ballDetectedThisCycle) return;
 
-        Pattern.Ball detected = detectBallColor();
+        Pattern.Ball detected = colorSensor.detectBallColor();
 
-        if (detected != Pattern.Ball.EMPTY) {
-            // Update the current slot with the detected ball color
+        if (detected == Pattern.Ball.PURPLE || detected == Pattern.Ball.GREEN) {
+            // Update the current slot with the detected ball color as long as we're not seein the spindexer
             updateSlot(currentSlot, detected);
             ballDetectedThisCycle = true;
+            Log.i("Spindexer", "updated slot: current (" + currentSlot + ") + detected (" + detected + ")");
 
-            int targetSlot = getPreferredSlotForColor(detected);
-
-            if (currentSlot != targetSlot) {
-                rotateToSlot(targetSlot);
-            }
+            rotateToNextEmptySlot();
 
             intakeCycleActive = false;
         }
@@ -90,14 +90,40 @@ public class Spindexer {
 
 
     public boolean intakeCycleIsComplete() {
+        Log.i("Spindexer", "intake cycle is complete");
         return !intakeCycleActive;
+
+    }
+    public void shotPrep()
+    {
+        if(getBallInShootingPosition() == Pattern.Ball.EMPTY)
+        {
+            Log.i("Spindexer", "current slot is empty, rotating to next full slot to shoot");
+            rotateToNextFullSlot();
+        }
+
     }
 
-    public void recordShotBall()
-    {
 
-        updateSlot(currentSlot, Pattern.Ball.EMPTY);
-        rotateToNextFullSlot();
+    /**
+     *
+     * @return true if the ball was shot, rotates automatically. false otherwise - does nothing
+     */
+    public boolean recordShotBall()
+    {
+        Log.i("Spindexer", "recording shot ball");
+
+        if(colorSensor.detectBallColor() == Pattern.Ball.EMPTY)
+        {
+            Log.i("Spindexer", "shot was successs yahoo yippe");
+            updateSlot(currentSlot, Pattern.Ball.EMPTY);
+            rotateToNextFullSlot();
+            return true;
+        }
+        Log.i("Spindexer", "shot failed aw shucks");
+
+        return false;
+
     }
     public void rotateToNextFullSlot() {
         Pattern.Ball[] slots = {
@@ -110,7 +136,8 @@ public class Spindexer {
         for (int i = 0; i <= 2; i++) {
             int slotToCheck = (currentSlot + i) % 3;
 
-            if (slots[slotToCheck] != Pattern.Ball.EMPTY) {
+            if (slots[slotToCheck] != Pattern.Ball.EMPTY && slotToCheck != currentSlot) {
+                Log.i("Spindexer", "rotating to next full slot" + slotToCheck);
                 rotateToSlot(slotToCheck);
                 return;
             }
@@ -128,7 +155,8 @@ public class Spindexer {
         for (int i = 0; i <= 2; i++) {
             int slotToCheck = (currentSlot + i) % 3;
 
-            if (slots[slotToCheck] == Pattern.Ball.EMPTY) {
+            if (slots[slotToCheck] == Pattern.Ball.EMPTY && slotToCheck != currentSlot) {
+                Log.i("Spindexer", "rotating to next empty slot" + slotToCheck);
                 rotateToSlot(slotToCheck);
                 return;
             }
@@ -154,6 +182,7 @@ public class Spindexer {
         pid.reset();
         spindexerServo.setPower(0);
         holdingPosition = true;
+        Log.i("Spindexer", "stopping and holding");
     }
 
     public boolean isAtTargetPosition() {
@@ -187,21 +216,9 @@ public class Spindexer {
         }
     }
 
-    private Pattern.Ball detectBallColor() {
-        float[] hsv = colorSensor.getHsvValues();
-        float hue = hsv[0];
-        float sat = hsv[1];
-
-        if (hue > 90 && hue < 190 && sat > 0.5) {
-            return Pattern.Ball.GREEN;
-        } else if (hue > 220 && hue < 300 && sat > 0.5) {
-            return Pattern.Ball.PURPLE;
-        } else {
-            return Pattern.Ball.EMPTY;
-        }
-    }
 
     private void rotateToSlot(int slot) {
+        Log.i("Spindexer", "rotating to slot" + slot);
         holdingPosition = false;
         currentSlot = slot;
         targetTicks = slot * TICKS_PER_SLOT;
@@ -232,8 +249,8 @@ public class Spindexer {
     public void showTelemetry(Telemetry telemetry) {
         telemetry.addLine("--- Spindexer ---");
         telemetry.addData("Current Slot", currentSlot);
-        telemetry.addData("Target Pos", "%.1f", targetTicks);
-        telemetry.addData("Encoder Pos", "%.1f", encoder.getCurrentPosition());
+        telemetry.addData("Target Pos",  targetTicks);
+        telemetry.addData("Encoder Pos",  encoder.getCurrentPosition());
         telemetry.addData("At Target?", isAtTargetPosition());
         telemetry.addData("Holding", holdingPosition);
         telemetry.addData("Intake Active", intakeCycleActive);

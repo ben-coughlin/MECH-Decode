@@ -119,7 +119,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
         odo.updateOdo();
         limelight.updateLimelight();
-        limelight.updateObelisk(true);
+        //limelight.updateObelisk(true);
         odo.showOdoTelemetry(telemetry);
 
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
@@ -177,17 +177,17 @@ public abstract class RobotMasterPinpoint extends OpMode {
         lastHeading = odo.getHeading();
 
 
+
+        spindexer.showTelemetry(telemetry);
         pose.displayPoseTelemetry(telemetry, pose, odo.getVelocityComponents()[0], odo.getVelocityComponents()[1], (odo.getHeading() - lastHeading) / dt);
         odo.showOdoTelemetry(telemetry);
         turret.showAimTelemetry(telemetry);
         colorSensor.showColorSensorTelemetry(telemetry);
-        spindexer.showTelemetry(telemetry);
-        spindexer.intakeNewBall();
 
-        telemetry.addData("Obelisk", "[%s] [%s] [%s]",
-                obelisk.spindexSlotOne,
-                obelisk.spindexSlotTwo,
-                obelisk.spindexSlotThree);
+
+
+
+
 
         telemetry.addData("Superstructure State", currentState);
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);

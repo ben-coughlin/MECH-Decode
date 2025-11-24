@@ -37,6 +37,7 @@ import static org.firstinspires.ftc.teamcode.MovementVars.movement_y;
 import android.os.SystemClock;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 
@@ -70,6 +71,7 @@ public class TeleOp extends RobotMasterPinpoint
     boolean isAutoHeading = false;
     boolean isAutoAiming = false;
     double targetHeading = 0.0;
+
 
 
 
@@ -214,16 +216,16 @@ public class TeleOp extends RobotMasterPinpoint
             if (stageFinished) {
                 initializeStateVariables();
 
-                turret.setFlywheelPower(0);
+                turret.turnOffFlywheel();
                 intakeSubsystem.turnIntakeOff();
                 intakeSubsystem.moveKickerHorizontal();
-                intakeSubsystem.setKickerPos(0.37);
+
             }
         }
         if (programStage == progStates.SHOOT_PREP.ordinal()) {
             if (stageFinished) {
                 initializeStateVariables();
-                turret.setFlywheelPower(1);
+                turret.turnOnFlywheel();
             }
             if (SystemClock.uptimeMillis() - stateStartTime > 4000) {
                 nextStage(progStates.READY_TO_SHOOT.ordinal());
@@ -233,14 +235,14 @@ public class TeleOp extends RobotMasterPinpoint
         if (programStage == progStates.READY_TO_SHOOT.ordinal()) {
             if (stageFinished) {
                 initializeStateVariables();
-                turret.setFlywheelPower(1);
+                gamepad1.rumble(1, 1, 200);
+                turret.turnOnFlywheel();
             }
         }
 
         if (programStage == progStates.FIRE_BALL.ordinal()) {
             if (stageFinished) {
                 initializeStateVariables();
-                spindexer.rotateToNextFullSlot();
             }
             if (SystemClock.uptimeMillis() - stateStartTime > 200) {
                 intakeSubsystem.moveKickerVertical();
@@ -248,7 +250,11 @@ public class TeleOp extends RobotMasterPinpoint
             }
             if (SystemClock.uptimeMillis() - stateStartTime > 500) {
                 intakeSubsystem.moveKickerHorizontal();
-                spindexer.recordShotBall();
+
+            }
+            if(SystemClock.uptimeMillis() - stateStartTime > 1000)
+            {
+                if(spindexer.recordShotBall()) {gamepad1.rumbleBlips(5);}
                 nextStage(progStates.READY_TO_SHOOT.ordinal());
             }
 
@@ -271,13 +277,11 @@ public class TeleOp extends RobotMasterPinpoint
                 initializeStateVariables();
                 intakeSubsystem.turnIntakeOn();
                 spindexer.startIntakeCycle();
-                spindexer.rotateToNextEmptySlot();
             }
 
             spindexer.intakeNewBall();
 
-            if (spindexer.isAtTargetPosition() && spindexer.intakeCycleIsComplete()) {
-                intakeSubsystem.turnIntakeOff();
+            if (spindexer.isAtTargetPosition()) {
                 nextStage(progStates.IDLE.ordinal());
             }
         }
@@ -291,7 +295,8 @@ public class TeleOp extends RobotMasterPinpoint
             drive.stopAllMovementDirectionBased();
             intakeSubsystem.turnIntakeOff();
             intakeSubsystem.moveKickerHorizontal();
-            turret.setFlywheelPower(0);
+            turret.turnOffFlywheel();
+
 
         }
 

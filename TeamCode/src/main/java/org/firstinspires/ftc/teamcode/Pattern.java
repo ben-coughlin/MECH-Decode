@@ -14,7 +14,8 @@ public class Pattern
     {
         GREEN,
         PURPLE,
-        EMPTY
+        EMPTY,
+        BALL_NOT_DETECTED;
     }
 
     /**

@@ -71,6 +71,7 @@ public class Odo
 
     public void showOdoTelemetry(Telemetry telemetry)
     {
+        telemetry.addLine("--- Odo ---");
         String data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", pos.getX(DistanceUnit.INCH), pos.getY(DistanceUnit.INCH), pos.getHeading(AngleUnit.DEGREES));
         telemetry.addData("Odo Position", data);
 
