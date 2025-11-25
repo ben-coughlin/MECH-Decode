@@ -200,9 +200,9 @@ public class PoseFusion {
     }
     public void updateMotionComponents()
     {
-        x[0] = worldXPosition;
-        x[1] = worldYPosition;
-        x[2] = worldAngle_rad;
+        worldXPosition = x[0];
+        worldYPosition = x[1];
+        worldAngle_rad = x[2];
     }
 
     // -------------------- Tuning / helpers --------------------

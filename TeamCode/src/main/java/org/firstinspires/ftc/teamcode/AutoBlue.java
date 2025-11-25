@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 @Autonomous
-public class AutoSummerPinPoint extends RobotMasterPinpoint {
+public class AutoBlue extends RobotMasterPinpoint {
 
     private final double SCALE_FACTOR = 1.4;
 
@@ -30,13 +30,14 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
 
     private enum progStates {
 
-        driveForward,
-        strafeLeft,
-        strafeRight,
-        driveBackward,
-        driveToPlayerStation,
-        grabSpecimen,
-        driveToChamber,
+        driveBackwardsFromStartToShootPreload,
+        driveToFirstThreeBalls,
+        intakeFirstThreeBalls,
+        driveToShootingPoint,
+        driveToSecondThreeBalls,
+        intakeSecondThreeBalls,
+        driveToThirdThreeBalls,
+        intakeThirdThreeBalls,
         hangSpecimen,
 
         driveUpToSamples,
@@ -45,6 +46,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
         pushSamplesToPlayerStation,
 
         pushSampleToPickUpSpecimen,
+        shoot,
 
         endBehavior
     }
@@ -90,52 +92,82 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
     private boolean hasGrabbedPixels = false;
 
     private double cutOffTime = 22.5;
-    private String currentState = String.valueOf(AutoSummerPinPoint.progStates.values()[AutoSummerPinPoint.programStage]);
+    private String currentState = String.valueOf(AutoBlue.progStates.values()[AutoBlue.programStage]);
 
     private boolean past5In = false;
 
     public static boolean pickupOffWall = false;
 
     public int overallCycleToChamber = 0;
+    private boolean isLookingAtObelisk = true;
 
 
 
     @Override
     public void mainLoop() {
+        super.mainLoop();
+
+        if(!isLookingAtObelisk)
+        {
+            if (Limelight.getCurrResult() != null && Limelight.getCurrResult().isValid() && VisionUtils.isTagBlueGoal(VisionUtils.getTagId(Limelight.getCurrResult())))
+            {
+                double llError = Limelight.getCurrResult().getTx();
+
+                turret.aimTurret(true, llError, gamepad2.right_stick_x, limelight.getDistanceToTag(Limelight.getCurrResult()));
+            }
+        }
+        else {
+
+            turret.aimTurret(false, 0, -0.27, 999);
+            if (Limelight.getCurrResult() != null && Limelight.getCurrResult().isValid() && VisionUtils.isTagBlueGoal(VisionUtils.getTagId(Limelight.getCurrResult())))
+            {
+                turret.aimTurret(false, 0, 0, 0);
+                turret.resetEncoder();
+                isLookingAtObelisk = false;
+                return;
+            }
+        }
+
 
         boolean jamDetected = false;//pixelJamAndCounting();
-        telemetry.addData("Superstructure State", currentState);
-        telemetry.addData("Path State", programStage);
         System.out.println("Superstructure State: " + currentState);
         System.out.println("Path State: " + programStage);
 
-        if (programStage == progStates.driveForward.ordinal()) {
+        if (programStage == progStates.driveBackwardsFromStartToShootPreload.ordinal()) {
             if (stageFinished) {
                 past5In = false;
                 initializeStateVariables();
-            }
 
+            }
             ArrayList<CurvePoint> points = new ArrayList<>();
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(20, 0,
+            points.add(new CurvePoint(-30, 0,
                     0.4 * SCALE_FACTOR, 0.40 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.6));
+
+
 
 //            points.add(new CurvePoint(20, 48,
 //                    0.4 * SCALE_FACTOR, 0.40 * SCALE_FACTOR, 5, 10,
 //                    Math.toRadians(60), 0.6));
 
-            if (Movement.followCurve(points, Math.toRadians(90),2)) { //the second term is is if drive strait or the strafe angle 90 deg is strait ahead
+            if (Movement.followCurve(points, Math.toRadians(-90),2)) { //the second term is is if drive strait or the strafe angle 90 deg is strait ahead
                 drive.stopAllMovementDirectionBased();
-                nextStage(progStates.strafeLeft.ordinal());
-            }
+                shooterSubsystem.startAuto(3);
+                isMovementDone = true;
 
+            }
+            boolean finishedShooting = shooterSubsystem.update(null, null);
+
+            if (finishedShooting && isMovementDone) {
+                nextStage(progStates.endBehavior.ordinal());
+            }
             drive.applyMovementDirectionBased(); // always put at end of state
         }
 
-        if (programStage == progStates.strafeLeft.ordinal()) {
+        if (programStage == progStates.intakeFirstThreeBalls.ordinal()) {
             if (stageFinished) {
                 past5In = false;
                 initializeStateVariables();
@@ -155,13 +187,13 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
 
             if (Movement.followCurve(points, Math.toRadians(0),2)) {
                 drive.stopAllMovementDirectionBased();
-                nextStage(progStates.strafeRight.ordinal());
+                nextStage(progStates.driveToShootingPoint.ordinal());
             }
 
             drive.applyMovementDirectionBased(); // always put at end of state
         }
 
-        if (programStage == progStates.strafeRight.ordinal()) {
+        if (programStage == progStates.driveToShootingPoint.ordinal()) {
             if (stageFinished) {
                 past5In = false;
                 initializeStateVariables();
@@ -182,13 +214,13 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
 
             if (Movement.followCurve(points, Math.toRadians(180),2)) {
                 drive.stopAllMovementDirectionBased();
-                nextStage(progStates.driveBackward.ordinal());
+                nextStage(progStates.driveToSecondThreeBalls.ordinal());
             }
 
             drive.applyMovementDirectionBased(); // always put at end of state
         }
 
-        if (programStage == progStates.driveBackward.ordinal()) {
+        if (programStage == progStates.driveToSecondThreeBalls.ordinal()) {
             if (stageFinished) {
                 past5In = false;
                 initializeStateVariables();
@@ -214,7 +246,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
             drive.applyMovementDirectionBased(); // always put at end of state
         }
 
-        if (programStage == progStates.driveToPlayerStation.ordinal()) {
+        if (programStage == progStates.intakeSecondThreeBalls.ordinal()) {
             if (stageFinished) {
                 past5In = false;
                 if (cycle == 1) {
@@ -261,7 +293,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
                     //superstructure.nextState(Superstructure.SuperstructureStates.COLLECT_SPECIMEN_PREP.ordinal());
 
                     if(cycle<2) {
-                        nextStage(progStates.grabSpecimen.ordinal());
+                        nextStage(progStates.driveToThirdThreeBalls.ordinal());
                     }else {
                         nextStage(progStates.driveUpToSamples.ordinal());
                     }
@@ -271,7 +303,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
             }
         }
 
-        if (programStage == progStates.grabSpecimen.ordinal()) {
+        if (programStage == progStates.driveToThirdThreeBalls.ordinal()) {
             if (stageFinished) {
                 past5In = false;
                 initializeStateVariables();
@@ -296,14 +328,14 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
                     pickupOffWall = false;
 
                     drive.stopAllMovementDirectionBased();
-                    nextStage(progStates.driveToChamber.ordinal());
+                    nextStage(progStates.intakeThirdThreeBalls.ordinal());
                 }
 
                 drive.applyMovementDirectionBased();
             }
         }
 
-        if (programStage == progStates.driveToChamber.ordinal()) {
+        if (programStage == progStates.intakeThirdThreeBalls.ordinal()) {
             if (stageFinished) {
                 past5In = false;
 
@@ -457,7 +489,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
                 drive.stopAllMovementDirectionBased();
                 //superstructure.nextState(Superstructure3Motor.SuperstructureStates.COLLECT_SPECIMEN_PREP.ordinal());
 
-                nextStage(progStates.grabSpecimen.ordinal());
+                nextStage(progStates.driveToThirdThreeBalls.ordinal());
             }
 
             Movement.movementResult r = Movement.pointAngle(
@@ -468,6 +500,7 @@ public class AutoSummerPinPoint extends RobotMasterPinpoint {
             drive.applyMovementDirectionBased();
 
         }
+
 
         if (programStage == progStates.endBehavior.ordinal()) {
             if (stageFinished) {

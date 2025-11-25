@@ -224,10 +224,11 @@ public class Turret
         telemetry.addData("Flywheel Current RPM", "%.2f", currRPM);
         telemetry.addData("Flywheel Calculated Power", targetPower);
 
-
     }
 
     public double getTurretDeg() { return turretDeg; }
+
+
     public double getTurretPower() { return turretPower; }
     public void setTurretPower(double turretPower) { turret.setPower(turretPower); }
     public double getFlywheelRPM() { return currRPM; }
@@ -235,4 +236,14 @@ public class Turret
     public void setFlywheelRightPower(double flywheelRightPower) { flywheelRight.setPower(flywheelRightPower); }
     public double getHoodPos() { return hoodPos; }
     public void setHoodPos(double hoodPos) { hood.setPosition(hoodPos); }
+
+    public void resetEncoder()
+    {
+        turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        turret.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+    }
+
+
+
+
 }

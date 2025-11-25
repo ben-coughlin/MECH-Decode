@@ -11,10 +11,6 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-
 import java.util.HashMap;
 
 public abstract class RobotMasterPinpoint extends OpMode {
@@ -29,6 +25,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
     Spindexer spindexer = null;
     PoseFusion pose = new PoseFusion();
     static Pattern obelisk = null;
+    ShooterSubsystem shooterSubsystem;
 
     // ftcsim stuff - - - - - - - -
     private UdpClientFieldSim client;
@@ -42,6 +39,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
     public boolean isAuto = false;
     public static boolean resetEncoders = false;
     double lastHeading = 0;
+    public boolean isMovementDone = false;
 
 
 
@@ -98,29 +96,39 @@ public abstract class RobotMasterPinpoint extends OpMode {
         odo = new Odo(hardwareMap);
         turret = new Turret(hardwareMap);
         spindexer = new Spindexer(hardwareMap, colorSensor);
+        shooterSubsystem = new ShooterSubsystem(turret, intakeSubsystem, spindexer);
 
 
 
 
-        if(gamepad1.options)
-        {
+        if(gamepad1.options) {
             DEBUGGING = true;
-            initDebugTools();
-        }
 
+        }
+        initDebugTools();
 
     }
 
     @Override
     public void init_loop() {
+        long startLoopTime = SystemClock.uptimeMillis();
 
+        long now = System.nanoTime();
+        double dt = (now - lastLoopTime) * 1e-9; // seconds
+        lastLoopTime = now;
 
-        double startLoopTime = SystemClock.uptimeMillis();
-
-        odo.updateOdo();
         limelight.updateLimelight();
-        limelight.updateObelisk(true);
+        odo.updateOdo();
+        pose.predict(odo.getVelocityComponents()[0], odo.getVelocityComponents()[1], (odo.getHeading() - lastHeading) / dt, dt);
+        pose.updateFromLimelight(limelight.getPose(), Math.toRadians(turret.getTurretDeg()), limelight.getCurrLatency());
+        pose.updateMotionComponents();
+        lastHeading = odo.getHeading();
+
+
+        obelisk = limelight.updateObelisk(true);
         odo.showOdoTelemetry(telemetry);
+        pose.displayPoseTelemetry(telemetry, pose, odo.getVelocityComponents()[0], odo.getVelocityComponents()[1], (odo.getHeading() - lastHeading) / dt);
+
 
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
         telemetry.update();
@@ -152,6 +160,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
         stateStartTime = SystemClock.uptimeMillis();
         Movement.initCurve();
         stageFinished = false;
+        isMovementDone = false;
     }
 
 
@@ -171,30 +180,30 @@ public abstract class RobotMasterPinpoint extends OpMode {
         turret.updateTurret();
         spindexer.update();
 
+
         pose.predict(odo.getVelocityComponents()[0], odo.getVelocityComponents()[1], (odo.getHeading() - lastHeading) / dt, dt);
         pose.updateFromLimelight(limelight.getPose(), Math.toRadians(turret.getTurretDeg()), limelight.getCurrLatency());
         pose.updateMotionComponents();
         lastHeading = odo.getHeading();
 
 
+        telemetry.addData("Obelisk", "[%s] [%s] [%s]",
+                obelisk.spindexSlotOne,
+                obelisk.spindexSlotTwo,
+                obelisk.spindexSlotThree);
 
         spindexer.showTelemetry(telemetry);
         pose.displayPoseTelemetry(telemetry, pose, odo.getVelocityComponents()[0], odo.getVelocityComponents()[1], (odo.getHeading() - lastHeading) / dt);
         odo.showOdoTelemetry(telemetry);
         turret.showAimTelemetry(telemetry);
         colorSensor.showColorSensorTelemetry(telemetry);
-
-
-
-
+        shooterSubsystem.showShooterTelemetry(telemetry);
 
 
         telemetry.addData("Superstructure State", currentState);
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
-        if(DEBUGGING)
-        {
-            addDebugData();
-        }
+        addDebugData();
+
         telemetry.update();
         Log.i("Loop Time", String.valueOf(SystemClock.uptimeMillis() - startLoopTime));
     }
@@ -216,8 +225,8 @@ public abstract class RobotMasterPinpoint extends OpMode {
     }
     private void initDebugTools()
     {
-        client = new UdpClientFieldSim("192.168.43.83", 7777);
-        clientPlot = new UdpClientPlot("192.168.43.83", 7778);
+        client = new UdpClientFieldSim("192.168.43.240", 7777);
+        clientPlot = new UdpClientPlot("192.168.43.240  ", 7778);
 
         clientPlot.sendYLimits(SystemClock.uptimeMillis(), 0.5, 0);
         clientPlot.sendYUnits(SystemClock.uptimeMillis() + 1, "PID");

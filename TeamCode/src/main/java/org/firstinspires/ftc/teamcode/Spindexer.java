@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import static org.firstinspires.ftc.teamcode.RobotMasterPinpoint.obelisk;
+
 import android.util.Log;
 
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -331,5 +333,8 @@ public class Spindexer {
                 inventory.spindexSlotOne,
                 inventory.spindexSlotTwo,
                 inventory.spindexSlotThree);
+
     }
+
+
 }
