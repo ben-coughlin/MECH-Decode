@@ -24,8 +24,9 @@ public abstract class RobotMasterPinpoint extends OpMode {
     Turret turret = null;
     Spindexer spindexer = null;
     PoseFusion pose = new PoseFusion();
-    static Pattern obelisk = null;
     ShooterSubsystem shooterSubsystem;
+    static Pattern obelisk = null;
+
 
     // ftcsim stuff - - - - - - - -
     private UdpClientFieldSim client;
@@ -40,6 +41,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
     public static boolean resetEncoders = false;
     double lastHeading = 0;
     public boolean isMovementDone = false;
+    int stageAfterShotOrdinal = 0;
 
 
 
@@ -66,17 +68,18 @@ public abstract class RobotMasterPinpoint extends OpMode {
     //holds the stage we are going to next
     int nextStage = 0;
 
-    public void nextStage(int ordinal) {
-        nextStage = ordinal;
+    public void nextStage(int shootOrdinal, int ordinal) {
+        nextStage = shootOrdinal;
         incrementStage();
+        stageAfterShotOrdinal = ordinal;
     }
 
     /**
      * Increments the programStage
      */
-    public void nextStage() {
-        nextStage(programStage + 1);
-
+    public void nextStage(int ordinal) {
+        nextStage = ordinal;
+        incrementStage();
     }
 
     private void incrementStage() {
@@ -96,7 +99,8 @@ public abstract class RobotMasterPinpoint extends OpMode {
         odo = new Odo(hardwareMap);
         turret = new Turret(hardwareMap);
         spindexer = new Spindexer(hardwareMap, colorSensor);
-        shooterSubsystem = new ShooterSubsystem(turret, intakeSubsystem, spindexer);
+        shooterSubsystem = new ShooterSubsystem(intakeSubsystem, spindexer, turret);
+
 
 
 
@@ -140,6 +144,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
     public void start() {
         programStage = 0;
         obelisk = limelight.updateObelisk(false);
+        if(obelisk == null) {obelisk = new Pattern(Pattern.Ball.EMPTY, Pattern.Ball.EMPTY, Pattern.Ball.EMPTY);} //uh oh someone set the bot up wrong
     }
     @Override
     public void stop()
@@ -197,7 +202,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
         odo.showOdoTelemetry(telemetry);
         turret.showAimTelemetry(telemetry);
         colorSensor.showColorSensorTelemetry(telemetry);
-        shooterSubsystem.showShooterTelemetry(telemetry);
+
 
 
         telemetry.addData("Superstructure State", currentState);

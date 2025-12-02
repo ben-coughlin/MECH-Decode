@@ -118,7 +118,6 @@ public class TeleOp extends RobotMasterPinpoint
         super.mainLoop();
         currentState = progStates.values()[programStage].name();
         debugKeyValues.put("Superstructure State", currentState);
-        shooterSubsystem.update(gamepad1, gamepad2);
 
 
         if(wasBallIntakeSuccessful)
@@ -134,7 +133,7 @@ public class TeleOp extends RobotMasterPinpoint
 
 
                             //driving stuff - - - - - - - - - - -
-        movement_y = -gamepad1.left_stick_y;
+        movement_y = gamepad1.left_stick_y;
         movement_x = gamepad1.left_stick_x;
 
         double currentHeadingRad = RobotPosition.worldAngle_rad;
@@ -193,10 +192,11 @@ public class TeleOp extends RobotMasterPinpoint
 
         if (programStage == progStates.IDLE.ordinal()) {
             if (gamepad1.dpad_up) {
-                shooterSubsystem.spinUp();
+                nextStage(progStates.SHOOT_PREP.ordinal());
             }
             else if (gamepad1.left_trigger > 0.1) {
-                nextStage(progStates.OUTTAKE.ordinal());
+                intakeSubsystem.turnIntakeOff();
+                intakeSubsystem.outtake();
             }
         }
 
@@ -212,7 +212,7 @@ public class TeleOp extends RobotMasterPinpoint
             }
 
             if (gamepad1.dpad_down) {
-                shooterSubsystem.fireManual();
+                nextStage(progStates.FIRE_BALL.ordinal());
             }
             // cancels the shot
             else if (gamepad1.right_bumper) {
@@ -248,12 +248,50 @@ public class TeleOp extends RobotMasterPinpoint
 
             }
         }
+        if (programStage == progStates.SHOOT_PREP.ordinal()) {
+            if (stageFinished) {
+                initializeStateVariables();
+                turret.turnOnFlywheel();
+            }
+            if (SystemClock.uptimeMillis() - stateStartTime > 4000) {
+                nextStage(progStates.READY_TO_SHOOT.ordinal());
+            }
+        }
+
+        if (programStage == progStates.READY_TO_SHOOT.ordinal()) {
+            if (stageFinished) {
+                initializeStateVariables();
+                gamepad1.rumble(1, 1, 200);
+                gamepad2.rumble(1, 1, 200);
+                turret.turnOnFlywheel();
+            }
+        }
+
+        if (programStage == progStates.FIRE_BALL.ordinal()) {
+            if (stageFinished) {
+                initializeStateVariables();
+            }
+            if (SystemClock.uptimeMillis() - stateStartTime > 200) {
+                intakeSubsystem.moveKickerVertical();
+
+            }
+            if (SystemClock.uptimeMillis() - stateStartTime > 500) {
+                intakeSubsystem.moveKickerHorizontal();
+
+            }
+            if(SystemClock.uptimeMillis() - stateStartTime > 1000)
+            {
+                if(spindexer.recordShotBall()) {gamepad1.rumbleBlips(5);}
+                nextStage(progStates.READY_TO_SHOOT.ordinal());
+            }
+
+        }
 
         if (programStage == progStates.OUTTAKE.ordinal()) {
             if (stageFinished) {
 
                 initializeStateVariables();
-                intakeSubsystem.outtake();
+
             }
             if(stateTimer.seconds() >= 1)
             {

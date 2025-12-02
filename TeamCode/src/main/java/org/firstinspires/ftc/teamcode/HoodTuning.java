@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 @TeleOp(name = "Hood Tuning")
 public class HoodTuning extends LinearOpMode {
-    private double currentServoPosition = 0.5;
+    private double currentServoPosition = 0;
     private double motorPower = 1;
     private final double MOTOR_INCREMENT = 0.025;
 
@@ -86,7 +86,8 @@ public class HoodTuning extends LinearOpMode {
             {
                 shootingSequenceActive = true;
                 timer.reset();
-              //  turret.setFlywheelPower(motorPower);
+                turret.flywheelRight.setPower(.05);
+                turret.flywheelLeft.setPower(.05);
             }
 
             if (shootingSequenceActive) {
@@ -150,7 +151,7 @@ public class HoodTuning extends LinearOpMode {
             telemetry.addLine("Use DPAD UP/DOWN to change servo position.");
             telemetry.addData("Distance to Tag (in)", "%.2f", distanceToTag);
             telemetry.addData("Servo Position", "%.3f", currentServoPosition);
-            telemetry.addData("Motor Power", "%.3f", motorPower);
+            telemetry.addData("Motor Power", "%.3f", turret.flywheelLeft.getPower());
             telemetry.addData("Compensated Power", "%.3f", compensatedPower);
             telemetry.update();
         }

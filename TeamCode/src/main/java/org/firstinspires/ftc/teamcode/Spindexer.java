@@ -24,7 +24,7 @@ public class Spindexer {
     private final ColorSensor colorSensor;
 
     // --- Control ---
-    private final PIDFController pid = new PIDFController(0.0002, 0, 0.00008, 0.08);
+    private final PIDFController pid = new PIDFController(0.00015, 0, 0.00009, 0.09);
 
     // --- Constants ---
     private static final double TICKS_PER_REV = 8192.0;
