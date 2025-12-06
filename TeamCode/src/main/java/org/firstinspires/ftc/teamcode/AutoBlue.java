@@ -8,6 +8,7 @@ import static org.firstinspires.ftc.teamcode.RobotPosition.worldXPosition;
 import static org.firstinspires.ftc.teamcode.RobotPosition.worldYPosition;
 
 import android.os.SystemClock;
+import android.util.Log;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
@@ -17,7 +18,7 @@ import java.util.HashMap;
 @Autonomous
 public class AutoBlue extends RobotMasterPinpoint {
 
-    private final double SCALE_FACTOR = 1.4;
+    private final double SCALE_FACTOR = 1.0;
 
     private long startTime = 0;
 
@@ -53,7 +54,7 @@ public class AutoBlue extends RobotMasterPinpoint {
     public void init() {
         //RobotMaster.resetEncoders = true;
         super.init();
-
+        spindexer.setInventory(new Pattern(Pattern.Ball.GREEN, Pattern.Ball.PURPLE, Pattern.Ball.PURPLE));
         //isAuto = true;
 
 
@@ -128,6 +129,8 @@ public class AutoBlue extends RobotMasterPinpoint {
         boolean jamDetected = false;//pixelJamAndCounting();
         System.out.println("Superstructure State: " + currentState);
         System.out.println("Path State: " + programStage);
+        Log.i("heading", String.valueOf(Math.toDegrees(worldAngle_rad)));
+        Log.i("state",  String.valueOf(AutoBlue.progStates.values()[AutoBlue.programStage]));
 
         if (programStage == progStates.driveBackwardsFromStartToShootPreload.ordinal()) {
             if (stageFinished) {
@@ -142,12 +145,12 @@ public class AutoBlue extends RobotMasterPinpoint {
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(-35, 0,
-                    0.4 * SCALE_FACTOR, 0.40 * SCALE_FACTOR, 10, 10,
+            points.add(new CurvePoint(-31, 0,
+                    0.8 * SCALE_FACTOR, 0.40 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.6));
 
 
-            if (Movement.followCurve(points, Math.toRadians(0),2)) { //the second term is is if drive strait or the strafe angle 90 deg is strait ahead
+            if (Movement.followCurve(points, Math.toRadians(-90),2)) { //the second term is is if drive strait or the strafe angle 90 deg is strait ahead
                 drive.stopAllMovementDirectionBased();
                 nextStage(progStates.SHOOT_PREP.ordinal(), progStates.driveToFirstThreeBalls.ordinal());
             }
@@ -164,16 +167,16 @@ public class AutoBlue extends RobotMasterPinpoint {
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(-35,30,
-                    0.35 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
+            points.add(new CurvePoint(-31,28,
+                    0.8 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.6));
 
 
 //            points.add(new CurvePoint(24, 35,
 //                    0.25 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 12, 10,
-//                    Math.toRadians(-90), 0.6));
+//                    Math.toRadians(-90), 0.8));
 
-            if (Movement.followCurve(points, Math.toRadians(15),2)) {
+            if (Movement.followCurve(points, Math.toRadians(0),2)) {
                 drive.stopAllMovementDirectionBased();
                 nextStage(progStates.intakeFirstThreeBalls.ordinal());
             }
@@ -189,12 +192,15 @@ public class AutoBlue extends RobotMasterPinpoint {
                 spindexer.startIntakeCycle();
             }
             spindexer.intakeNewBall();
+
+
+
             ArrayList<CurvePoint> points = new ArrayList<>();
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(-30, 10,
-                    0.2 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
+            points.add(new CurvePoint(-11, 28,
+                    0.13 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.6));
 
 //            points.add(new CurvePoint(24, 35,
@@ -202,9 +208,42 @@ public class AutoBlue extends RobotMasterPinpoint {
 //                    Math.toRadians(-90), 0.6));
 
 
-            if (Movement.followCurve(points, Math.toRadians(0),2)) {
+            if (Movement.followCurve(points, Math.toRadians(90),2)) {
                 drive.stopAllMovementDirectionBased();
-                nextStage(progStates.endBehavior.ordinal());
+                shooterSubsystem.isFlywheelSpun = true;
+                nextStage(progStates.driveToShootingPoint.ordinal());
+            }
+
+            drive.applyMovementDirectionBased(); // always put at end of state
+        }
+
+        if (programStage == progStates.driveToShootingPoint.ordinal()) {
+            if (stageFinished) {
+                past5In = false;
+                initializeStateVariables();
+                shooterSubsystem.isFlywheelReady = false;
+                shooterSubsystem.spinUp();  // Start flywheel
+                intakeSubsystem.outtake();
+            }
+            shooterSubsystem.updateSpin();
+            shooterSubsystem.updateActiveShot();
+            ArrayList<CurvePoint> points = new ArrayList<>();
+            points.add(new CurvePoint(stateStartingX, stateStartingY,
+                    0, 0, 0, 0, 0, 0));
+
+            points.add(new CurvePoint(-31, 30,
+                    0.8* SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
+                    Math.toRadians(60), 0.6));
+
+//            points.add(new CurvePoint(24, 35,
+//                    0.25 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 12, 10,
+//                    Math.toRadians(-90), 0.6));
+
+            if (Movement.followCurve(points, Math.toRadians(-90),1)) {
+                intakeSubsystem.turnIntakeOff();
+                drive.stopAllMovementDirectionBased();
+                shooterSubsystem.isFlywheelSpun = false;
+                nextStage(progStates.SHOOT_PREP.ordinal(), progStates.driveToSecondThreeBalls.ordinal());
             }
 
             drive.applyMovementDirectionBased(); // always put at end of state
@@ -213,116 +252,64 @@ public class AutoBlue extends RobotMasterPinpoint {
         if (programStage == progStates.driveToSecondThreeBalls.ordinal()) {
             if (stageFinished) {
                 past5In = false;
-                initializeStateVariables();
+
             }
 
-            ArrayList<CurvePoint> points = new ArrayList<>();
-            points.add(new CurvePoint(stateStartingX, stateStartingY,
-                    0, 0, 0, 0, 0, 0));
-
-            points.add(new CurvePoint(0, 0,
-                    0.35 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
-                    Math.toRadians(60), 0.6));
-
-//            points.add(new CurvePoint(24, 35,
-//                    0.25 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 12, 10,
-//                    Math.toRadians(-90), 0.6));
-
-            if (Movement.followCurve(points, Math.toRadians(-90),1)) {
-                drive.stopAllMovementDirectionBased();
-                nextStage(progStates.endBehavior.ordinal());
-            }
-
-            drive.applyMovementDirectionBased(); // always put at end of state
-        }
-
-        if (programStage == progStates.intakeSecondThreeBalls.ordinal()) {
-            if (stageFinished) {
-                past5In = false;
-                if (cycle == 1) {
-                    //superstructure.nextState(Superstructure3Motor.SuperstructureStates.GOTO_RESTING_WORLDS.ordinal());
-                } else {
-                   // superstructure.nextState(Superstructure3Motor.SuperstructureStates.COLLECT_SPECIMEN_PREP.ordinal());
-                }
-
-                System.out.println("Starting X" + stateStartingX);
-                System.out.println("Starting Y" + stateStartingY);
-                initializeStateVariables();
-            }
-            if (SystemClock.uptimeMillis()-stateStartTime > 100) {
                 ArrayList<CurvePoint> points = new ArrayList<>();
                 points.add(new CurvePoint(stateStartingX, stateStartingY,
                         0, 0, 0, 0, 0, 0));
 
 
-                double wantedX = cycle == 1 ? 26 : 15;
 
-                points.add(new CurvePoint(wantedX, -45,
-                        1 * SCALE_FACTOR, 1 * SCALE_FACTOR, 15, 15,
+
+                points.add(new CurvePoint(-31, 52,
+                        0.8 * SCALE_FACTOR, 1 * SCALE_FACTOR, 15, 15,
                         Math.toRadians(60), 0.6));
 
-                boolean completed = Movement.followCurve(points, Math.toRadians(90), 2);
 
-                double relativePointAngle = AngleWrap(Math.toRadians(180) - worldAngle_rad);
 
-                if (worldYPosition < -15 && cycle == 1) {
-                    Movement.movementResult r = Movement.pointAngle(
-                            Math.toRadians(180),
-                            1,
-                            Math.toRadians(30));
-                } else  if (worldYPosition < -25) {
-                    Movement.movementResult r = Movement.pointAngle(
-                            Math.toRadians(180),
-                            1,
-                            Math.toRadians(30));
-                }
-
-                if (completed && Math.abs(relativePointAngle) < Math.toRadians(4)) {
+                if (Movement.followCurve(points, Math.toRadians(0),1)) {
                     drive.stopAllMovementDirectionBased();
-                    cycle++;
-                    //superstructure.nextState(Superstructure.SuperstructureStates.COLLECT_SPECIMEN_PREP.ordinal());
-
-                    if(cycle<2) {
-                        nextStage(progStates.driveToThirdThreeBalls.ordinal());
-                    }else {
-                        nextStage(progStates.driveUpToSamples.ordinal());
-                    }
+                    nextStage(progStates.intakeSecondThreeBalls.ordinal());
                 }
 
-                drive.applyMovementDirectionBased();
-            }
+                drive.applyMovementDirectionBased(); // always put at end of state
+
         }
 
-        if (programStage == progStates.driveToThirdThreeBalls.ordinal()) {
+        if (programStage == progStates.intakeSecondThreeBalls.ordinal()) {
             if (stageFinished) {
                 past5In = false;
-                initializeStateVariables();
+                intakeSubsystem.turnIntakeOn();
+                spindexer.startIntakeCycle();
             }
-            if (SystemClock.uptimeMillis()-stateStartTime > 250) {
 
-                if (!past5In) {
-                    //superstructure.nextState(Superstructure.SuperstructureStates.COLLECT_SPECIMEN_PREP.ordinal());
-                    past5In = true;
-                }
+            spindexer.intakeNewBall();
 
-                movement_y = 0.20;
-
-                if (Math.abs(Math.hypot(worldXPosition - 10, worldYPosition - (-45))) < 1) {
-                    if (!past5In) {
-                        //superstructure.nextState(Superstructure.SuperstructureStates.COLLECT_SPECIMEN_WALL.ordinal());
-                        past5In = true;
-                    }
-                }
-
-                if (SystemClock.uptimeMillis()-stateStartTime>1250) {
-                    pickupOffWall = false;
-
-                    drive.stopAllMovementDirectionBased();
-                    nextStage(progStates.intakeThirdThreeBalls.ordinal());
-                }
-
-                drive.applyMovementDirectionBased();
+            if(spindexer.isAtTargetPosition())
+            {
+                spindexer.startIntakeCycle();
             }
+            spindexer.intakeNewBall();
+
+
+            ArrayList<CurvePoint> points = new ArrayList<>();
+            points.add(new CurvePoint(stateStartingX, stateStartingY,
+                    0, 0, 0, 0, 0, 0));
+
+            points.add(new CurvePoint(-10, 54,
+                    0.105 * SCALE_FACTOR, 1 * SCALE_FACTOR, 15, 15,
+                    Math.toRadians(60), 0.6));
+
+
+
+            if (Movement.followCurve(points, Math.toRadians(90),1)) {
+                drive.stopAllMovementDirectionBased();
+                nextStage(progStates.endBehavior.ordinal());
+            }
+
+            drive.applyMovementDirectionBased(); // always put at end of state
+
         }
 
         if (programStage == progStates.intakeThirdThreeBalls.ordinal()) {
@@ -494,6 +481,8 @@ public class AutoBlue extends RobotMasterPinpoint {
         if (programStage == progStates.SHOOT_PREP.ordinal()) {
             if (stageFinished) {
                 initializeStateVariables();
+                shooterSubsystem.spinUp();
+                spindexer.rotateToNextSlotInPattern();
             }
             shooterSubsystem.updateSpin();
             shooterSubsystem.updateActiveShot();
@@ -508,13 +497,15 @@ public class AutoBlue extends RobotMasterPinpoint {
             shooterSubsystem.updateActiveShot();
 
             if (stageFinished) {
+                stageFinished = false;
                 initializeStateVariables();
                 shooterSubsystem.startMultiShot(3);
+                Log.i("ShooterSubsystem", "SHOOTING 3");
             }
 
 
             if (shooterSubsystem.isReadyToShoot()) {
-                shooterSubsystem.turnOff();
+                Log.i("ShooterSubsystem", "progressing to " + progStates.values()[stageAfterShotOrdinal]);
                 nextStage(stageAfterShotOrdinal);
             }
         }

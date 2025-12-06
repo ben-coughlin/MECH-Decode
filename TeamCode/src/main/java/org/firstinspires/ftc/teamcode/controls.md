@@ -6,8 +6,8 @@
  | Left Stick X | Strafe Left / Right | - | |
   | Right Stick Y| Unassigned | - | | 
   | Right Stick X| Manual Robot Turn | - | Overrides heading hold | 
-  | DPad-Up | Enter SHOOT_PREP state | - | Starts flywheel spin-up | 
-  | DPad-Down | FIRE_BALL | - | Moves then resets the kicker | 
+  | DPad-Up | Unassigned | - | - | 
+  | DPad-Down |  | - | Moves then resets the kicker | 
   | DPad-Left | Unassigned | - | | 
   | DPad-Right | Unassigned | - | | 
   | Y (Triangle)| Unassigned | - | | 
@@ -15,8 +15,8 @@
   | B (Circle) |  | - |  | 
   | A (Cross) | spins spindexer | - | | 
   | Left Bumper | Emergency Stop | - | Enters STOP state | 
-  | Right Bumper| Cancel Shot | - | Returns from READY_TO_SHOOT to IDLE | 
-  | Right Trigger| Enter INTAKE state | - | (This is an analog axis) | 
+  | Right Bumper| FIRE_BALL | - | Returns from READY_TO_SHOOT to IDLE | 
+  | Right Trigger| Enter INTAKE state and stop flywheel | - | (This is an analog axis) | 
   | Left Trigger| Outtake | Runs outtake for 1 second | (This is an analog axis) | 
   | Left Stick Button| Unassigned | - | | 
   | Right Stick Button| Unassigned | - | | 

@@ -99,7 +99,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
         odo = new Odo(hardwareMap);
         turret = new Turret(hardwareMap);
         spindexer = new Spindexer(hardwareMap, colorSensor);
-        shooterSubsystem = new ShooterSubsystem(intakeSubsystem, spindexer, turret);
+        shooterSubsystem = new ShooterSubsystem(intakeSubsystem, spindexer, turret, colorSensor);
 
 
 

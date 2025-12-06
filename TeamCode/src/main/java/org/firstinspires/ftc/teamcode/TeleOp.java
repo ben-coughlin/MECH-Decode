@@ -191,12 +191,12 @@ public class TeleOp extends RobotMasterPinpoint
 
 
         if (programStage == progStates.IDLE.ordinal()) {
-            if (gamepad1.dpad_up) {
+            if (gamepad1.left_bumper || gamepad2.dpad_up)  {
                 nextStage(progStates.SHOOT_PREP.ordinal());
             }
             else if (gamepad1.left_trigger > 0.1) {
                 intakeSubsystem.turnIntakeOff();
-                intakeSubsystem.outtake();
+                nextStage(progStates.OUTTAKE.ordinal());
             }
         }
 
@@ -211,12 +211,12 @@ public class TeleOp extends RobotMasterPinpoint
                 spindexer.chooseShotColor(Pattern.Ball.GREEN);
             }
 
-            if (gamepad1.dpad_down) {
+            if (gamepad1.right_bumper || gamepad2.dpad_down) {
                 nextStage(progStates.FIRE_BALL.ordinal());
             }
             // cancels the shot
-            else if (gamepad1.right_bumper) {
-                nextStage(progStates.IDLE.ordinal());
+            else if (gamepad1.circle || gamepad2.circle) {
+                turret.turnOffFlywheel();
             }
         }
 
@@ -229,11 +229,7 @@ public class TeleOp extends RobotMasterPinpoint
                 nextStage(progStates.IDLE.ordinal());
             }
         }
-        //estop
-        if (gamepad1.left_bumper) {
-            //nextStage(progStates.STOP.ordinal());
-            // i don't like this state so for now disabled
-        }
+
 
 
 
@@ -253,7 +249,7 @@ public class TeleOp extends RobotMasterPinpoint
                 initializeStateVariables();
                 turret.turnOnFlywheel();
             }
-            if (SystemClock.uptimeMillis() - stateStartTime > 4000) {
+            if (SystemClock.uptimeMillis() - stateStartTime > 2700) {
                 nextStage(progStates.READY_TO_SHOOT.ordinal());
             }
         }
@@ -281,7 +277,7 @@ public class TeleOp extends RobotMasterPinpoint
             }
             if(SystemClock.uptimeMillis() - stateStartTime > 1000)
             {
-                if(spindexer.recordShotBall()) {gamepad1.rumbleBlips(5);}
+                if(spindexer.recordShotBall(false)) {gamepad1.rumbleBlips(5);}
                 nextStage(progStates.READY_TO_SHOOT.ordinal());
             }
 
@@ -293,9 +289,9 @@ public class TeleOp extends RobotMasterPinpoint
                 initializeStateVariables();
 
             }
-            if(stateTimer.seconds() >= 1)
+            if(stateTimer.seconds() >= 2)
             {
-                intakeSubsystem.turnIntakeOff();
+                intakeSubsystem.outtake();
                 nextStage(progStates.IDLE.ordinal());
             }
         }

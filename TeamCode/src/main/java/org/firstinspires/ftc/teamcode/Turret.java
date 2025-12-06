@@ -22,15 +22,15 @@ public class Turret
     private final double TURRET_MIN_LIMIT_TICKS = -450;
     private final double TURRET_MAX_LIMIT_TICKS = 450;
     private static final double FLYWHEEL_TICKS_PER_REVOLUTION = 28; //rev throughbore
-
-
+    private double lastTurretPower = 0.0;
+    private final double TURRET_SLEW_RATE = 0.05; // max change in power per loop`
     private final DcMotorEx turret;
     public final DcMotorEx flywheelLeft;
     public final DcMotorEx flywheelRight;
     private final Servo hood;
     private VoltageSensor voltageSensor;
-    private final PIDFController autoAimClose = new PIDFController(0.012, 0.0001, 0.0016, 0.1);
-    private final PIDFController autoAimFar = new PIDFController(0.0072, 0.0001, 0.0009, 0.08);
+    private final PIDFController autoAimClose = new PIDFController(0.0065, 0.0, 0.004, 0.03);
+    private final PIDFController autoAimFar = new PIDFController(0.007, 0.0001, 0.0009, 0.08);
     private  PIDFController activeAutoAimController;
     private static final double GAIN_SCHEDULING_DISTANCE_THRESHOLD = 72.0;
     private double turretDeg;
@@ -41,6 +41,7 @@ public class Turret
     private double currVoltage;
     private final double NOMINAL_VOLTAGE = 12.0;
     private boolean isFlywheelOn;
+
 
 
 
@@ -119,7 +120,6 @@ public class Turret
 
         if(useAutoAim)
         {
-
             if (distance < GAIN_SCHEDULING_DISTANCE_THRESHOLD && distance > 0) {
                 activeAutoAimController = autoAimClose;
             } else {
@@ -139,17 +139,24 @@ public class Turret
             autoAimFar.reset();
         }
 
+        double delta = calculatedPower - lastTurretPower;
+        if (Math.abs(delta) > TURRET_SLEW_RATE) {
+            calculatedPower = lastTurretPower + Math.signum(delta) * TURRET_SLEW_RATE;
+        }
+        lastTurretPower = calculatedPower;
+
         int currentPosition = turret.getCurrentPosition();
         if (currentPosition >= TURRET_MAX_LIMIT_TICKS && calculatedPower > 0) {
             turret.setPower(0);
+            lastTurretPower = 0; // reset slew when hitting limits
         }
         else if (currentPosition <= TURRET_MIN_LIMIT_TICKS && calculatedPower < 0) {
             turret.setPower(0);
+            lastTurretPower = 0; // reset slew when hitting limits
         }
         else {
             turret.setPower(calculatedPower);
         }
-
     }
 
 

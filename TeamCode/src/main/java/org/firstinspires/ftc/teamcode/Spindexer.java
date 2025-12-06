@@ -7,6 +7,7 @@ import android.util.Log;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -22,15 +23,15 @@ public class Spindexer {
     private final CRServo spindexerServo;
     private final DcMotorEx encoder;
     private final ColorSensor colorSensor;
+    private VoltageSensor voltageSensor;
 
     // --- Control ---
-    private final PIDFController pid = new PIDFController(0.00015, 0, 0.00009, 0.09);
+    private final PIDFController pid = new PIDFController(0.000173, 0.00002, 0.000091, 0.093);
 
     // --- Constants ---
     private static final double TICKS_PER_REV = 8192.0;
     private static final double TICKS_PER_SLOT = (TICKS_PER_REV / 3.0);
-    private static final int POSITION_TOLERANCE = 40;
-
+    private static final int POSITION_TOLERANCE = 50;
     // --- State ---
     private final Pattern inventory;
     private int currentSlot = 0;
@@ -39,6 +40,9 @@ public class Spindexer {
     private boolean intakeCycleActive = false;
     private boolean ballDetectedThisCycle = false;
     private int nudgeOffset = 0;
+    private double lastOutput = 0;            // last power set to servo
+    private static double MAX_SLEW = 0.0258;
+    private Pattern.Ball detected = null;
 
     public Spindexer(HardwareMap hwMap, ColorSensor colorSensor) {
         this.spindexerServo = hwMap.get(CRServo.class, "spindexer");
@@ -47,6 +51,7 @@ public class Spindexer {
 
         encoder.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
         encoder.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+        initVoltageSensor(hwMap);
 
         inventory = new Pattern(Pattern.Ball.EMPTY, Pattern.Ball.EMPTY, Pattern.Ball.EMPTY);
 
@@ -58,17 +63,39 @@ public class Spindexer {
     public void update() {
         double currentPos = encoder.getCurrentPosition();
         double error = targetTicks - currentPos;
+        detected = colorSensor.detectBallColor();
+        MAX_SLEW += (14.5 - voltageSensor.getVoltage()) / 0.1 * 0.00013;
 
+
+        // PIDF calculation
         double output = pid.calculatePIDF(currentPos);
         output = Range.clip(output, -1, 1);
+
+        // --- Slew rate limiting ---
+        double delta = output - lastOutput;
+        if (delta > MAX_SLEW) delta = MAX_SLEW;
+        if (delta < -MAX_SLEW) delta = -MAX_SLEW;
+        output = lastOutput + delta;
+
+        double distance = targetTicks - currentPos;
+
+        double scale = Range.clip(Math.abs(distance) / 200.0, 0, 1); // 200 ticks = full power
+        output *= scale;
+        // Send to motor
         spindexerServo.setPower(output);
 
+        // Update last output for next cycle
+        lastOutput = output;
+
+        // Holding position logic
         if (Math.abs(error) <= POSITION_TOLERANCE) {
             spindexerServo.setPower(0);
             holdingPosition = true;
         } else {
             holdingPosition = false;
         }
+
+
     }
 
 
@@ -81,21 +108,28 @@ public class Spindexer {
     }
 
     public void intakeNewBall() {
-        if (!IntakeSubsystem.isIntakeRunning|| !isAtTargetPosition() || ballDetectedThisCycle) return;
+        if (!IntakeSubsystem.isIntakeRunning) return;
 
-        Pattern.Ball detected = colorSensor.detectBallColor();
+        // Only process if we are holding position (rotation finished)
+        if (!isAtTargetPosition()) return;
+
+        // Only allow one ball per cycle
+        if (ballDetectedThisCycle) return;
+        Log.i("Spindexer", " inside intake new ball Detected Ball: " + detected + "color booleans " + colorSensor.detectBallColor());
+
 
         if (detected == Pattern.Ball.PURPLE || detected == Pattern.Ball.GREEN) {
-            // Update the current slot with the detected ball color as long as we're not seein the spindexer
             updateSlot(currentSlot, detected);
             ballDetectedThisCycle = true;
             Log.i("Spindexer", "updated slot: current (" + currentSlot + ") + detected (" + detected + ")");
+
 
             rotateToNextEmptySlot();
 
             intakeCycleActive = false;
         }
     }
+
 
 
     public boolean intakeCycleIsComplete() {
@@ -118,16 +152,22 @@ public class Spindexer {
      *
      * @return true if the ball was shot, rotates automatically. false otherwise - does nothing
      */
-    public boolean recordShotBall()
+    public boolean recordShotBall(boolean useObeliskSlot)
     {
         Log.i("Spindexer", "recording shot ball");
 
-        if(colorSensor.detectBallColor() == Pattern.Ball.EMPTY)
+        if(detected == Pattern.Ball.EMPTY)
         {
             Log.i("Spindexer", "shot was successs yahoo yippe");
             updateSlot(currentSlot, Pattern.Ball.EMPTY);
-            rotateToNextFullSlot();
-            return true;
+            if(useObeliskSlot)
+            {
+                rotateToNextSlotInPattern();
+            }
+            else
+            {
+                rotateToNextFullSlot();
+            }
         }
         Log.i("Spindexer", "shot failed aw shucks");
 
@@ -142,7 +182,7 @@ public class Spindexer {
         };
 
         //
-        for (int i = 0; i <= 2; i++) {
+        for (int i = 1; i <= 3; i++) {
             int slotToCheck = (currentSlot + i) % 3;
 
             if (slots[slotToCheck] != Pattern.Ball.EMPTY && slotToCheck != currentSlot) {
@@ -157,21 +197,23 @@ public class Spindexer {
         Pattern.Ball[] slots = {
                 inventory.spindexSlotOne,
                 inventory.spindexSlotTwo,
-                inventory.spindexSlotThree
+                inventory.spindexSlotThree,
         };
 
-        //
-        for (int i = 0; i <= 2; i++) {
+        for (int i = 1; i <= 3; i++) { // start from 1 to avoid current slot
             int slotToCheck = (currentSlot + i) % 3;
 
-            if (slots[slotToCheck] == Pattern.Ball.EMPTY && slotToCheck != currentSlot) {
-                Log.i("Spindexer", "rotating to next empty slot" + slotToCheck);
+            if (slots[slotToCheck] == Pattern.Ball.EMPTY) {
+                Log.i("Spindexer", "rotating to next empty slot " + slotToCheck);
                 rotateToSlot(slotToCheck);
+                ballDetectedThisCycle = false;
                 return;
             }
         }
 
+        Log.i("Spindexer", "no empty slot found, staying at currentSlot " + currentSlot);
     }
+
 
     public void chooseShotColor(Pattern.Ball desiredColor)
     {
@@ -192,7 +234,7 @@ public class Spindexer {
         };
 
         //
-        for (int i = 0; i <= 2; i++) {
+        for (int i = 1; i <= 3; i++) {
             int slotToCheck = (currentSlot + i) % 3;
 
             if (slots[slotToCheck] == Pattern.Ball.GREEN && slotToCheck != currentSlot) {
@@ -211,7 +253,7 @@ public class Spindexer {
         };
 
         //
-        for (int i = 0; i <= 2; i++) {
+        for (int i = 1; i <= 3; i++) {
             int slotToCheck = (currentSlot + i) % 3;
 
             if (slots[slotToCheck] == Pattern.Ball.PURPLE && slotToCheck != currentSlot) {
@@ -271,18 +313,33 @@ public class Spindexer {
                 break;
         }
     }
-
-
     private void rotateToSlot(int slot) {
 
-           Log.i("Spindexer", "rotating to slot" + slot);
-           holdingPosition = false;
-           currentSlot = slot;
-           targetTicks = slot * TICKS_PER_SLOT + nudgeOffset;
-           pid.setReference(targetTicks);
-           pid.reset();
+        Log.i("Spindexer", "rotating to slot " + slot);
 
+        holdingPosition = false;
+        currentSlot = slot;
+
+        double baseTarget = slot * TICKS_PER_SLOT + nudgeOffset;
+
+        int current = encoder.getCurrentPosition();  // your encoder position
+
+        // Generate candidate positions (same slot, different revolutions)
+        double target1 = baseTarget;
+        double target2 = baseTarget + TICKS_PER_REV;   // one full rev ahead
+        double target3 = baseTarget - TICKS_PER_REV;   // one full rev behind
+
+        // Pick the closest
+        double bestTarget = target1;
+        if (Math.abs(current - target2) < Math.abs(current - bestTarget)) bestTarget = target2;
+        if (Math.abs(current - target3) < Math.abs(current - bestTarget)) bestTarget = target3;
+
+        targetTicks = bestTarget;
+
+        pid.reset();
+        pid.setReference(targetTicks);
     }
+
 
     private int getPreferredSlotForColor(Pattern.Ball color) {
         switch (color) {
@@ -302,6 +359,43 @@ public class Spindexer {
                 return currentSlot;
         }
     }
+    public void rotateToNextSlotInPattern() {
+        Pattern.Ball[] invSlots = {
+                inventory.spindexSlotOne,
+                inventory.spindexSlotTwo,
+                inventory.spindexSlotThree
+        };
+        Pattern.Ball[] obeliskSlots = {
+                obelisk.spindexSlotOne,
+                obelisk.spindexSlotTwo,
+                obelisk.spindexSlotThree
+        };
+
+        // Try each slot starting from the next one after currentSlot
+        for (int i = 1; i <= 3; i++) {
+            int slotToCheck = (currentSlot + i) % 3;
+
+            // Skip empty inventory slots
+            if (invSlots[slotToCheck] == Pattern.Ball.EMPTY) continue;
+
+            // Check if the slot matches the obelisk or if the obelisk slot is empty
+            if (obeliskSlots[slotToCheck] != Pattern.Ball.EMPTY &&
+                    invSlots[slotToCheck] == obeliskSlots[slotToCheck]) {
+
+                Log.i("Spindexer", "rotating to next matching obelisk slot " + slotToCheck);
+                rotateToSlot(slotToCheck);
+                return;
+            }
+        }
+
+        // If no matching obelisk slot found, rotate to next non-empty inventory slot
+        rotateToNextFullSlot();
+
+        // If inventory is empty, stay in place
+        Log.i("Spindexer", "inventory empty, staying at currentSlot " + currentSlot);
+    }
+
+
     public void nudgeLeft() {
         nudgeOffset -= 25;
         holdingPosition = false;
@@ -335,6 +429,15 @@ public class Spindexer {
                 inventory.spindexSlotThree);
 
     }
+    public void setInventory(Pattern p)
+    {
+        inventory.updatePattern(p.spindexSlotOne, p.spindexSlotTwo, p.spindexSlotThree);
+    }
+    private void initVoltageSensor(HardwareMap hwMap)
+    {
+        voltageSensor = hwMap.voltageSensor.iterator().next();
+    }
+
 
 
 }

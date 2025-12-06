@@ -97,7 +97,7 @@ public class Movement {
         //we only care about the relative angle to the point, so subtract our angle
         //also subtract 90 since if we were 0 degrees (pointed at it) we use movement_y to
         //go forwards. This is a little bit counter-intuitive
-        double deltaAngleToPointAdjusted = AngleWrap(angleToPointAdjusted - (worldAngle_rad));
+        double deltaAngleToPointAdjusted = AngleWrap(angleToPointAdjusted - (worldAngle_rad - Math.toRadians(90)));
 
         //Relative x and y components required to move toward the next point (with angle correction)
         double relative_x_to_point = Math.cos(deltaAngleToPointAdjusted) * distanceToPoint;

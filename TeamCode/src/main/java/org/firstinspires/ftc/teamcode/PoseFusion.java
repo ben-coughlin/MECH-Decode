@@ -37,7 +37,7 @@ public class PoseFusion {
 
     // Vision measurement noise (std dev)
     private double rPos = 1.5;       // inches
-    private double rHeading = 0.12;  // radians
+    private double rHeading = 0.15;  // radians
 
     private final double tiltRad = Math.toRadians(22); // camera pitch in radians (positive = upward)
 
@@ -143,6 +143,8 @@ public class PoseFusion {
         double robotX_in = robotX_m * 39.37007874015748; // meters -> inches
         double robotY_in = robotY_m * 39.37007874015748;
 
+
+
         // Jump rejection: ensure vision hasn't teleported
         double lastX = x[0];
         double lastY = x[1];
@@ -168,6 +170,9 @@ public class PoseFusion {
         yInno[0] = z[0] - x[0];
         yInno[1] = z[1] - x[1];
         yInno[2] = normalizeAngle(z[2] - x[2]);
+
+        double scale = Math.max(0, 1 - Math.abs(limePose3D.getOrientation().getYaw(AngleUnit.RADIANS)) / Math.toRadians(90));
+        yInno[2] *= scale;
 
         // S = P + R
         double[][] S = copyMatrix(P);
