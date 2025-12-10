@@ -12,12 +12,12 @@ public class ShooterSubsystem {
     private final ColorSensor colorSensor;
 
     public boolean isFlywheelReady = false;
-    private boolean isShotInProgress = false;
+    public boolean isShotInProgress = false; //todo: change this back to private after debugging
     public boolean isFlywheelSpun = false;
 
     private long flywheelStartTime = 0;
     private long shotStartTime = 0;
-    private int shotsRemaining = 0;
+    public int shotsRemaining = 0; //todo: change this back to private after debugging
     private long shotInterval = 300; // ms between balls
     private long lastShotTime = 0;
     private boolean hasKickerGoneVertical = false;
@@ -135,6 +135,14 @@ public class ShooterSubsystem {
     public void turnOff()
     {
         turret.turnOffFlywheel();
+    }
+    public void reset() {
+        isShotInProgress = false;
+        shotsRemaining = 0;
+        hasKickerGoneVertical = false;
+        hasKickerGoneHorizontal = false;
+        hasRecordedShotBall = false;
+        Log.i("ShooterSubsystem", "Shot sequence reset");
     }
 
 }

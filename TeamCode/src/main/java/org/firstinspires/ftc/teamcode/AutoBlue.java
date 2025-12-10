@@ -41,12 +41,6 @@ public class AutoBlue extends RobotMasterPinpoint {
         intakeSecondThreeBalls,
         driveToThirdThreeBalls,
         intakeThirdThreeBalls,
-        hangSpecimen,
-        driveUpToSamples,
-        strafeToSamples,
-        pushSamplesToPlayerStation,
-
-        pushSampleToPickUpSpecimen,
         SHOOT_PREP,
         SHOOT,
         endBehavior
@@ -130,10 +124,9 @@ public class AutoBlue extends RobotMasterPinpoint {
 
 
         boolean jamDetected = false;//pixelJamAndCounting();
-        System.out.println("Superstructure State: " + currentState);
-        System.out.println("Path State: " + programStage);
-        Log.i("heading", String.valueOf(Math.toDegrees(worldAngle_rad)));
-        Log.i("esnupi", progStates.values()[programStage].name());
+        Log.i("DEBUG", "Current stage: " + programStage + " = " + progStates.values()[programStage].name());
+        Log.i("DEBUG", "=== LOOP START === Stage: " + programStage + " = " + progStates.values()[programStage].name());
+        Log.i("DEBUG", "isShotInProgress: " + shooterSubsystem.isShotInProgress + ", shotsRemaining: " + shooterSubsystem.shotsRemaining);
 
         if (programStage == progStates.driveBackwardsFromStartToShootPreload.ordinal()) {
             if (stageFinished) {
@@ -305,7 +298,7 @@ public class AutoBlue extends RobotMasterPinpoint {
             if (Movement.followCurve(points, Math.toRadians(90),1)) {
                 drive.stopAllMovementDirectionBased();
                 spindexer.intakeCycleActive = false;
-                nextStage(progStates.SHOOT_PREP.ordinal(), progStates.endBehavior.ordinal());
+                nextStage(progStates.SHOOT_PREP.ordinal(), progStates.driveToThirdThreeBalls.ordinal());
             }
 
             drive.applyMovementDirectionBased(); // always put at end of state
@@ -329,7 +322,7 @@ public class AutoBlue extends RobotMasterPinpoint {
 
             if (Movement.followCurve(points, Math.toRadians(0),1)) {
                 drive.stopAllMovementDirectionBased();
-                nextStage(progStates.endBehavior.ordinal());
+                nextStage(progStates.intakeThirdThreeBalls.ordinal());
             }
 
             drive.applyMovementDirectionBased(); // always put at end of state
@@ -341,7 +334,7 @@ public class AutoBlue extends RobotMasterPinpoint {
                 past5In = false;
                 intakeSubsystem.turnIntakeOn();
                 spindexer.startIntakeCycle();
-                ShooterSubsystem.activeShotDisable = true;
+
             }
 
             spindexer.intakeNewBall();
@@ -360,7 +353,7 @@ public class AutoBlue extends RobotMasterPinpoint {
             if (Movement.followCurve(points, Math.toRadians(90), 1)) {
                 drive.stopAllMovementDirectionBased();
                 spindexer.intakeCycleActive = false;
-                ShooterSubsystem.activeShotDisable = false;
+                shooterSubsystem.reset();
                 nextStage(progStates.endBehavior.ordinal());
             }
 

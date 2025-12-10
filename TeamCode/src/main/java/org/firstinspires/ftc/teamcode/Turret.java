@@ -47,13 +47,13 @@ public class Turret
 
 
     private final double[][] launchAngleLookupTable = {
-            { 25, 0.49, 4350},   // At 20 inches, servo is 0.01, power is 0.7
-            { 36, 0.630, 4350},
-            { 50, 0.715, 4650 },
-            { 60, 0.770, 4800 },
-            { 70, 0.810, 5250 },
+            { 25, 0.49, 4150},   // inches from apriltag, servo angle, rpm
+            { 36, 0.630, 4150},
+            { 50, 0.715, 4450 },
+            { 60, 0.770, 4600 },
+            { 70, 0.810, 5050 },
             { 93, 0.765, 5400 },
-            { 125, 0.8, 6000 }   //todo: tune
+            { 125, 0.8, 6000 }
     };
 
     public Turret(HardwareMap hwMap)
