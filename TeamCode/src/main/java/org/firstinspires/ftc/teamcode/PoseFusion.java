@@ -48,7 +48,7 @@ public class PoseFusion {
     // temporary storage to avoid allocation
     private final double[] z = new double[3];
     private final double[] yInno = new double[3];
-
+    private static boolean useHeading;
 
 
     /** Primary constructor. tiltDegrees positive = upward tilt. */
@@ -154,6 +154,18 @@ public class PoseFusion {
             return;
         }
 
+        //calculate tag viewing angle
+        double tagX_in = robotX_in + (limePose3D.getPosition().z * 39.37007874015748) * Math.cos(cameraYaw);
+        double tagY_in = robotY_in + (limePose3D.getPosition().z * 39.37007874015748) * Math.sin(cameraYaw);
+
+        double angleToTag = Math.atan2(tagY_in - robotY_in, tagX_in - robotX_in);
+
+        double viewingAngle = Math.abs(normalizeAngle(robotHeadingMeas - angleToTag));
+        double viewingAngleDeg = Math.toDegrees(viewingAngle);
+
+        double maxViewingAngleDeg = 35.0;
+        useHeading = viewingAngleDeg < maxViewingAngleDeg;
+
         // Measurement vector z = [x, y, heading]
         z[0] = robotX_in;
         z[1] = robotY_in;
@@ -161,18 +173,21 @@ public class PoseFusion {
 
         // Build measurement noise R and inflate based on latency.
         double latencyScale = 1.0 + Math.min(limelightLatencyMs / maxAllowedLatencyMs, 3.0); // up to 4x
+        double headingNoiseScale = useHeading ? 1.0 : 1000.0; // effectively reject heading when it's too high
         double[][] R = new double[3][3];
         R[0][0] = (rPos * latencyScale) * (rPos * latencyScale);
         R[1][1] = (rPos * latencyScale) * (rPos * latencyScale);
-        R[2][2] = (rHeading * latencyScale) * (rHeading * latencyScale);
+        R[2][2] = (rHeading * latencyScale * headingNoiseScale) * (rHeading * latencyScale * headingNoiseScale);
+
 
         // Innovation y = z - x
         yInno[0] = z[0] - x[0];
         yInno[1] = z[1] - x[1];
-        yInno[2] = normalizeAngle(z[2] - x[2]);
-
-        double scale = Math.max(0, 1 - Math.abs(limePose3D.getOrientation().getYaw(AngleUnit.RADIANS)) / Math.toRadians(90));
-        yInno[2] *= scale;
+        //yInno[2] = normalizeAngle(z[2] - x[2]);
+        yInno[2] = 0.0;
+        if (!useHeading) {
+            yInno[2] = 0.0;
+        }
 
         // S = P + R
         double[][] S = copyMatrix(P);
@@ -338,4 +353,9 @@ public class PoseFusion {
         while (a <= -Math.PI) a += 2*Math.PI;
         return a;
     }
+    public static void useHeading(boolean h)
+    {
+        useHeading = h;
+    }
+
 }

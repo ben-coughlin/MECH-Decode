@@ -54,56 +54,27 @@ public class HoodTuning extends LinearOpMode {
 
             turret.aimTurret(true, result.getTx(), gamepad1.right_stick_y, distanceToTag);
 
-
-            final double MAX_POWER_DISTANCE = 40.0; // inches
-
-            final double MIN_POWER_DISTANCE = 20.0; // inches
-
-            final double MIN_POWER = 0.80;
-
-            double compensatedPower;
-
-            if (distanceToTag >= MAX_POWER_DISTANCE) {
-                compensatedPower = 1.0;
-            } else if (distanceToTag <= MIN_POWER_DISTANCE) {
-                compensatedPower = MIN_POWER;
-            } else {
-
-                double range = MAX_POWER_DISTANCE - MIN_POWER_DISTANCE;
-                double howFarIntoRange = (distanceToTag - MIN_POWER_DISTANCE) / range;
-
-                double powerRange = 1.0 - MIN_POWER;
-                compensatedPower = MIN_POWER + (howFarIntoRange * powerRange);
-            }
-
-
-            compensatedPower = Math.max(MIN_POWER, Math.min(1.0, compensatedPower));
-
-
-
-
             if (gamepad1.circle && !shootingSequenceActive)
             {
                 shootingSequenceActive = true;
-                timer.reset();
-                turret.flywheelRight.setPower(.05);
-                turret.flywheelLeft.setPower(.05);
+
+                turret.flywheelRight.setPower(motorPower);
+                turret.flywheelLeft.setPower(motorPower);
             }
 
-            if (shootingSequenceActive) {
-                if (timer.seconds() > 5) {
-                    intake.moveKickerVertical();
-                }
-                if (timer.seconds() > 6) {
-                   // turret.setFlywheelPower(0);
-                    intake.moveKickerHorizontal();
-                    shootingSequenceActive = false;
-                }
-            }
 
             if(gamepad1.square)
             {
-                currentServoPosition = 0;
+
+                intake.moveKickerVertical();
+
+
+            }
+            if (gamepad1.cross) {
+                turret.flywheelRight.setPower(0);
+                turret.flywheelLeft.setPower(0);
+                intake.moveKickerHorizontal();
+                shootingSequenceActive = false;
             }
 
 
@@ -152,7 +123,7 @@ public class HoodTuning extends LinearOpMode {
             telemetry.addData("Distance to Tag (in)", "%.2f", distanceToTag);
             telemetry.addData("Servo Position", "%.3f", currentServoPosition);
             telemetry.addData("Motor Power", "%.3f", turret.flywheelLeft.getPower());
-            telemetry.addData("Compensated Power", "%.3f", compensatedPower);
+            telemetry.addData("Desired Power", "%.3f", motorPower);
             telemetry.update();
         }
     }

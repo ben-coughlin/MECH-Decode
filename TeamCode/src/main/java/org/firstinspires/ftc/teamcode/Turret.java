@@ -23,7 +23,7 @@ public class Turret
     private final double TURRET_MAX_LIMIT_TICKS = 450;
     private static final double FLYWHEEL_TICKS_PER_REVOLUTION = 28; //rev throughbore
     private double lastTurretPower = 0.0;
-    private final double TURRET_SLEW_RATE = 0.05; // max change in power per loop`
+    private final double TURRET_SLEW_RATE = 0.14; // max change in power per loop`
     private final DcMotorEx turret;
     public final DcMotorEx flywheelLeft;
     public final DcMotorEx flywheelRight;
@@ -47,13 +47,13 @@ public class Turret
 
 
     private final double[][] launchAngleLookupTable = {
-            { 20, 0.01, 3800},   // At 20 inches, servo is 0.01, power is 0.7
-            { 36, 0.08, 4400},
-            { 48, 0.11, 5200 },
-            { 60, 0.15, 5400 },
-            { 65, 0.24, 5500 },
-            { 75, 0.40, 5700 },
-            { 100, 0.8, 6000 }   //todo: tune
+            { 25, 0.49, 4350},   // At 20 inches, servo is 0.01, power is 0.7
+            { 36, 0.630, 4350},
+            { 50, 0.715, 4650 },
+            { 60, 0.770, 4800 },
+            { 70, 0.810, 5250 },
+            { 93, 0.765, 5400 },
+            { 125, 0.8, 6000 }   //todo: tune
     };
 
     public Turret(HardwareMap hwMap)

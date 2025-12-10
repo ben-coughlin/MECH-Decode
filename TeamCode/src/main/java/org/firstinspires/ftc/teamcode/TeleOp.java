@@ -73,11 +73,6 @@ public class TeleOp extends RobotMasterPinpoint
     double targetHeading = 0.0;
     public boolean wasBallIntakeSuccessful;
 
-
-
-
-
-
     @Override
     public void init()
     {
@@ -277,7 +272,7 @@ public class TeleOp extends RobotMasterPinpoint
             }
             if(SystemClock.uptimeMillis() - stateStartTime > 1000)
             {
-                if(spindexer.recordShotBall(false)) {gamepad1.rumbleBlips(5);}
+                if(spindexer.recordShotBall(false)) {gamepad1.rumble(1, 0, 100);}
                 nextStage(progStates.READY_TO_SHOOT.ordinal());
             }
 

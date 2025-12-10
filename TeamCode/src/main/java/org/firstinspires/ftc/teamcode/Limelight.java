@@ -129,7 +129,7 @@ public class Limelight extends RobotMasterPinpoint
         if(isTagObelisk(tagId) && canObeliskBeChanged)
         {
             currObeliskAprilTag = tagId;
-            return null;
+            return new Pattern(idToPatternList.get(currObeliskAprilTag));
         }
 
           return idToPatternList.get(currObeliskAprilTag);

@@ -37,7 +37,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
     public HashMap<String, String> debugKeyValues = new HashMap<>();
 
     //misc
-    public boolean isAuto = false;
+    public static boolean isAuto = false;
     public static boolean resetEncoders = false;
     double lastHeading = 0;
     public boolean isMovementDone = false;
@@ -130,10 +130,12 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
 
         obelisk = limelight.updateObelisk(true);
-        odo.showOdoTelemetry(telemetry);
-        pose.displayPoseTelemetry(telemetry, pose, odo.getVelocityComponents()[0], odo.getVelocityComponents()[1], (odo.getHeading() - lastHeading) / dt);
-
-
+        if(obelisk != null) {
+            telemetry.addData("Obelisk", "[%s] [%s] [%s]",
+                    obelisk.spindexSlotOne,
+                    obelisk.spindexSlotTwo,
+                    obelisk.spindexSlotThree);
+        }
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
         telemetry.update();
         Log.i("Loop Time", String.valueOf(SystemClock.uptimeMillis() - startLoopTime));

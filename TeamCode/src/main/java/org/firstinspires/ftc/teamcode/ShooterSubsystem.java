@@ -23,6 +23,7 @@ public class ShooterSubsystem {
     private boolean hasKickerGoneVertical = false;
     private boolean hasKickerGoneHorizontal = false;
     private boolean hasRecordedShotBall = false;
+    public static boolean activeShotDisable = false;
 
 
     public ShooterSubsystem(IntakeSubsystem intakeSubsystem, Spindexer spindexer, Turret turret, ColorSensor colorSensor) {
@@ -73,27 +74,28 @@ public class ShooterSubsystem {
     /** Must be called EVERY LOOP */
     public void updateActiveShot() {
         if (!isShotInProgress) return;
+        if(activeShotDisable) return;
 
         long now = SystemClock.uptimeMillis();
         long elapsed = now - lastShotTime;
 
 
-        if ((spindexer.isAtTargetPosition() || elapsed >= 670)  && !hasKickerGoneVertical) {
+        if ((spindexer.isAtTargetPosition() || elapsed >= 600)  && !hasKickerGoneVertical) {
             intakeSubsystem.moveKickerVertical();
             hasKickerGoneVertical = true;
             Log.i("ShooterSubsystem", "move kicker vertical@"+elapsed);
         }
 
-        if (elapsed >= 850 && !hasKickerGoneHorizontal) {
+        if (elapsed >= 750 && !hasKickerGoneHorizontal) {
             intakeSubsystem.moveKickerHorizontal();
             hasKickerGoneHorizontal = true;
             Log.i("ShooterSubsystem", "move kicker horizontal@"+elapsed);
         }
 
-        boolean ballGone = (colorSensor.detectBallColor() == Pattern.Ball.EMPTY);
+
 
 // Phase 1: detect shot
-        if (!hasRecordedShotBall && ballGone && elapsed >= 1000) {
+        if (!hasRecordedShotBall && elapsed >= 850) {
             if(!spindexer.recordShotBall(true))
             {
                 lastShotTime = now;
@@ -101,12 +103,15 @@ public class ShooterSubsystem {
                 hasKickerGoneHorizontal = false;
                 Log.i("Spindexer", "shot failed, resetting timers to try again" + elapsed);
             }
-            hasRecordedShotBall = true;
+            else
+            {
+                hasRecordedShotBall = true;
+            }
             Log.i("ShooterSubsystem","Shot detected@" + elapsed);
         }
 
 // Phase 2: wait for spindexer to reach next position OR timeout
-        if (hasRecordedShotBall && (spindexer.isAtTargetPosition() || elapsed >= 1800)) {
+        if (hasRecordedShotBall && (spindexer.isAtTargetPosition() || elapsed >= 1650)) {
             shotsRemaining--;
             lastShotTime = now;
             hasKickerGoneVertical = false;
