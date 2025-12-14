@@ -23,13 +23,13 @@ public class Turret
     private final double TURRET_MAX_LIMIT_TICKS = 450;
     private static final double FLYWHEEL_TICKS_PER_REVOLUTION = 28; //rev throughbore
     private double lastTurretPower = 0.0;
-    private final double TURRET_SLEW_RATE = 0.14; // max change in power per loop`
+    private final double TURRET_SLEW_RATE = 0.1; // max change in power per loop`
     private final DcMotorEx turret;
     public final DcMotorEx flywheelLeft;
     public final DcMotorEx flywheelRight;
     private final Servo hood;
     private VoltageSensor voltageSensor;
-    private final PIDFController autoAimClose = new PIDFController(0.0065, 0.0, 0.004, 0.03);
+    private final PIDFController autoAimClose = new PIDFController(0.0064, 0.000001, 0.009, 0.097);
     private final PIDFController autoAimFar = new PIDFController(0.007, 0.0001, 0.0009, 0.08);
     private  PIDFController activeAutoAimController;
     private static final double GAIN_SCHEDULING_DISTANCE_THRESHOLD = 72.0;
@@ -42,16 +42,13 @@ public class Turret
     private final double NOMINAL_VOLTAGE = 12.0;
     private boolean isFlywheelOn;
 
-
-
-
-
     private final double[][] launchAngleLookupTable = {
-            { 25, 0.49, 4150},   // inches from apriltag, servo angle, rpm
-            { 36, 0.630, 4150},
-            { 50, 0.715, 4450 },
-            { 60, 0.770, 4600 },
-            { 70, 0.810, 5050 },
+            { 25, 0.61, 4000},   // inches from apriltag, servo angle, rpm
+            { 36, 0.75, 4050},
+            {42, .77, 4500},
+            {48, .787, 4500},
+            { 60, 0.795, 4800 },
+            { 70, 0.810, 5200 },
             { 93, 0.765, 5400 },
             { 125, 0.8, 6000 }
     };
@@ -285,6 +282,13 @@ public class Turret
     {
         voltageSensor = hwMap.voltageSensor.iterator().next();
     }
+    public void resetPID()
+    {
+        autoAimClose.reset();
+        autoAimFar.reset();
+    }
+
+
 
 
 

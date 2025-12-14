@@ -45,7 +45,7 @@ public class ShooterSubsystem {
 
     /** Call every loop until ready */
     public void updateSpin() {
-        if ((!isFlywheelReady && SystemClock.uptimeMillis() - flywheelStartTime > 1700) || isFlywheelSpun) {
+        if ((!isFlywheelReady && SystemClock.uptimeMillis() - flywheelStartTime > 600) || isFlywheelSpun) {
             Log.i("ShooterSubsystem", "Spin update elapsed = " +
                     (SystemClock.uptimeMillis() - flywheelStartTime));
 
@@ -80,7 +80,7 @@ public class ShooterSubsystem {
         long elapsed = now - lastShotTime;
 
 
-        if ((spindexer.isAtTargetPosition() || elapsed >= 600)  && !hasKickerGoneVertical) {
+        if ((spindexer.isAtTargetPosition() || elapsed >= 620)  && !hasKickerGoneVertical) {
             intakeSubsystem.moveKickerVertical();
             hasKickerGoneVertical = true;
             Log.i("ShooterSubsystem", "move kicker vertical@"+elapsed);

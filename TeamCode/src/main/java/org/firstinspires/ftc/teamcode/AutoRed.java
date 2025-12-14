@@ -1,14 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import static com.sun.tools.doclint.Entity.omega;
-import static org.firstinspires.ftc.teamcode.MovementVars.movement_turn;
-import static org.firstinspires.ftc.teamcode.MovementVars.movement_x;
-import static org.firstinspires.ftc.teamcode.MovementVars.movement_y;
-import static org.firstinspires.ftc.teamcode.RobotPosition.AngleWrap;
-import static org.firstinspires.ftc.teamcode.RobotPosition.worldAngle_rad;
-import static org.firstinspires.ftc.teamcode.RobotPosition.worldXPosition;
-import static org.firstinspires.ftc.teamcode.RobotPosition.worldYPosition;
-
 import android.os.SystemClock;
 import android.util.Log;
 
@@ -18,7 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 @Autonomous
-public class AutoBlue extends RobotMasterPinpoint {
+public class AutoRed extends RobotMasterPinpoint {
 
     private final double SCALE_FACTOR = 0.9;
 
@@ -33,6 +24,7 @@ public class AutoBlue extends RobotMasterPinpoint {
     private boolean hasFinishedManualAim = false;
 
 
+
     private enum progStates {
         driveBackwardsFromStartToShootPreload,
         driveToFirstThreeBalls,
@@ -41,9 +33,9 @@ public class AutoBlue extends RobotMasterPinpoint {
         driveToSecondThreeBalls,
         intakeSecondThreeBalls,
         driveToShootPointToEnd,
+        driveOutsideOfShootZoneToEnd,
         driveToThirdThreeBalls,
         intakeThirdThreeBalls,
-        driveOutsideOfShootZoneToEnd,
         SHOOT_PREP,
         SHOOT,
         endBehavior
@@ -72,7 +64,6 @@ public class AutoBlue extends RobotMasterPinpoint {
         super.start();
         startTime = SystemClock.uptimeMillis();
 
-
     }
 
     private int pixelDropLocation = 0;
@@ -88,7 +79,7 @@ public class AutoBlue extends RobotMasterPinpoint {
     private double lockedHeading;
 
     private double cutOffTime = 22.5;
-    private String currentState = String.valueOf(AutoBlue.progStates.values()[AutoBlue.programStage]);
+    private String currentState = String.valueOf(AutoRed.progStates.values()[AutoRed.programStage]);
 
     private boolean past5In = false;
 
@@ -106,7 +97,7 @@ public class AutoBlue extends RobotMasterPinpoint {
 
         if(!isLookingAtObelisk)
         {
-            if (Limelight.getCurrResult() != null && Limelight.getCurrResult().isValid() && VisionUtils.isTagBlueGoal(VisionUtils.getTagId(Limelight.getCurrResult())))
+            if (Limelight.getCurrResult() != null && Limelight.getCurrResult().isValid() && VisionUtils.isTagRedGoal(VisionUtils.getTagId(Limelight.getCurrResult())))
             {
                 double llError = Limelight.getCurrResult().getTx();
 
@@ -116,9 +107,9 @@ public class AutoBlue extends RobotMasterPinpoint {
         }
         else {
 
-            if(!hasFinishedManualAim) {turret.aimTurret(false, 0, -0.37, 999);}
+            if(!hasFinishedManualAim) {turret.aimTurret(false, 0, 0.23, 999);}
 
-            if (Limelight.getCurrResult() != null && Limelight.getCurrResult().isValid() && VisionUtils.isTagBlueGoal(VisionUtils.getTagId(Limelight.getCurrResult())))
+            if (Limelight.getCurrResult() != null && Limelight.getCurrResult().isValid() && VisionUtils.isTagRedGoal(VisionUtils.getTagId(Limelight.getCurrResult())))
             {
                 turret.aimTurret(false, 0, 0, 0);
                 turret.resetEncoder();
@@ -146,12 +137,13 @@ public class AutoBlue extends RobotMasterPinpoint {
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(-31, 0,
+            points.add(new CurvePoint(-33.5, 0,
                     0.8 * SCALE_FACTOR, 0.30 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.3));
 
 
-            if (Movement.followCurve(points, Math.toRadians(-90),1)) { //the second term is is if drive strait or the strafe angle 90 deg is strait ahead
+
+            if (Movement.followCurve(points, Math.toRadians(-90),2)) { //the second term is is if drive strait or the strafe angle 90 deg is strait ahead
                 drive.stopAllMovementDirectionBased();
                 nextStage(progStates.SHOOT_PREP.ordinal(), progStates.driveToFirstThreeBalls.ordinal());
             }
@@ -168,7 +160,7 @@ public class AutoBlue extends RobotMasterPinpoint {
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(-28,29,
+            points.add(new CurvePoint(-24,-28,
                     0.8 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.3));
 
@@ -177,7 +169,7 @@ public class AutoBlue extends RobotMasterPinpoint {
 //                    0.25 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 12, 10,
 //                    Math.toRadians(-90), 0.8));
 
-            if (Movement.followCurve(points, Math.toRadians(0),1)) {
+            if (Movement.followCurve(points, Math.toRadians(160),2)) {
                 drive.stopAllMovementDirectionBased();
                 nextStage(progStates.intakeFirstThreeBalls.ordinal());
             }
@@ -200,8 +192,8 @@ public class AutoBlue extends RobotMasterPinpoint {
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(-6, 29,
-                    0.115 * SCALE_FACTOR, 0.6 * SCALE_FACTOR, 10, 10,
+            points.add(new CurvePoint(-8, -29,
+                    0.14 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.3));
 
 //            points.add(new CurvePoint(24, 35,
@@ -209,7 +201,7 @@ public class AutoBlue extends RobotMasterPinpoint {
 //                    Math.toRadians(-90), 0.3));
 
 
-            if (Movement.followCurve(points, Math.toRadians(90),1)) {
+            if (Movement.followCurve(points, Math.toRadians(90),2)) {
                 drive.stopAllMovementDirectionBased();
                 shooterSubsystem.isFlywheelSpun = true;
                 nextStage(progStates.driveToShootingPoint.ordinal());
@@ -232,7 +224,7 @@ public class AutoBlue extends RobotMasterPinpoint {
                 points.add(new CurvePoint(stateStartingX, stateStartingY,
                         0, 0, 0, 0, 0, 0));
 
-                points.add(new CurvePoint(-31, 30,
+                points.add(new CurvePoint(-33, -28,
                         0.8* SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
                         Math.toRadians(60), 0.3));
 
@@ -240,7 +232,7 @@ public class AutoBlue extends RobotMasterPinpoint {
     //                    0.25 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 12, 10,
     //                    Math.toRadians(-90), 0.3));
 
-                if (Movement.followCurve(points, Math.toRadians(-90),3)) {
+                if (Movement.followCurve(points, Math.toRadians(-90),2)) {
                     intakeSubsystem.turnIntakeOff();
                     drive.stopAllMovementDirectionBased();
                     nextStage(progStates.SHOOT_PREP.ordinal(), progStates.driveToSecondThreeBalls.ordinal());
@@ -252,7 +244,6 @@ public class AutoBlue extends RobotMasterPinpoint {
         if (programStage == progStates.driveToSecondThreeBalls.ordinal()) {
             if (stageFinished) {
                 past5In = false;
-                isLookingAtObelisk = true;
                 initializeStateVariables();
             }
 
@@ -260,18 +251,15 @@ public class AutoBlue extends RobotMasterPinpoint {
                 points.add(new CurvePoint(stateStartingX, stateStartingY,
                         0, 0, 0, 0, 0, 0));
 
-
-
-
-                points.add(new CurvePoint(-33, 55,
-                        0.8 * SCALE_FACTOR, 0.1  * SCALE_FACTOR, 15, 15,
+                points.add(new CurvePoint(-33, -53,
+                        0.8 * SCALE_FACTOR, 1 * SCALE_FACTOR, 15, 15,
                         Math.toRadians(60), 0.3));
 
 
 
-                if (Movement.followCurve(points, Math.toRadians(45),1)) {
+                if (Movement.followCurve(points, Math.toRadians(180),2)) {
                     drive.stopAllMovementDirectionBased();
-                    shooterSubsystem.turnOff();
+                    spindexer.rotateToNextSlotInPattern();
                     nextStage(progStates.endBehavior.ordinal());
                 }
 
@@ -286,7 +274,6 @@ public class AutoBlue extends RobotMasterPinpoint {
                 spindexer.startIntakeCycle();
                 shooterSubsystem.spinUp();
                 Log.i("DEBUG", "intakeSecondThreeBalls");
-
             }
 
             spindexer.intakeNewBall();
@@ -297,24 +284,22 @@ public class AutoBlue extends RobotMasterPinpoint {
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(-6, 55,
-                    0.115 * SCALE_FACTOR, 1 * SCALE_FACTOR, 15, 15,
+            points.add(new CurvePoint(-8, -54,
+                    0.15 * SCALE_FACTOR, 1 * SCALE_FACTOR, 15, 15,
                     Math.toRadians(60), 0.3));
 
 
 
-            if (Movement.followCurve(points, Math.toRadians(90),1)) {
+            if (Movement.followCurve(points, Math.toRadians(90),2)) {
                 drive.stopAllMovementDirectionBased();
-                isLookingAtObelisk = false;
-                spindexer.rotateToNextSlotInPattern();
-                if((startTime - SystemClock.uptimeMillis()) * 1000 > 26 && spindexer.isAtTargetPosition()) //if it's been 26 seconds or more just stay for park rp
+                if((startTime - SystemClock.uptimeMillis()) * 1000 > 26) //if it's been 28 seconds or more just stay for park rp
                 {
-                    nextStage(AutoBlue.progStates.endBehavior.ordinal());
+                    nextStage(progStates.endBehavior.ordinal());
                 }
                 else
                 {
 
-                    nextStage(AutoBlue.progStates.driveToShootPointToEnd.ordinal());
+                    nextStage(progStates.driveToShootPointToEnd.ordinal());
                 }
             }
 
@@ -323,6 +308,7 @@ public class AutoBlue extends RobotMasterPinpoint {
         }
         if (programStage == progStates.driveToShootPointToEnd.ordinal()) {
             if (stageFinished) {
+                spindexer.rotateToNextSlotInPattern();
                 past5In = false;
                 spindexer.intakeCycleActive = false;
                 initializeStateVariables();
@@ -337,7 +323,7 @@ public class AutoBlue extends RobotMasterPinpoint {
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(-31, 25,
+            points.add(new CurvePoint(-31, -25,
                     1* SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
                     Math.toRadians(60), 0.3));
 
@@ -345,34 +331,33 @@ public class AutoBlue extends RobotMasterPinpoint {
             //                    0.25 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 12, 10,
             //                    Math.toRadians(-90), 0.3));
 
-            if (Movement.followCurve(points, Math.toRadians(-90),1)) {
+            if (Movement.followCurve(points, Math.toRadians(-90),3)) {
                 intakeSubsystem.turnIntakeOff();
                 drive.stopAllMovementDirectionBased();
                 shooterSubsystem.isFlywheelSpun = true;
-                nextStage(AutoBlue.progStates.SHOOT_PREP.ordinal(), AutoBlue.progStates.driveOutsideOfShootZoneToEnd.ordinal());
+                nextStage(progStates.SHOOT_PREP.ordinal(), progStates.driveOutsideOfShootZoneToEnd.ordinal());
             }
 
             drive.applyMovementDirectionBased(); // always put at end of state
         }
-        if (programStage == progStates.driveToThirdThreeBalls.ordinal()) {
+        if (programStage == progStates.driveOutsideOfShootZoneToEnd.ordinal()) {
             if (stageFinished) {
                 past5In = false;
-            Log.i("DEBUG", "driveToThirdThreeBalls");
-            }
 
+            }
             ArrayList<CurvePoint> points = new ArrayList<>();
             points.add(new CurvePoint(stateStartingX, stateStartingY,
                     0, 0, 0, 0, 0, 0));
 
-            points.add(new CurvePoint(-31, 71,
-                    0.8 * SCALE_FACTOR, 1 * SCALE_FACTOR, 15, 15,
+            points.add(new CurvePoint(-31, -35,
+                    1 * SCALE_FACTOR, 1 * SCALE_FACTOR, 15, 15,
                     Math.toRadians(60), 0.3));
 
 
 
             if (Movement.followCurve(points, Math.toRadians(0),1)) {
                 drive.stopAllMovementDirectionBased();
-                nextStage(progStates.intakeThirdThreeBalls.ordinal());
+                nextStage(progStates.endBehavior.ordinal());
             }
 
             drive.applyMovementDirectionBased(); // always put at end of state
@@ -404,30 +389,6 @@ public class AutoBlue extends RobotMasterPinpoint {
                 spindexer.intakeCycleActive = false;
                 shooterSubsystem.reset();
                 nextStage(progStates.endBehavior.ordinal());
-            }
-
-            drive.applyMovementDirectionBased(); // always put at end of state
-
-        }
-
-        if (programStage == AutoBlue.progStates.driveOutsideOfShootZoneToEnd.ordinal()) {
-            if (stageFinished) {
-                past5In = false;
-
-            }
-            ArrayList<CurvePoint> points = new ArrayList<>();
-            points.add(new CurvePoint(stateStartingX, stateStartingY,
-                    0, 0, 0, 0, 0, 0));
-
-            points.add(new CurvePoint(-31, 35,
-                    1 * SCALE_FACTOR, 1 * SCALE_FACTOR, 15, 15,
-                    Math.toRadians(60), 0.3));
-
-
-
-            if (Movement.followCurve(points, Math.toRadians(0),1)) {
-                drive.stopAllMovementDirectionBased();
-                nextStage(AutoBlue.progStates.endBehavior.ordinal());
             }
 
             drive.applyMovementDirectionBased(); // always put at end of state
@@ -474,7 +435,7 @@ public class AutoBlue extends RobotMasterPinpoint {
                 past5In = false;
                 initializeStateVariables();
             }
-
+            shooterSubsystem.turnOff();
             drive.stopAllMovementDirectionBased();
 
         }

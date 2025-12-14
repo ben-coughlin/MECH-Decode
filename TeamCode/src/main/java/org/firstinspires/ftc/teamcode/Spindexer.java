@@ -33,7 +33,7 @@ public class Spindexer {
     private static final double TICKS_PER_SLOT = (TICKS_PER_REV / 3.0);
     private static final int POSITION_TOLERANCE = 20;
     // --- State ---
-    private final Pattern inventory;
+    public final Pattern inventory;
     private int currentSlot = 0;
     private double targetTicks = 0;
     private boolean holdingPosition = true;
@@ -88,7 +88,11 @@ public class Spindexer {
         double scale = Range.clip(Math.abs(distance) / 100.0, 0, 1); // 200 ticks = full power
         output *= scale;
         // Send to motor
-        spindexerServo.setPower(output);
+
+
+            spindexerServo.setPower(output);
+
+
 
         // Update last output for next cycle
         lastOutput = output;

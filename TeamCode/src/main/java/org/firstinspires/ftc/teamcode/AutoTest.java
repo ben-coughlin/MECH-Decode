@@ -47,7 +47,7 @@ import java.util.List;
 
 
 @Autonomous(name="AutoTest")
-
+@Disabled
 public class AutoTest extends RobotMasterPinpoint
 {
     // Declare OpMode members.

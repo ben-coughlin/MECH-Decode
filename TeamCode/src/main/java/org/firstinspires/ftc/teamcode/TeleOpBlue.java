@@ -37,13 +37,12 @@ import static org.firstinspires.ftc.teamcode.MovementVars.movement_y;
 import android.os.SystemClock;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
-import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 
 
-@com.qualcomm.robotcore.eventloop.opmode.TeleOp(name = "TeleOp")
-public class TeleOp extends RobotMasterPinpoint
+@com.qualcomm.robotcore.eventloop.opmode.TeleOp(name = "TeleOpBlue")
+public class TeleOpBlue extends RobotMasterPinpoint
 {
 
     //state machines!!
@@ -161,7 +160,7 @@ public class TeleOp extends RobotMasterPinpoint
         isAutoAiming = autoAimToggle.getState();
         LLResult result = Limelight.getCurrResult();
 
-        if (result != null && result.isValid() && !VisionUtils.isTagObelisk(VisionUtils.getTagId(result)))
+        if (result != null && result.isValid() && !VisionUtils.isTagObelisk(VisionUtils.getTagId(result)) && VisionUtils.isTagBlueGoal(VisionUtils.getTagId(result)))
         {
             double llError = result.getTx();
 
@@ -181,6 +180,7 @@ public class TeleOp extends RobotMasterPinpoint
         {
             spindexer.nudgeRight();
         }
+
 
 
 

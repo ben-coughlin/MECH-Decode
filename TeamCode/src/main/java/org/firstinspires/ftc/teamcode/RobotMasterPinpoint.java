@@ -42,6 +42,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
     double lastHeading = 0;
     public boolean isMovementDone = false;
     int stageAfterShotOrdinal = 0;
+    
 
 
 
@@ -168,6 +169,8 @@ public abstract class RobotMasterPinpoint extends OpMode {
         Movement.initCurve();
         stageFinished = false;
         isMovementDone = false;
+        turret.resetPID();
+        Log.i("DEBUG 2", "stateStartingX:" + stateStartingX + " stateStartingY:" + stateStartingY + " stateStartingAngle_deg:" + Math.toDegrees(stateStartingAngle_rad));
     }
 
 
@@ -238,6 +241,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
         clientPlot.sendYLimits(SystemClock.uptimeMillis(), 0.5, 0);
         clientPlot.sendYUnits(SystemClock.uptimeMillis() + 1, "PID");
     }
+
 
 
 
