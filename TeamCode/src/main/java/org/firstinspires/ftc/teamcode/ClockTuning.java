@@ -27,7 +27,7 @@ public class ClockTuning extends LinearOpMode {
     private boolean dpadRightPressed = false;
 
     @Override
-    public void runOpMode() throws InterruptedException {
+    public void runOpMode() {
         Limelight limelight = new Limelight(hardwareMap);
         Turret turret = new Turret(hardwareMap);
         IntakeSubsystem intake = new IntakeSubsystem(hardwareMap);
