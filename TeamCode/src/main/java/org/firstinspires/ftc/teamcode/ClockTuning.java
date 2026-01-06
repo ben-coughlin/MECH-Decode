@@ -8,9 +8,10 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 @TeleOp(name = "Clock Tuning")
 public class ClockTuning extends LinearOpMode {
-    private double currentServoPosition = 0;
+    private double currentClockPosition = 0.5;
+    private double currentRampPosition = 0.5;
     private double motorPower = 1;
-    private final double MOTOR_INCREMENT = 0.025;
+    private final double SERVO_INCREMENT = 0.025;
     public Servo clock = null;
     public Servo ramp = null;
 
@@ -72,26 +73,27 @@ public class ClockTuning extends LinearOpMode {
             {
                 ramp.setPosition(1);
             }*/
-            if (gamepad1.cross)
+            if (gamepad1.dpad_up)
             {
-                clock.setPosition(.5);
+                currentClockPosition += SERVO_INCREMENT;
             }
-            else if (gamepad1.triangle)
+            else if (gamepad1.dpad_down)
             {
-                clock.setPosition(-.5);
+                currentClockPosition -= SERVO_INCREMENT;
             }
-            if (gamepad1.circle)
+            if (gamepad1.dpad_right)
             {
-                ramp.setPosition(.5);
+                currentRampPosition += SERVO_INCREMENT;
             }
-            else if (gamepad1.square)
+            else if (gamepad1.dpad_left)
             {
-                ramp.setPosition(-.5);
+                currentRampPosition -= SERVO_INCREMENT;
             }
 
 
             // Constrain the servo position to the valid range [0.0, 1.0]
-            currentServoPosition = Math.max(0.0, Math.min(1.0, currentServoPosition));
+            currentClockPosition = Math.max(0.0, Math.min(1.0, clock.getPosition()));
+            currentRampPosition = Math.max(0.0, Math.min(1.0, ramp.getPosition()));
             motorPower = Math.max(0.0, Math.min(1.0, motorPower));
 
 
@@ -99,7 +101,7 @@ public class ClockTuning extends LinearOpMode {
             telemetry.addLine("--- Launcher Tuning ---");
             telemetry.addLine("Use DPAD UP/DOWN to change servo position.");
             telemetry.addData("Distance to Tag (in)", "%.2f", distanceToTag);
-            telemetry.addData("Servo Position", "%.3f", currentServoPosition);
+            telemetry.addData("Servo Position", "%.3f", currentClockPosition);
             telemetry.addData("Motor Power", "%.3f", turret.flywheelLeft.getPower());
             telemetry.addData("Desired Power", "%.3f", motorPower);
             telemetry.update();
