@@ -33,13 +33,9 @@ public class ClockTuning extends LinearOpMode {
         IntakeSubsystem intake = new IntakeSubsystem(hardwareMap);
         this.clock = hardwareMap.get(Servo.class, "clock");
         this.ramp = hardwareMap.get(Servo.class, "ramp");
-
-
-
-
-
-
-
+        clock.setPosition(0.5);
+        ramp.setPosition(0.5);
+        
         telemetry.addData("Status", "Initialized");
         telemetry.addLine("Place the robot in front of an AprilTag.");
         telemetry.addLine("Use DPAD UP/DOWN to adjust the launcher angle, press the circle button to toggle the flywheel");
@@ -56,23 +52,7 @@ public class ClockTuning extends LinearOpMode {
 
 
             turret.aimTurret(true, result.getTx(), gamepad1.right_stick_y, distanceToTag);
-
-            /*if (gamepad1.cross)
-            {
-              clock.setPosition(1);
-            }
-            else if (!gamepad1.cross)
-            {
-                clock.setPosition(0);
-            }
-            if (gamepad1.square)
-            {
-                ramp.setPosition(1);
-            }
-            else if (!gamepad1.square)
-            {
-                ramp.setPosition(1);
-            }*/
+            
             if (gamepad1.dpad_up)
             {
                 currentClockPosition += SERVO_INCREMENT;
@@ -90,20 +70,34 @@ public class ClockTuning extends LinearOpMode {
                 currentRampPosition -= SERVO_INCREMENT;
             }
 
-
+            if (gamepad1.left_bumper) {
+                intake.turnIntakeOn();
+            } else if (gamepad1.right_bumper) {
+                intake.outtake();
+            } else {
+                intake.turnIntakeOff();
+            }
             // Constrain the servo position to the valid range [0.0, 1.0]
-            currentClockPosition = Math.max(0.0, Math.min(1.0, clock.getPosition()));
-            currentRampPosition = Math.max(0.0, Math.min(1.0, ramp.getPosition()));
+            currentClockPosition = Math.max(0.0, Math.min(1.0, currentClockPosition));
+            currentRampPosition = Math.max(0.0, Math.min(1.0, currentRampPosition));
+            clock.setPosition(currentClockPosition);
+            ramp.setPosition(currentRampPosition);
             motorPower = Math.max(0.0, Math.min(1.0, motorPower));
 
 
             // --- Telemetry ---
-            telemetry.addLine("--- Launcher Tuning ---");
-            telemetry.addLine("Use DPAD UP/DOWN to change servo position.");
+            telemetry.addLine("--- Clock & Ramp Tuning ---");
+            telemetry.addLine("Use DPAD UP/DOWN to change clock position.");
+            telemetry.addLine("Use DPAD LEFT/RIGHT to change ramp position");
             telemetry.addData("Distance to Tag (in)", "%.2f", distanceToTag);
-            telemetry.addData("Servo Position", "%.3f", currentClockPosition);
+            telemetry.addData("Clock Servo Position", "%.3f", currentClockPosition);
+            telemetry.addData("Ramp Servo Position", "%.3f", currentRampPosition);
             telemetry.addData("Motor Power", "%.3f", turret.flywheelLeft.getPower());
             telemetry.addData("Desired Power", "%.3f", motorPower);
+            
+            telemetry.addLine("--- Intake ---");
+            telemetry.addData("Intake Active", IntakeSubsystem.isIntakeRunning);
+
             telemetry.update();
         }
     }
