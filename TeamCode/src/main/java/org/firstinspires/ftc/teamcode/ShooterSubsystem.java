@@ -81,13 +81,13 @@ public class ShooterSubsystem {
 
 
         if ((spindexer.isAtTargetPosition() || elapsed >= 620)  && !hasKickerGoneVertical) {
-            intakeSubsystem.moveKickerVertical();
+           // intakeSubsystem.moveKickerVertical();
             hasKickerGoneVertical = true;
             Log.i("ShooterSubsystem", "move kicker vertical@"+elapsed);
         }
 
         if (elapsed >= 750 && !hasKickerGoneHorizontal) {
-            intakeSubsystem.moveKickerHorizontal();
+            //intakeSubsystem.moveKickerHorizontal();
             hasKickerGoneHorizontal = true;
             Log.i("ShooterSubsystem", "move kicker horizontal@"+elapsed);
         }

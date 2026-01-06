@@ -11,26 +11,19 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 public class IntakeSubsystem
 {
-
-    private final Servo kicker;
     private final DcMotorEx intake;
     public static boolean isIntakeRunning;
 
 
     public IntakeSubsystem(HardwareMap hwMap)
     {
-        kicker = hwMap.get(Servo.class, "kicker");
+
         intake = hwMap.get(DcMotorEx.class, "intake");
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
 
         intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-        kicker.setPosition(0.7);
-
     }
-
-
 
     public double normalizeAngleFromTicks(double position, int ticksPerRevolution)
     {
@@ -40,9 +33,6 @@ public class IntakeSubsystem
 
         return angle / 360;
     }
-
-
-
 
     public void turnIntakeOn()
     {
@@ -63,25 +53,6 @@ public class IntakeSubsystem
         isIntakeRunning = false;
     }
 
-    public void moveKickerVertical()
-    {
-        double kickerVertical = 0.3;
-      kicker.setPosition(kickerVertical);
-    }
-
-    public void moveKickerHorizontal()
-    {
-        double kickerHorizontal = 0.7;
-        kicker.setPosition(kickerHorizontal);
-    }
-    public double getKickerPos()
-    {
-        return kicker.getPosition();
-    }
-    public void setKickerPos(double kickerPos)
-    {
-        kicker.setPosition(kickerPos);
-    }
 
 
 
