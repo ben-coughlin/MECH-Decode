@@ -1,0 +1,108 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+@TeleOp(name = "Clock Tuning")
+public class ClockTuning extends LinearOpMode {
+    private double currentServoPosition = 0;
+    private double motorPower = 1;
+    private final double MOTOR_INCREMENT = 0.025;
+    public Servo clock = null;
+    public Servo ramp = null;
+
+    private final ElapsedTime timer = new ElapsedTime();
+
+    // State variables for shooting sequence
+    private boolean shootingSequenceActive = false;
+
+    // Debounce for servo controls
+    private boolean dpadUpPressed = false;
+    private boolean dpadDownPressed = false;
+    private boolean dpadLeftPressed = false;
+    private boolean dpadRightPressed = false;
+
+    @Override
+    public void runOpMode() throws InterruptedException {
+        Limelight limelight = new Limelight(hardwareMap);
+        Turret turret = new Turret(hardwareMap);
+        IntakeSubsystem intake = new IntakeSubsystem(hardwareMap);
+        this.clock = hardwareMap.get(Servo.class, "clock");
+        this.ramp = hardwareMap.get(Servo.class, "ramp");
+
+
+
+
+
+
+
+        telemetry.addData("Status", "Initialized");
+        telemetry.addLine("Place the robot in front of an AprilTag.");
+        telemetry.addLine("Use DPAD UP/DOWN to adjust the launcher angle, press the circle button to toggle the flywheel");
+        telemetry.addLine("Record the 'Distance' and 'Servo Position' for your lookup table.");
+        telemetry.update();
+
+        waitForStart();
+
+        while (opModeIsActive()) {
+
+            limelight.updateLimelight();
+            LLResult result = Limelight.getCurrResult();
+            double distanceToTag = limelight.getDistanceToTag(result);
+
+
+            turret.aimTurret(true, result.getTx(), gamepad1.right_stick_y, distanceToTag);
+
+            /*if (gamepad1.cross)
+            {
+              clock.setPosition(1);
+            }
+            else if (!gamepad1.cross)
+            {
+                clock.setPosition(0);
+            }
+            if (gamepad1.square)
+            {
+                ramp.setPosition(1);
+            }
+            else if (!gamepad1.square)
+            {
+                ramp.setPosition(1);
+            }*/
+            if (gamepad1.cross)
+            {
+                clock.setPosition(.5);
+            }
+            else if (gamepad1.triangle)
+            {
+                clock.setPosition(-.5);
+            }
+            if (gamepad1.circle)
+            {
+                ramp.setPosition(.5);
+            }
+            else if (gamepad1.square)
+            {
+                ramp.setPosition(-.5);
+            }
+
+
+            // Constrain the servo position to the valid range [0.0, 1.0]
+            currentServoPosition = Math.max(0.0, Math.min(1.0, currentServoPosition));
+            motorPower = Math.max(0.0, Math.min(1.0, motorPower));
+
+
+            // --- Telemetry ---
+            telemetry.addLine("--- Launcher Tuning ---");
+            telemetry.addLine("Use DPAD UP/DOWN to change servo position.");
+            telemetry.addData("Distance to Tag (in)", "%.2f", distanceToTag);
+            telemetry.addData("Servo Position", "%.3f", currentServoPosition);
+            telemetry.addData("Motor Power", "%.3f", turret.flywheelLeft.getPower());
+            telemetry.addData("Desired Power", "%.3f", motorPower);
+            telemetry.update();
+        }
+    }
+}
