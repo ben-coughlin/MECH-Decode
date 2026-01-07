@@ -53,21 +53,32 @@ public class ClockTuning extends LinearOpMode {
 
             turret.aimTurret(true, result.getTx(), gamepad1.right_stick_y, distanceToTag);
             
-            if (gamepad1.dpad_up)
+            if (gamepad1.dpad_up && !dpadUpPressed)
             {
                 currentClockPosition += SERVO_INCREMENT;
+                dpadUpPressed = true;
             }
-            else if (gamepad1.dpad_down)
+            else if (gamepad1.dpad_down && !dpadDownPressed)
             {
                 currentClockPosition -= SERVO_INCREMENT;
+                dpadDownPressed = true;
             }
-            if (gamepad1.dpad_right)
+            if (gamepad1.dpad_left && !dpadLeftPressed)
             {
                 currentRampPosition += SERVO_INCREMENT;
+                dpadLeftPressed = true;
             }
-            else if (gamepad1.dpad_left)
+            else if (gamepad1.dpad_right && !dpadRightPressed)
             {
                 currentRampPosition -= SERVO_INCREMENT;
+                dpadRightPressed = true;
+            }
+            else
+            {
+                dpadUpPressed = false;
+                dpadLeftPressed = false;
+                dpadRightPressed = false;
+                dpadDownPressed = false;
             }
 
             if (gamepad1.left_bumper) {
