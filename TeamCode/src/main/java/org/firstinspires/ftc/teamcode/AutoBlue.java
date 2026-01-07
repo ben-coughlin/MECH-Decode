@@ -94,7 +94,6 @@ public class AutoBlue extends AutoMaster {
 
     @Override
     protected void onDriveToSecondThreeBallsComplete() {
-        shooterSubsystem.turnOff();
         nextStage(progStates.endBehavior.ordinal());
     }
 
@@ -116,8 +115,7 @@ public class AutoBlue extends AutoMaster {
     @Override
     protected void onIntakeSecondThreeBallsComplete() {
         isLookingAtObelisk = false;
-        spindexer.rotateToNextSlotInPattern();
-        if ((startTime - SystemClock.uptimeMillis()) * 1000 > 26 && spindexer.isAtTargetPosition()) {
+        if ((startTime - SystemClock.uptimeMillis()) * 1000 > 26 && clock.isAtShootPosition()) {
             nextStage(progStates.endBehavior.ordinal());
         } else {
             nextStage(progStates.driveToShootPointToEnd.ordinal());

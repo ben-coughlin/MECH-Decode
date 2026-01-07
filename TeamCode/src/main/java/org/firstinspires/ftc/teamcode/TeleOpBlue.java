@@ -174,11 +174,11 @@ public class TeleOpBlue extends RobotMasterPinpoint
 
         if(gamepad2.dpad_left)
         {
-            spindexer.nudgeLeft();
+            //spindexer.nudgeLeft(); todo: fix the movement
         }
         else if(gamepad2.dpad_right)
         {
-            spindexer.nudgeRight();
+            //spindexer.nudgeRight(); todo: fix the movement
         }
 
 
@@ -197,15 +197,6 @@ public class TeleOpBlue extends RobotMasterPinpoint
 
         if (programStage == progStates.READY_TO_SHOOT.ordinal()) {
 
-            if(gamepad2.left_bumper)
-            {
-                spindexer.chooseShotColor(Pattern.Ball.PURPLE);
-            }
-            else if(gamepad2.right_bumper)
-            {
-                spindexer.chooseShotColor(Pattern.Ball.GREEN);
-            }
-
             if (gamepad1.right_bumper || gamepad2.dpad_down) {
                 nextStage(progStates.FIRE_BALL.ordinal());
             }
@@ -217,7 +208,6 @@ public class TeleOpBlue extends RobotMasterPinpoint
 
         if (intakeToggle.getState()) {
             nextStage(progStates.INTAKE.ordinal());
-            spindexer.startIntakeCycle();
         }
         else { // WHEN the trigger is RELEASED
             if (programStage == progStates.INTAKE.ordinal()) {
@@ -235,7 +225,6 @@ public class TeleOpBlue extends RobotMasterPinpoint
 
                 turret.turnOffFlywheel();
                 intakeSubsystem.turnIntakeOff();
-                intakeSubsystem.moveKickerHorizontal();
 
             }
         }
@@ -262,17 +251,9 @@ public class TeleOpBlue extends RobotMasterPinpoint
             if (stageFinished) {
                 initializeStateVariables();
             }
-            if (SystemClock.uptimeMillis() - stateStartTime > 200) {
-                intakeSubsystem.moveKickerVertical();
-
-            }
-            if (SystemClock.uptimeMillis() - stateStartTime > 500) {
-                intakeSubsystem.moveKickerHorizontal();
-
-            }
             if(SystemClock.uptimeMillis() - stateStartTime > 1000)
             {
-                if(spindexer.recordShotBall(false)) {gamepad1.rumble(1, 0, 100);}
+                //if(spindexer.recordShotBall(false)) {gamepad1.rumble(1, 0, 100);} todo: fix the record shot
                 nextStage(progStates.READY_TO_SHOOT.ordinal());
             }
 
@@ -294,13 +275,6 @@ public class TeleOpBlue extends RobotMasterPinpoint
             if (stageFinished) {
                 initializeStateVariables();
                 intakeSubsystem.turnIntakeOn();
-                spindexer.startIntakeCycle();
-            }
-
-            spindexer.intakeNewBall();
-
-            if (spindexer.isAtTargetPosition()) {
-                nextStage(progStates.IDLE.ordinal());
             }
         }
 
@@ -312,7 +286,6 @@ public class TeleOpBlue extends RobotMasterPinpoint
             }
             drive.stopAllMovementDirectionBased();
             intakeSubsystem.turnIntakeOff();
-            intakeSubsystem.moveKickerHorizontal();
             turret.turnOffFlywheel();
 
 

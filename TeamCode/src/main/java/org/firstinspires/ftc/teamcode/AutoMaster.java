@@ -85,7 +85,7 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
     @Override
     public void init() {
         super.init();
-        spindexer.setInventory(new Pattern(Pattern.Ball.GREEN, Pattern.Ball.PURPLE, Pattern.Ball.PURPLE));
+        //spindexer.setInventory(new Pattern(Pattern.Ball.GREEN, Pattern.Ball.PURPLE, Pattern.Ball.PURPLE)); //todo: we might  need a motif method, check later
         isAuto = true;
     }
 
@@ -187,7 +187,6 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
             shooterSubsystem.spinUp();
         }
         shooterSubsystem.updateSpin();
-        shooterSubsystem.updateActiveShot();
 
         ArrayList<CurvePoint> points = new ArrayList<>();
         points.add(new CurvePoint(stateStartingX, stateStartingY, 0, 0, 0, 0, 0, 0));
@@ -222,9 +221,7 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
             past5In = false;
             initializeStateVariables();
             intakeSubsystem.turnIntakeOn();
-            spindexer.startIntakeCycle();
         }
-        spindexer.intakeNewBall();
 
         ArrayList<CurvePoint> points = new ArrayList<>();
         points.add(new CurvePoint(stateStartingX, stateStartingY, 0, 0, 0, 0, 0, 0));
@@ -247,7 +244,6 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
             intakeSubsystem.turnIntakeOff();
         }
         shooterSubsystem.updateSpin();
-        shooterSubsystem.updateActiveShot();
 
         ArrayList<CurvePoint> points = new ArrayList<>();
         points.add(new CurvePoint(stateStartingX, stateStartingY, 0, 0, 0, 0, 0, 0));
@@ -280,7 +276,6 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
 
     // Hook method for alliance-specific behavior after second three balls
     protected void onDriveToSecondThreeBallsComplete() {
-        spindexer.rotateToNextSlotInPattern();
         nextStage(progStates.endBehavior.ordinal());
     }
 
@@ -288,12 +283,9 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
         if (stageFinished) {
             past5In = false;
             intakeSubsystem.turnIntakeOn();
-            spindexer.startIntakeCycle();
             shooterSubsystem.spinUp();
             Log.i("DEBUG", "intakeSecondThreeBalls");
         }
-
-        spindexer.intakeNewBall();
 
         ArrayList<CurvePoint> points = new ArrayList<>();
         points.add(new CurvePoint(stateStartingX, stateStartingY, 0, 0, 0, 0, 0, 0));
@@ -318,14 +310,12 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
     protected void handleDriveToShootPointToEnd() {
         if (stageFinished) {
             past5In = false;
-            spindexer.intakeCycleActive = false;
             initializeStateVariables();
             shooterSubsystem.isFlywheelReady = false;
             shooterSubsystem.spinUp();
             intakeSubsystem.turnIntakeOff();
         }
         shooterSubsystem.updateSpin();
-        shooterSubsystem.updateActiveShot();
 
         ArrayList<CurvePoint> points = new ArrayList<>();
         points.add(new CurvePoint(stateStartingX, stateStartingY, 0, 0, 0, 0, 0, 0));
@@ -360,11 +350,8 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
         if (stageFinished) {
             past5In = false;
             intakeSubsystem.turnIntakeOn();
-            spindexer.startIntakeCycle();
             Log.i("DEBUG", "intakeThirdThreeBalls");
         }
-
-        spindexer.intakeNewBall();
 
         ArrayList<CurvePoint> points = new ArrayList<>();
         points.add(new CurvePoint(stateStartingX, stateStartingY, 0, 0, 0, 0, 0, 0));
@@ -372,8 +359,6 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
 
         if (Movement.followCurve(points, Math.toRadians(90), 1)) {
             drive.stopAllMovementDirectionBased();
-            spindexer.intakeCycleActive = false;
-            shooterSubsystem.reset();
             nextStage(progStates.endBehavior.ordinal());
         }
         drive.applyMovementDirectionBased();
@@ -383,32 +368,21 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
         if (stageFinished) {
             initializeStateVariables();
             shooterSubsystem.spinUp();
-            spindexer.rotateToNextSlotInPattern();
         }
         shooterSubsystem.updateSpin();
-        shooterSubsystem.updateActiveShot();
 
-        if (shooterSubsystem.isReadyToShoot()) {
+        if (shooterSubsystem.isFlywheelReady) {
             nextStage(progStates.SHOOT.ordinal());
         }
     }
 
     protected void handleShoot() {
         shooterSubsystem.updateSpin();
-        shooterSubsystem.updateActiveShot();
-
         if (stageFinished) {
             stageFinished = false;
             initializeStateVariables();
-            shooterSubsystem.startMultiShot(3);
-            Log.i("ShooterSubsystem", "SHOOTING 3");
         }
-
-        if (shooterSubsystem.isReadyToShoot()) {
-            Log.i("DEBUG 1", "stageAfterShotOrdinal = " + stageAfterShotOrdinal);
-            Log.i("DEBUG 1", "progressing to " + progStates.values()[stageAfterShotOrdinal]);
-            nextStage(stageAfterShotOrdinal);
-        }
+        shooterSubsystem.startShotSequence();
     }
 
     protected void handleEndBehavior() {
@@ -416,7 +390,6 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
             past5In = false;
             initializeStateVariables();
         }
-        shooterSubsystem.turnOff();
         drive.stopAllMovementDirectionBased();
     }
 }

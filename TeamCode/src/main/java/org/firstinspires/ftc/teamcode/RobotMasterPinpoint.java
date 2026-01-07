@@ -22,7 +22,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
     Limelight limelight = null;
     IntakeSubsystem intakeSubsystem = null;
     Turret turret = null;
-    Spindexer spindexer = null;
+    Clock clock = null;
     PoseFusion pose = new PoseFusion();
     ShooterSubsystem shooterSubsystem;
     static Pattern obelisk = null;
@@ -99,8 +99,8 @@ public abstract class RobotMasterPinpoint extends OpMode {
         intakeSubsystem = new IntakeSubsystem(hardwareMap);
         odo = new Odo(hardwareMap);
         turret = new Turret(hardwareMap);
-        spindexer = new Spindexer(hardwareMap, colorSensor);
-        shooterSubsystem = new ShooterSubsystem(intakeSubsystem, spindexer, turret, colorSensor);
+        clock = new Clock(hardwareMap);
+        shooterSubsystem = new ShooterSubsystem(intakeSubsystem, clock, turret, colorSensor);
 
 
 
@@ -188,7 +188,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
         limelight.updateLimelight();
         odo.updateOdo();
         turret.updateTurret();
-        spindexer.update();
+        clock.clockUpdate();
 
 
         pose.predict(odo.getVelocityComponents()[0], odo.getVelocityComponents()[1], (odo.getHeading() - lastHeading) / dt, dt);
@@ -202,7 +202,6 @@ public abstract class RobotMasterPinpoint extends OpMode {
                 obelisk.spindexSlotTwo,
                 obelisk.spindexSlotThree);
 
-        spindexer.showTelemetry(telemetry);
         pose.displayPoseTelemetry(telemetry, pose, odo.getVelocityComponents()[0], odo.getVelocityComponents()[1], (odo.getHeading() - lastHeading) / dt);
         odo.showOdoTelemetry(telemetry);
         turret.showAimTelemetry(telemetry);

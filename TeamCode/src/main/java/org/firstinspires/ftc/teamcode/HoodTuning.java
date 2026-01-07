@@ -61,19 +61,9 @@ public class HoodTuning extends LinearOpMode {
                 turret.flywheelRight.setPower(motorPower);
                 turret.flywheelLeft.setPower(motorPower);
             }
-
-
-            if(gamepad1.square)
-            {
-
-                intake.moveKickerVertical();
-
-
-            }
             if (gamepad1.cross) {
                 turret.flywheelRight.setPower(0);
                 turret.flywheelLeft.setPower(0);
-                intake.moveKickerHorizontal();
                 shootingSequenceActive = false;
             }
 
