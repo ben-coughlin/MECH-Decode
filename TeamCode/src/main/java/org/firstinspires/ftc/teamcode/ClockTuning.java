@@ -4,14 +4,16 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@TeleOp(name = "Hood Tuning")
-public class HoodTuning extends LinearOpMode {
-    private double currentServoPosition = 0;
+@TeleOp(name = "Clock Tuning")
+public class ClockTuning extends LinearOpMode {
+    private double currentClockPosition = 0.5;
+    private double currentRampPosition = 0.5;
     private double motorPower = 1;
-    private final double MOTOR_INCREMENT = 0.025;
+    private final double SERVO_INCREMENT = 0.025;
+    public Servo clock = null;
+    public Servo ramp = null;
 
     private final ElapsedTime timer = new ElapsedTime();
 
@@ -25,18 +27,15 @@ public class HoodTuning extends LinearOpMode {
     private boolean dpadRightPressed = false;
 
     @Override
-    public void runOpMode() throws InterruptedException {
+    public void runOpMode() {
         Limelight limelight = new Limelight(hardwareMap);
-        Servo launchServo = hardwareMap.get(Servo.class, "hood");
         Turret turret = new Turret(hardwareMap);
         IntakeSubsystem intake = new IntakeSubsystem(hardwareMap);
-
-
-
-
-
-
-
+        this.clock = hardwareMap.get(Servo.class, "clock");
+        this.ramp = hardwareMap.get(Servo.class, "ramp");
+        clock.setPosition(0.5);
+        ramp.setPosition(0.5);
+        
         telemetry.addData("Status", "Initialized");
         telemetry.addLine("Place the robot in front of an AprilTag.");
         telemetry.addLine("Use DPAD UP/DOWN to adjust the launcher angle, press the circle button to toggle the flywheel");
@@ -53,67 +52,63 @@ public class HoodTuning extends LinearOpMode {
 
 
             turret.aimTurret(true, result.getTx(), gamepad1.right_stick_y, distanceToTag);
-
-            if (gamepad1.circle && !shootingSequenceActive)
+            
+            if (gamepad1.dpad_up && !dpadUpPressed)
             {
-                shootingSequenceActive = true;
-
-                turret.flywheelRight.setPower(motorPower);
-                turret.flywheelLeft.setPower(motorPower);
-            }
-            if (gamepad1.cross) {
-                turret.flywheelRight.setPower(0);
-                turret.flywheelLeft.setPower(0);
-                shootingSequenceActive = false;
-            }
-
-
-
-            double SERVO_INCREMENT = 0.005;
-            if (gamepad1.dpad_up && !dpadUpPressed) {
-                currentServoPosition += SERVO_INCREMENT;
-
+                currentClockPosition += SERVO_INCREMENT;
                 dpadUpPressed = true;
-            } else if (!gamepad1.dpad_up) {
-                dpadUpPressed = false;
             }
-            if (gamepad1.dpad_down && !dpadDownPressed) {
-               currentServoPosition -= SERVO_INCREMENT;
-
+            else if (gamepad1.dpad_down && !dpadDownPressed)
+            {
+                currentClockPosition -= SERVO_INCREMENT;
                 dpadDownPressed = true;
-            } else if (!gamepad1.dpad_down) {
+            }
+            if (gamepad1.dpad_left && !dpadLeftPressed)
+            {
+                currentRampPosition += SERVO_INCREMENT;
+                dpadLeftPressed = true;
+            }
+            else if (gamepad1.dpad_right && !dpadRightPressed)
+            {
+                currentRampPosition -= SERVO_INCREMENT;
+                dpadRightPressed = true;
+            }
+            else
+            {
+                dpadUpPressed = false;
+                dpadLeftPressed = false;
+                dpadRightPressed = false;
                 dpadDownPressed = false;
             }
 
-            if (gamepad1.dpad_left && !dpadLeftPressed) {
-                motorPower += MOTOR_INCREMENT;
-                dpadLeftPressed = true;
-            } else if (!gamepad1.dpad_left) {
-                dpadLeftPressed = false;
+            if (gamepad1.left_bumper) {
+                intake.turnIntakeOn();
+            } else if (gamepad1.right_bumper) {
+                intake.outtake();
+            } else {
+                intake.turnIntakeOff();
             }
-            if (gamepad1.dpad_right && !dpadRightPressed) {
-                motorPower -= MOTOR_INCREMENT;
-                dpadRightPressed = true;
-            } else if (!gamepad1.dpad_right) {
-                dpadRightPressed = false;
-            }
-
-
             // Constrain the servo position to the valid range [0.0, 1.0]
-            currentServoPosition = Math.max(0.0, Math.min(1.0, currentServoPosition));
+            currentClockPosition = Math.max(0.0, Math.min(1.0, currentClockPosition));
+            currentRampPosition = Math.max(0.0, Math.min(1.0, currentRampPosition));
+            clock.setPosition(currentClockPosition);
+            ramp.setPosition(currentRampPosition);
             motorPower = Math.max(0.0, Math.min(1.0, motorPower));
-
-            // Set the servo's position
-            launchServo.setPosition(currentServoPosition);
 
 
             // --- Telemetry ---
-            telemetry.addLine("--- Launcher Tuning ---");
-            telemetry.addLine("Use DPAD UP/DOWN to change servo position.");
+            telemetry.addLine("--- Clock & Ramp Tuning ---");
+            telemetry.addLine("Use DPAD UP/DOWN to change clock position.");
+            telemetry.addLine("Use DPAD LEFT/RIGHT to change ramp position");
             telemetry.addData("Distance to Tag (in)", "%.2f", distanceToTag);
-            telemetry.addData("Servo Position", "%.3f", currentServoPosition);
+            telemetry.addData("Clock Servo Position", "%.3f", currentClockPosition);
+            telemetry.addData("Ramp Servo Position", "%.3f", currentRampPosition);
             telemetry.addData("Motor Power", "%.3f", turret.flywheelLeft.getPower());
             telemetry.addData("Desired Power", "%.3f", motorPower);
+            
+            telemetry.addLine("--- Intake ---");
+            telemetry.addData("Intake Active", IntakeSubsystem.isIntakeRunning);
+
             telemetry.update();
         }
     }

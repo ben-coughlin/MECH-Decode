@@ -1,453 +1,138 @@
 package org.firstinspires.ftc.teamcode;
 
-import android.os.SystemClock;
-import android.util.Log;
-
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-
 @Autonomous
-public class AutoRed extends RobotMasterPinpoint {
+public class AutoRed extends AutoMaster {
 
-    private final double SCALE_FACTOR = 0.9;
-
-    private long startTime = 0;
-
-    private int cycle = 0;
-    private int driveToGetSampleCycle = 0;
-
-
-    private static final String SIMULATOR_HOST = "192.168.43.22";
-    private static final int SIMULATOR_PORT = 7777;
-    private boolean hasFinishedManualAim = false;
-
-
-
-    private enum progStates {
-        driveBackwardsFromStartToShootPreload,
-        driveToFirstThreeBalls,
-        intakeFirstThreeBalls,
-        driveToShootingPoint,
-        driveToSecondThreeBalls,
-        intakeSecondThreeBalls,
-        driveToShootPointToEnd,
-        driveOutsideOfShootZoneToEnd,
-        driveToThirdThreeBalls,
-        intakeThirdThreeBalls,
-        SHOOT_PREP,
-        SHOOT,
-        endBehavior
+    @Override
+    protected boolean isCorrectGoalTag(int tagId) {
+        return VisionUtils.isTagRedGoal(tagId);
     }
 
     @Override
-    public void init() {
-        //RobotMaster.resetEncoders = true;
-        super.init();
-        spindexer.setInventory(new Pattern(Pattern.Ball.GREEN, Pattern.Ball.PURPLE, Pattern.Ball.PURPLE));
-        isAuto = true;
-
-
-    }
-
-    private int timeDelay = 0;
-
-    @Override
-    public void init_loop() {
-        super.init_loop();
-
+    protected double getManualAimSpeed() {
+        return 0.23;
     }
 
     @Override
-    public void start() {
-        super.start();
-        startTime = SystemClock.uptimeMillis();
-
+    protected CurvePoint getShootPreloadEndPoint() {
+        return new CurvePoint(-33.5, 0, 0.8 * SCALE_FACTOR, 0.30 * SCALE_FACTOR, 10, 10, Math.toRadians(60), 0.3);
     }
 
-    private int pixelDropLocation = 0;
+    @Override
+    protected double getShootPreloadHeading() {
+        return Math.toRadians(-90);
+    }
 
-    private HashMap<Integer, PointDouble> purpleDrop = new HashMap<Integer, PointDouble>() {{ // this is from center stage season
-        put(0, new PointDouble(105, 26));
-        put(1, new PointDouble(103.24, 35));
-        put(2, new PointDouble(109.62, 36.8));
-    }};
+    @Override
+    protected int getShootPreloadFollowCurveTolerance() {
+        return 2;
+    }
 
+    @Override
+    protected CurvePoint getFirstThreeBallsEndPoint() {
+        return new CurvePoint(-24, -28, 0.8 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10, Math.toRadians(60), 0.3);
+    }
 
-    private boolean hasGrabbedPixels = false;
-    private double lockedHeading;
+    @Override
+    protected double getFirstThreeBallsHeading() {
+        return Math.toRadians(160);
+    }
 
-    private double cutOffTime = 22.5;
-    private String currentState = String.valueOf(AutoRed.progStates.values()[AutoRed.programStage]);
+    @Override
+    protected int getFirstThreeBallsFollowCurveTolerance() {
+        return 2;
+    }
 
-    private boolean past5In = false;
+    @Override
+    protected CurvePoint getIntakeFirstThreeBallsEndPoint() {
+        return new CurvePoint(-8, -29, 0.14 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10, Math.toRadians(60), 0.3);
+    }
 
-    public static boolean pickupOffWall = false;
+    @Override
+    protected double getIntakeFirstThreeBallsHeading() {
+        return Math.toRadians(90);
+    }
 
-    public int overallCycleToChamber = 0;
-    private boolean isLookingAtObelisk = true;
+    @Override
+    protected int getIntakeFirstThreeBallsFollowCurveTolerance() {
+        return 2;
+    }
 
+    @Override
+    protected CurvePoint getShootingPointEndPoint() {
+        return new CurvePoint(-33, -28, 0.8 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10, Math.toRadians(60), 0.3);
+    }
+
+    @Override
+    protected double getShootingPointHeading() {
+        return Math.toRadians(-90);
+    }
+
+    @Override
+    protected int getShootingPointFollowCurveTolerance() {
+        return 2;
+    }
+
+    @Override
+    protected CurvePoint getSecondThreeBallsEndPoint() {
+        return new CurvePoint(-33, -53, 0.8 * SCALE_FACTOR, 1 * SCALE_FACTOR, 15, 15, Math.toRadians(60), 0.3);
+    }
+
+    @Override
+    protected double getSecondThreeBallsHeading() {
+        return Math.toRadians(180);
+    }
+
+    @Override
+    protected int getSecondThreeBallsFollowCurveTolerance() {
+        return 2;
+    }
+
+    @Override
+    protected CurvePoint getIntakeSecondThreeBallsEndPoint() {
+        return new CurvePoint(-8, -54, 0.15 * SCALE_FACTOR, 1 * SCALE_FACTOR, 15, 15, Math.toRadians(60), 0.3);
+    }
+
+    @Override
+    protected double getIntakeSecondThreeBallsHeading() {
+        return Math.toRadians(90);
+    }
+
+    @Override
+    protected int getIntakeSecondThreeBallsTolerance() {
+        return 1;
+    }
 
 
     @Override
-    public void mainLoop() {
-        super.mainLoop();
-
-
-        if(!isLookingAtObelisk)
-        {
-            if (Limelight.getCurrResult() != null && Limelight.getCurrResult().isValid() && VisionUtils.isTagRedGoal(VisionUtils.getTagId(Limelight.getCurrResult())))
-            {
-                double llError = Limelight.getCurrResult().getTx();
-
-                turret.aimTurret(true, llError, gamepad2.right_stick_x, limelight.getDistanceToTag(Limelight.getCurrResult()));
-                hasFinishedManualAim = true;
-            }
-        }
-        else {
-
-            if(!hasFinishedManualAim) {turret.aimTurret(false, 0, 0.23, 999);}
-
-            if (Limelight.getCurrResult() != null && Limelight.getCurrResult().isValid() && VisionUtils.isTagRedGoal(VisionUtils.getTagId(Limelight.getCurrResult())))
-            {
-                turret.aimTurret(false, 0, 0, 0);
-                turret.resetEncoder();
-                isLookingAtObelisk = false;
-                return;
-            }
-        }
-
-
-        boolean jamDetected = false;//pixelJamAndCounting();
-        Log.i("DEBUG", "Current stage: " + programStage + " = " + progStates.values()[programStage].name());
-        Log.i("DEBUG", "=== LOOP START === Stage: " + programStage + " = " + progStates.values()[programStage].name());
-        Log.i("DEBUG", "isShotInProgress: " + shooterSubsystem.isShotInProgress + ", shotsRemaining: " + shooterSubsystem.shotsRemaining);
-
-        if (programStage == progStates.driveBackwardsFromStartToShootPreload.ordinal()) {
-            if (stageFinished) {
-                past5In = false;
-                initializeStateVariables();
-                shooterSubsystem.spinUp();  // Start flywheel
-
-            }
-            shooterSubsystem.updateSpin();
-            shooterSubsystem.updateActiveShot();
-            ArrayList<CurvePoint> points = new ArrayList<>();
-            points.add(new CurvePoint(stateStartingX, stateStartingY,
-                    0, 0, 0, 0, 0, 0));
-
-            points.add(new CurvePoint(-33.5, 0,
-                    0.8 * SCALE_FACTOR, 0.30 * SCALE_FACTOR, 10, 10,
-                    Math.toRadians(60), 0.3));
-
-
-
-            if (Movement.followCurve(points, Math.toRadians(-90),2)) { //the second term is is if drive strait or the strafe angle 90 deg is strait ahead
-                drive.stopAllMovementDirectionBased();
-                nextStage(progStates.SHOOT_PREP.ordinal(), progStates.driveToFirstThreeBalls.ordinal());
-            }
-            drive.applyMovementDirectionBased(); // always put at end of state
-        }
-
-        if (programStage == progStates.driveToFirstThreeBalls.ordinal()) {
-            if (stageFinished) {
-                past5In = false;
-                initializeStateVariables();
-            }
-
-            ArrayList<CurvePoint> points = new ArrayList<>();
-            points.add(new CurvePoint(stateStartingX, stateStartingY,
-                    0, 0, 0, 0, 0, 0));
-
-            points.add(new CurvePoint(-24,-28,
-                    0.8 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
-                    Math.toRadians(60), 0.3));
-
-
-//            points.add(new CurvePoint(24, 35,
-//                    0.25 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 12, 10,
-//                    Math.toRadians(-90), 0.8));
-
-            if (Movement.followCurve(points, Math.toRadians(160),2)) {
-                drive.stopAllMovementDirectionBased();
-                nextStage(progStates.intakeFirstThreeBalls.ordinal());
-            }
-
-            drive.applyMovementDirectionBased(); // always put at end of state
-        }
-
-        if (programStage == progStates.intakeFirstThreeBalls.ordinal()) {
-            if (stageFinished) {
-                past5In = false;
-                initializeStateVariables();
-                intakeSubsystem.turnIntakeOn();
-                spindexer.startIntakeCycle();
-            }
-            spindexer.intakeNewBall();
-
-
-
-            ArrayList<CurvePoint> points = new ArrayList<>();
-            points.add(new CurvePoint(stateStartingX, stateStartingY,
-                    0, 0, 0, 0, 0, 0));
-
-            points.add(new CurvePoint(-8, -29,
-                    0.14 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
-                    Math.toRadians(60), 0.3));
-
-//            points.add(new CurvePoint(24, 35,
-//                    0.25 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 12, 10,
-//                    Math.toRadians(-90), 0.3));
-
-
-            if (Movement.followCurve(points, Math.toRadians(90),2)) {
-                drive.stopAllMovementDirectionBased();
-                shooterSubsystem.isFlywheelSpun = true;
-                nextStage(progStates.driveToShootingPoint.ordinal());
-            }
-
-            drive.applyMovementDirectionBased(); // always put at end of state
-        }
-
-            if (programStage == progStates.driveToShootingPoint.ordinal()) {
-                if (stageFinished) {
-                    past5In = false;
-                    initializeStateVariables();
-                    shooterSubsystem.isFlywheelReady = false;
-                    shooterSubsystem.spinUp();  // Start flywheel
-                    intakeSubsystem.turnIntakeOff();
-                }
-                shooterSubsystem.updateSpin();
-                shooterSubsystem.updateActiveShot();
-                ArrayList<CurvePoint> points = new ArrayList<>();
-                points.add(new CurvePoint(stateStartingX, stateStartingY,
-                        0, 0, 0, 0, 0, 0));
-
-                points.add(new CurvePoint(-33, -28,
-                        0.8* SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
-                        Math.toRadians(60), 0.3));
-
-    //            points.add(new CurvePoint(24, 35,
-    //                    0.25 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 12, 10,
-    //                    Math.toRadians(-90), 0.3));
-
-                if (Movement.followCurve(points, Math.toRadians(-90),2)) {
-                    intakeSubsystem.turnIntakeOff();
-                    drive.stopAllMovementDirectionBased();
-                    nextStage(progStates.SHOOT_PREP.ordinal(), progStates.driveToSecondThreeBalls.ordinal());
-                }
-
-                drive.applyMovementDirectionBased(); // always put at end of state
-            }
-
-        if (programStage == progStates.driveToSecondThreeBalls.ordinal()) {
-            if (stageFinished) {
-                past5In = false;
-                initializeStateVariables();
-            }
-
-                ArrayList<CurvePoint> points = new ArrayList<>();
-                points.add(new CurvePoint(stateStartingX, stateStartingY,
-                        0, 0, 0, 0, 0, 0));
-
-                points.add(new CurvePoint(-33, -53,
-                        0.8 * SCALE_FACTOR, 1 * SCALE_FACTOR, 15, 15,
-                        Math.toRadians(60), 0.3));
-
-
-
-                if (Movement.followCurve(points, Math.toRadians(180),2)) {
-                    drive.stopAllMovementDirectionBased();
-                    spindexer.rotateToNextSlotInPattern();
-                    nextStage(progStates.endBehavior.ordinal());
-                }
-
-                drive.applyMovementDirectionBased(); // always put at end of state
-
-        }
-
-        if (programStage == progStates.intakeSecondThreeBalls.ordinal()) {
-            if (stageFinished) {
-                past5In = false;
-                intakeSubsystem.turnIntakeOn();
-                spindexer.startIntakeCycle();
-                shooterSubsystem.spinUp();
-                Log.i("DEBUG", "intakeSecondThreeBalls");
-            }
-
-            spindexer.intakeNewBall();
-
-
-
-            ArrayList<CurvePoint> points = new ArrayList<>();
-            points.add(new CurvePoint(stateStartingX, stateStartingY,
-                    0, 0, 0, 0, 0, 0));
-
-            points.add(new CurvePoint(-8, -54,
-                    0.15 * SCALE_FACTOR, 1 * SCALE_FACTOR, 15, 15,
-                    Math.toRadians(60), 0.3));
-
-
-
-            if (Movement.followCurve(points, Math.toRadians(90),2)) {
-                drive.stopAllMovementDirectionBased();
-                if((startTime - SystemClock.uptimeMillis()) * 1000 > 26) //if it's been 28 seconds or more just stay for park rp
-                {
-                    nextStage(progStates.endBehavior.ordinal());
-                }
-                else
-                {
-
-                    nextStage(progStates.driveToShootPointToEnd.ordinal());
-                }
-            }
-
-            drive.applyMovementDirectionBased(); // always put at end of state
-
-        }
-        if (programStage == progStates.driveToShootPointToEnd.ordinal()) {
-            if (stageFinished) {
-                spindexer.rotateToNextSlotInPattern();
-                past5In = false;
-                spindexer.intakeCycleActive = false;
-                initializeStateVariables();
-                shooterSubsystem.isFlywheelReady = false;
-                shooterSubsystem.spinUp();  // Start flywheel
-                intakeSubsystem.turnIntakeOff();
-
-            }
-            shooterSubsystem.updateSpin();
-            shooterSubsystem.updateActiveShot();
-            ArrayList<CurvePoint> points = new ArrayList<>();
-            points.add(new CurvePoint(stateStartingX, stateStartingY,
-                    0, 0, 0, 0, 0, 0));
-
-            points.add(new CurvePoint(-31, -25,
-                    1* SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10,
-                    Math.toRadians(60), 0.3));
-
-            //            points.add(new CurvePoint(24, 35,
-            //                    0.25 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 12, 10,
-            //                    Math.toRadians(-90), 0.3));
-
-            if (Movement.followCurve(points, Math.toRadians(-90),3)) {
-                intakeSubsystem.turnIntakeOff();
-                drive.stopAllMovementDirectionBased();
-                shooterSubsystem.isFlywheelSpun = true;
-                nextStage(progStates.SHOOT_PREP.ordinal(), progStates.driveOutsideOfShootZoneToEnd.ordinal());
-            }
-
-            drive.applyMovementDirectionBased(); // always put at end of state
-        }
-        if (programStage == progStates.driveOutsideOfShootZoneToEnd.ordinal()) {
-            if (stageFinished) {
-                past5In = false;
-
-            }
-            ArrayList<CurvePoint> points = new ArrayList<>();
-            points.add(new CurvePoint(stateStartingX, stateStartingY,
-                    0, 0, 0, 0, 0, 0));
-
-            points.add(new CurvePoint(-31, -35,
-                    1 * SCALE_FACTOR, 1 * SCALE_FACTOR, 15, 15,
-                    Math.toRadians(60), 0.3));
-
-
-
-            if (Movement.followCurve(points, Math.toRadians(0),1)) {
-                drive.stopAllMovementDirectionBased();
-                nextStage(progStates.endBehavior.ordinal());
-            }
-
-            drive.applyMovementDirectionBased(); // always put at end of state
-
-        }
-
-        if (programStage == progStates.intakeThirdThreeBalls.ordinal()) {
-            if (stageFinished) {
-                past5In = false;
-                intakeSubsystem.turnIntakeOn();
-                spindexer.startIntakeCycle();
-                Log.i("DEBUG", "intakeThirdThreeBalls");
-            }
-
-            spindexer.intakeNewBall();
-
-
-            ArrayList<CurvePoint> points = new ArrayList<>();
-            points.add(new CurvePoint(stateStartingX, stateStartingY,
-                    0, 0, 0, 0, 0, 0));
-
-            points.add(new CurvePoint(-10, 71,
-                    0.14 * SCALE_FACTOR, 0 * SCALE_FACTOR, 15, 15,
-                    Math.toRadians(60), 0.5));
-
-
-            if (Movement.followCurve(points, Math.toRadians(90), 1)) {
-                drive.stopAllMovementDirectionBased();
-                spindexer.intakeCycleActive = false;
-                shooterSubsystem.reset();
-                nextStage(progStates.endBehavior.ordinal());
-            }
-
-            drive.applyMovementDirectionBased(); // always put at end of state
-
-        }
-
-
-        if (programStage == progStates.SHOOT_PREP.ordinal()) {
-            if (stageFinished) {
-                initializeStateVariables();
-                shooterSubsystem.spinUp();
-                spindexer.rotateToNextSlotInPattern();
-            }
-            shooterSubsystem.updateSpin();
-            shooterSubsystem.updateActiveShot();
-
-            // wait until ready
-            if (shooterSubsystem.isReadyToShoot()) {
-                nextStage(progStates.SHOOT.ordinal());
-            }
-        }
-        if (programStage == progStates.SHOOT.ordinal()) {
-            shooterSubsystem.updateSpin();
-            shooterSubsystem.updateActiveShot();
-
-            if (stageFinished) {
-                stageFinished = false;
-                initializeStateVariables();
-                shooterSubsystem.startMultiShot(3);
-                Log.i("ShooterSubsystem", "SHOOTING 3");
-            }
-
-
-            if (shooterSubsystem.isReadyToShoot()) {
-                Log.i("DEBUG 1", "stageAfterShotOrdinal = " + stageAfterShotOrdinal);
-                Log.i("DEBUG 1", "progressing to " + progStates.values()[stageAfterShotOrdinal]);
-                nextStage(stageAfterShotOrdinal);
-            }
-        }
-
-
-        if (programStage == progStates.endBehavior.ordinal()) {
-            if (stageFinished) {
-                past5In = false;
-                initializeStateVariables();
-            }
-            shooterSubsystem.turnOff();
-            drive.stopAllMovementDirectionBased();
-
-        }
-
-        //tp4.markStart();
-
-        //superstructure.update(telemetry, gamepad1, gamepad2);
-
-        //tp4.markEnd();
-
-        //System.out.println("Time Profiler 4 Average Time: "  tp4.getAverageTimePerUpdateMillis());
-
+    protected CurvePoint getShootPointToEndEndPoint() {
+        return new CurvePoint(-31, -25, 1 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10, Math.toRadians(60), 0.3);
+    }
+
+    @Override
+    protected double getShootPointToEndHeading() {
+        return Math.toRadians(-90);
+    }
+
+    @Override
+    protected int getShootPointToEndFollowCurveTolerance() {
+        return 3;
+    }
+
+    @Override
+    protected CurvePoint getDriveOutsideShootZoneEndPoint() {
+        return new CurvePoint(-31, -35, 1 * SCALE_FACTOR, 1 * SCALE_FACTOR, 15, 15, Math.toRadians(60), 0.3);
+    }
+
+    @Override
+    protected double getDriveOutsideShootZoneHeading() {
+        return Math.toRadians(0);
+    }
+
+    @Override
+    protected int getDriveOutsideShootZoneFollowCurveTolerance() {
+        return 1;
     }
 }
-
