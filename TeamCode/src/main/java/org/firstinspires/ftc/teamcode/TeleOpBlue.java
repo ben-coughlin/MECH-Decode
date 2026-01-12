@@ -8,7 +8,7 @@ public class TeleOpBlue extends TeleOpMaster {
         return VisionUtils.isTagBlueGoal(tagId);
     }
 
-    // Optional: Override timing methods if blue alliance needs different tuning
+    // Example: Override timing methods if blue alliance needs different tuning
     // @Override
     // protected double getShootPrepTime() {
     //     return 2600; // Custom value for blue

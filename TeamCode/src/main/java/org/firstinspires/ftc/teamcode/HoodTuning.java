@@ -52,7 +52,7 @@ public class HoodTuning extends LinearOpMode {
             double distanceToTag = limelight.getDistanceToTag(result);
 
 
-            turret.aimTurret(true, result.getTx(), gamepad1.right_stick_y, distanceToTag);
+           // turret.aimTurret(true, result.getTx(), gamepad1.right_stick_y, distanceToTag);
 
             if (gamepad1.circle && !shootingSequenceActive)
             {

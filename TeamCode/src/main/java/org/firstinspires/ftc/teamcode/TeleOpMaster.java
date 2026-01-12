@@ -9,6 +9,10 @@ import android.os.SystemClock;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+
 public abstract class TeleOpMaster extends RobotMasterPinpoint {
 
     //state machines!!
@@ -48,11 +52,11 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
         return 200;
     }
 
-    protected double getKickerHorizontalTime() {
+    protected double getClockShootTime() {
         return 500;
     }
 
-    protected double getFireBallCompleteTime() {
+    protected double getShotCompleteTime() {
         return 1000;
     }
 
@@ -124,22 +128,28 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
         // limelight
         isAutoAiming = autoAimToggle.getState();
         LLResult result = Limelight.getCurrResult();
+        Pose2D pos = odo.pos; //try not to flood odo with reads
 
         if (result != null && result.isValid() && !VisionUtils.isTagObelisk(VisionUtils.getTagId(result))
                 && isCorrectGoalTag(VisionUtils.getTagId(result))) {
             double llError = result.getTx();
-            turret.aimTurret(isAutoAiming, llError, gamepad2.right_stick_x, limelight.getDistanceToTag(result));
+            turret.aimTurret(result.isValid(), llError, gamepad2.right_stick_x, Limelight.getDistance(), pos.getX(DistanceUnit.INCH), odo.pos.getY(DistanceUnit.INCH), odo.pos.getHeading(AngleUnit.DEGREES), turret.getTurretDeg());
         } else {
             // use 999 to ensure that we default to the safer, long range aim controller
-            turret.aimTurret(false, 0, gamepad2.right_stick_x, 999);
+            turret.aimTurret(
+                    false,
+                    0,
+                    gamepad1.right_stick_x,
+                    999,
+                    pos.getX(DistanceUnit.INCH),
+                    pos.getY(DistanceUnit.INCH),
+                    Math.toDegrees(pos.getHeading(AngleUnit.RADIANS)),
+                    turret.getTurretDeg()
+            );
         }
 
-        if (gamepad2.dpad_left) {
-            spindexer.nudgeLeft();
-        } else if (gamepad2.dpad_right) {
-            spindexer.nudgeRight();
-        }
 
+        // honestly no idea why there are two separate statements but it works :P
         if (programStage == progStates.IDLE.ordinal()) {
             if (gamepad1.left_bumper || gamepad2.dpad_up) {
                 nextStage(progStates.SHOOT_PREP.ordinal());
@@ -148,13 +158,18 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
                 nextStage(progStates.OUTTAKE.ordinal());
             }
         }
+        // safe home state
+        if (programStage == progStates.IDLE.ordinal()) {
+            if (stageFinished) {
+                initializeStateVariables();
+                turret.turnOffFlywheel();
+                intakeSubsystem.turnIntakeOff();
+                clock.resetClock();
+            }
+        }
+
 
         if (programStage == progStates.READY_TO_SHOOT.ordinal()) {
-            if (gamepad2.left_bumper) {
-                spindexer.chooseShotColor(Pattern.Ball.PURPLE);
-            } else if (gamepad2.right_bumper) {
-                spindexer.chooseShotColor(Pattern.Ball.GREEN);
-            }
 
             if (gamepad1.right_bumper || gamepad2.dpad_down) {
                 nextStage(progStates.FIRE_BALL.ordinal());
@@ -167,22 +182,13 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
 
         if (intakeToggle.getState()) {
             nextStage(progStates.INTAKE.ordinal());
-            spindexer.startIntakeCycle();
         } else { // WHEN the trigger is RELEASED
             if (programStage == progStates.INTAKE.ordinal()) {
                 nextStage(progStates.IDLE.ordinal());
             }
         }
 
-        // safe home state
-        if (programStage == progStates.IDLE.ordinal()) {
-            if (stageFinished) {
-                initializeStateVariables();
-                turret.turnOffFlywheel();
-                intakeSubsystem.turnIntakeOff();
-                intakeSubsystem.moveKickerHorizontal();
-            }
-        }
+
 
         if (programStage == progStates.SHOOT_PREP.ordinal()) {
             if (stageFinished) {
@@ -207,17 +213,13 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
             if (stageFinished) {
                 initializeStateVariables();
             }
-            if (SystemClock.uptimeMillis() - stateStartTime > getKickerVerticalTime()) {
-                intakeSubsystem.moveKickerVertical();
+
+            if (SystemClock.uptimeMillis() - stateStartTime > getClockShootTime()) {
+                clock.moveClockToShootPosition();
             }
-            if (SystemClock.uptimeMillis() - stateStartTime > getKickerHorizontalTime()) {
-                intakeSubsystem.moveKickerHorizontal();
-            }
-            if (SystemClock.uptimeMillis() - stateStartTime > getFireBallCompleteTime()) {
-                if (spindexer.recordShotBall(false)) {
-                    gamepad1.rumble(1, 0, 100);
-                }
-                nextStage(progStates.READY_TO_SHOOT.ordinal());
+            if (SystemClock.uptimeMillis() - stateStartTime > getShotCompleteTime()) {
+                //we reset the clock in idle so no need to do it here
+                nextStage(progStates.IDLE.ordinal());
             }
         }
 
@@ -235,14 +237,8 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
             if (stageFinished) {
                 initializeStateVariables();
                 intakeSubsystem.turnIntakeOn();
-                spindexer.startIntakeCycle();
             }
 
-            spindexer.intakeNewBall();
-
-            if (spindexer.isAtTargetPosition()) {
-                nextStage(progStates.IDLE.ordinal());
-            }
         }
 
         // kills everything
@@ -252,7 +248,6 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
             }
             drive.stopAllMovementDirectionBased();
             intakeSubsystem.turnIntakeOff();
-            intakeSubsystem.moveKickerHorizontal();
             turret.turnOffFlywheel();
         }
     }

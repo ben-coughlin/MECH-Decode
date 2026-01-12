@@ -1,10 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 @TeleOp(name = "Clock Tuning")
 public class ClockTuning extends LinearOpMode {
@@ -12,74 +9,67 @@ public class ClockTuning extends LinearOpMode {
     private double currentRampPosition = 0.5;
     private double motorPower = 1;
     private final double SERVO_INCREMENT = 0.025;
-    public Servo clock = null;
-    public Servo ramp = null;
 
-    private final ElapsedTime timer = new ElapsedTime();
 
-    // State variables for shooting sequence
-    private boolean shootingSequenceActive = false;
-
-    // Debounce for servo controls
-    private boolean dpadUpPressed = false;
-    private boolean dpadDownPressed = false;
-    private boolean dpadLeftPressed = false;
-    private boolean dpadRightPressed = false;
+    // Previous button states for rising edge detection
+    boolean lastDpadUp = false;
+    boolean lastDpadDown = false;
+    boolean lastDpadLeft = false;
+    boolean lastDpadRight = false;
+    boolean lastCircle = false; // Added for flywheel toggle if needed
 
     @Override
     public void runOpMode() {
-        Limelight limelight = new Limelight(hardwareMap);
-        Turret turret = new Turret(hardwareMap);
+
+        Clock clock = new Clock( hardwareMap);
         IntakeSubsystem intake = new IntakeSubsystem(hardwareMap);
-        this.clock = hardwareMap.get(Servo.class, "clock");
-        this.ramp = hardwareMap.get(Servo.class, "ramp");
-        clock.setPosition(0.5);
-        ramp.setPosition(0.5);
-        
+        Turret turret = new Turret(hardwareMap);
+
+
         telemetry.addData("Status", "Initialized");
-        telemetry.addLine("Place the robot in front of an AprilTag.");
-        telemetry.addLine("Use DPAD UP/DOWN to adjust the launcher angle, press the circle button to toggle the flywheel");
-        telemetry.addLine("Record the 'Distance' and 'Servo Position' for your lookup table.");
         telemetry.update();
 
         waitForStart();
 
         while (opModeIsActive()) {
+            clock.clockUpdate();
+            turret.updateTurret();
+//            limelight.updateLimelight();
+//            LLResult result = Limelight.getCurrResult();
+//            double distanceToTag = Limelight.getDistance();
+//
+//            // --- TURRET AIMING ---
+//            // Note: Make sure aimTurret handles null results gracefully if needed
+//            double tx = (result != null) ? result.getTx() : 0;
+//            turret.aimTurret(true, tx, gamepad1.right_stick_y, distanceToTag);
+//            turret.updateTurret(); // Ensure the turret loop runs!
 
-            limelight.updateLimelight();
-            LLResult result = Limelight.getCurrResult();
-            double distanceToTag = limelight.getDistanceToTag(result);
+            // --- SERVO INCREMENT LOGIC (Rising Edge Detection) ---
 
-
-            turret.aimTurret(true, result.getTx(), gamepad1.right_stick_y, distanceToTag);
-            
-            if (gamepad1.dpad_up && !dpadUpPressed)
-            {
+            // CLOCK: Increment on DPAD UP press
+            if (gamepad1.dpad_up && !lastDpadUp) {
                 currentClockPosition += SERVO_INCREMENT;
-                dpadUpPressed = true;
             }
-            else if (gamepad1.dpad_down && !dpadDownPressed)
-            {
+            lastDpadUp = gamepad1.dpad_up;
+
+            // CLOCK: Decrement on DPAD DOWN press
+            if (gamepad1.dpad_down && !lastDpadDown) {
                 currentClockPosition -= SERVO_INCREMENT;
-                dpadDownPressed = true;
             }
-            if (gamepad1.dpad_left && !dpadLeftPressed)
-            {
+            lastDpadDown = gamepad1.dpad_down;
+
+            // RAMP: Increment on DPAD LEFT press
+            if (gamepad1.dpad_left && !lastDpadLeft) {
                 currentRampPosition += SERVO_INCREMENT;
-                dpadLeftPressed = true;
             }
-            else if (gamepad1.dpad_right && !dpadRightPressed)
-            {
+            lastDpadLeft = gamepad1.dpad_left;
+
+            // RAMP: Decrement on DPAD RIGHT press
+            if (gamepad1.dpad_right && !lastDpadRight) {
                 currentRampPosition -= SERVO_INCREMENT;
-                dpadRightPressed = true;
             }
-            else
-            {
-                dpadUpPressed = false;
-                dpadLeftPressed = false;
-                dpadRightPressed = false;
-                dpadDownPressed = false;
-            }
+            lastDpadRight = gamepad1.dpad_right;
+
 
             if (gamepad1.left_bumper) {
                 intake.turnIntakeOn();
@@ -88,26 +78,45 @@ public class ClockTuning extends LinearOpMode {
             } else {
                 intake.turnIntakeOff();
             }
-            // Constrain the servo position to the valid range [0.0, 1.0]
+
+            if(gamepad1.triangle)
+            {
+                clock.moveRampToShootPosition();
+                clock.moveClockToShootPosition();
+            }
+            if(gamepad1.square)
+            {
+                clock.resetRamp();
+                clock.resetClock();
+            }
+            // --- BOUNDARY CHECKS & UPDATES ---
             currentClockPosition = Math.max(0.0, Math.min(1.0, currentClockPosition));
             currentRampPosition = Math.max(0.0, Math.min(1.0, currentRampPosition));
-            clock.setPosition(currentClockPosition);
-            ramp.setPosition(currentRampPosition);
-            motorPower = Math.max(0.0, Math.min(1.0, motorPower));
 
+            if(gamepad1.cross)
+            {
+                clock.setClockPos(currentClockPosition);
+                clock.setRampPos(currentRampPosition);
+            }
 
-            // --- Telemetry ---
+            if(gamepad2.dpad_up)
+            {
+                turret.turnOnFlywheel();
+            }
+            else if(gamepad2.dpad_down)
+            {
+                turret.turnOffFlywheel();
+            }
+
+            // --- TELEMETRY ---
             telemetry.addLine("--- Clock & Ramp Tuning ---");
-            telemetry.addLine("Use DPAD UP/DOWN to change clock position.");
-            telemetry.addLine("Use DPAD LEFT/RIGHT to change ramp position");
-            telemetry.addData("Distance to Tag (in)", "%.2f", distanceToTag);
-            telemetry.addData("Clock Servo Position", "%.3f", currentClockPosition);
-            telemetry.addData("Ramp Servo Position", "%.3f", currentRampPosition);
-            telemetry.addData("Motor Power", "%.3f", turret.flywheelLeft.getPower());
-            telemetry.addData("Desired Power", "%.3f", motorPower);
-            
-            telemetry.addLine("--- Intake ---");
-            telemetry.addData("Intake Active", IntakeSubsystem.isIntakeRunning);
+      //      telemetry.addData("Distance to Tag (in)", "%.2f", distanceToTag);
+            telemetry.addData("Clock Position", "%.3f", currentClockPosition);
+            telemetry.addData("Ramp Position", "%.3f", currentRampPosition);
+         //   telemetry.addData("Flywheel Power", "%.2f", turret.flywheelRight.getPower());
+
+            // This is useful to see if your Limelight is actually getting data
+          //  telemetry.addData("Limelight Valid", result != null);
 
             telemetry.update();
         }

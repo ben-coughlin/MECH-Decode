@@ -42,6 +42,15 @@ public class Turret
     private final double NOMINAL_VOLTAGE = 12.0;
     private boolean isFlywheelOn;
 
+    // Constants
+    private static final double VISION_TIMEOUT_MS = 500; // how long before switching to odometry mode
+
+    // Odometry tracking fields
+    private double lastSeenTagX = 0; // field coordinates of tag when last seen
+    private double lastSeenTagY = 0;
+    private long lastVisionUpdateTime = 0;
+    private boolean hasSeenTagBefore = false;
+
     private final double[][] launchAngleLookupTable = {
             { 25, 0.61, 4000},   // inches from apriltag, servo angle, rpm
             { 36, 0.75, 4050},
@@ -103,7 +112,6 @@ public class Turret
 
     }
 
-
     /**
      * Aims the turret using either auto-aim or manual input, and selects PIDF gains based on distance.
      * @param useAutoAim        Boolean to enable/disable auto-aim.
@@ -111,52 +119,164 @@ public class Turret
      * @param manualTurnInput   Manual joystick input.
      * @param distance          The distance to the target, used for gain scheduling.
      */
-    public void aimTurret(boolean useAutoAim, double limelightError, double manualTurnInput, double distance)
-    {
-        double calculatedPower;
+    /**
+     * Call this method when you have a valid AprilTag detection
+     * @param tagFieldX - X position of tag in field coordinates
+     * @param tagFieldY - Y position of tag in field coordinates
+     */
+    public void updateLastSeenTagPosition(double tagFieldX, double tagFieldY) {
+        lastSeenTagX = tagFieldX;
+        lastSeenTagY = tagFieldY;
+        lastVisionUpdateTime = System.currentTimeMillis();
+        hasSeenTagBefore = true;
+    }
 
-        if(useAutoAim)
-        {
-            if (distance < GAIN_SCHEDULING_DISTANCE_THRESHOLD && distance > 0) {
-                activeAutoAimController = autoAimClose;
+    /**
+     * Calculate the angle error to the last seen tag using current odometry
+     * @param robotX - current robot X position (field coordinates)
+     * @param robotY - current robot Y position (field coordinates)
+     * @param robotHeading - current robot heading in degrees (0 = forward along field X axis)
+     * @param currentTurretAngle - current turret angle in degrees relative to robot (0 = forward)
+     * @return angle error in degrees that turret needs to rotate
+     */
+    public double calculateOdometryBasedError(double robotX, double robotY,
+                                              double robotHeading, double currentTurretAngle) {
+        // Calculate vector from robot to last seen tag
+        double deltaX = lastSeenTagX - robotX;
+        double deltaY = lastSeenTagY - robotY;
+
+        // Calculate absolute angle to target in field coordinates
+        double angleToTarget = Math.toDegrees(Math.atan2(deltaY, deltaX));
+
+        // Calculate angle relative to robot's current heading
+        double angleRelativeToRobot = angleToTarget - robotHeading;
+
+        // Normalize to -180 to 180
+        while (angleRelativeToRobot > 180) angleRelativeToRobot -= 360;
+        while (angleRelativeToRobot < -180) angleRelativeToRobot += 360;
+
+        // Subtract current turret angle to get error
+        double turretError = angleRelativeToRobot - currentTurretAngle;
+
+        // Normalize error to -180 to 180
+        while (turretError > 180) turretError -= 360;
+        while (turretError < -180) turretError += 360;
+
+        return turretError;
+    }
+
+    /**
+     * Enhanced turret aiming with odometry fallback
+     * @param hasValidTarget - true if Limelight currently sees the target
+     * @param limelightError - error from Limelight in degrees (only used if hasValidTarget is true)
+     * @param manualTurnInput - manual control input (-1 to 1)
+     * @param distance - distance to target
+     * @param robotX - current robot X position (field coordinates)
+     * @param robotY - current robot Y position (field coordinates)
+     * @param robotHeading - current robot heading in degrees
+     * @param currentTurretAngle - current turret angle in degrees relative to robot
+     */
+    public void aimTurret(boolean hasValidTarget, double limelightError, double manualTurnInput,
+                          double distance, double robotX, double robotY,
+                          double robotHeading, double currentTurretAngle) {
+        double calculatedPower;
+        boolean useAutoAim = hasValidTarget || isUsingOdometryMode();
+
+        if (useAutoAim) {
+            double errorToUse;
+
+            if (hasValidTarget) {
+                // Use vision-based error
+                if (distance < GAIN_SCHEDULING_DISTANCE_THRESHOLD && distance > 0) {
+                    if (activeAutoAimController != autoAimClose) {
+                        autoAimFar.reset();
+                    }
+                    activeAutoAimController = autoAimClose;
+                } else {
+                    if (activeAutoAimController != autoAimFar) {
+                        autoAimClose.reset();
+                    }
+                    activeAutoAimController = autoAimFar;
+                }
+
+                if (limelightError > 180) limelightError -= 360;
+                else if (limelightError < -180) limelightError += 360;
+
+                errorToUse = limelightError;
             } else {
+                // Use odometry-based error
+                errorToUse = calculateOdometryBasedError(robotX, robotY, robotHeading, currentTurretAngle);
+
+                // Use far controller for odometry mode (more damped, less aggressive)
+                if (activeAutoAimController != autoAimFar) {
+                    autoAimClose.reset();
+                }
                 activeAutoAimController = autoAimFar;
             }
 
-            if (limelightError > 180) limelightError -= 360;
-            else if (limelightError < -180) limelightError += 360;
-
-            llError = limelightError;
-            calculatedPower = -activeAutoAimController.calculatePIDF(limelightError);
-        }
-        else
-        {
+            llError = errorToUse;
+            calculatedPower = -activeAutoAimController.calculatePIDF(errorToUse);
+        } else {
+            // Manual mode
             calculatedPower = manualTurnInput;
             autoAimClose.reset();
             autoAimFar.reset();
         }
 
+        // Slew rate limiting
         double delta = calculatedPower - lastTurretPower;
         if (Math.abs(delta) > TURRET_SLEW_RATE) {
             calculatedPower = lastTurretPower + Math.signum(delta) * TURRET_SLEW_RATE;
         }
         lastTurretPower = calculatedPower;
 
+        // Soft limits
         int currentPosition = turret.getCurrentPosition();
         if (currentPosition >= TURRET_MAX_LIMIT_TICKS && calculatedPower > 0) {
             turret.setPower(0);
-            lastTurretPower = 0; // reset slew when hitting limits
-        }
-        else if (currentPosition <= TURRET_MIN_LIMIT_TICKS && calculatedPower < 0) {
+            lastTurretPower = calculatedPower; // Don't reset to 0
+        } else if (currentPosition <= TURRET_MIN_LIMIT_TICKS && calculatedPower < 0) {
             turret.setPower(0);
-            lastTurretPower = 0; // reset slew when hitting limits
-        }
-        else {
+            lastTurretPower = calculatedPower; // Don't reset to 0
+        } else {
             turret.setPower(calculatedPower);
         }
     }
 
+    /**
+     * Determines if we should use odometry-based tracking
+     * @return true if we've lost vision recently but have a previous tag position
+     */
+    private boolean isUsingOdometryMode() {
+        if (!hasSeenTagBefore) return false;
 
+        long timeSinceLastVision = System.currentTimeMillis() - lastVisionUpdateTime;
+        return timeSinceLastVision < VISION_TIMEOUT_MS;
+    }
+
+    /**
+     * Call this to reset odometry tracking (e.g., at start of match)
+     */
+    public void resetOdometryTracking() {
+        hasSeenTagBefore = false;
+        lastSeenTagX = 0;
+        lastSeenTagY = 0;
+        lastVisionUpdateTime = 0;
+    }
+
+    /**
+     * Get status for telemetry
+     */
+    public String getTrackingMode() {
+        long timeSinceLastVision = System.currentTimeMillis() - lastVisionUpdateTime;
+        if (timeSinceLastVision < 100) {
+            return "VISION";
+        } else if (isUsingOdometryMode()) {
+            return "ODOMETRY (" + timeSinceLastVision + "ms)";
+        } else {
+            return "MANUAL";
+        }
+    }
 
 
     public void setFlywheelVelocity(double targetRPM)
@@ -259,8 +379,7 @@ public class Turret
         telemetry.addData("Target RPM", targetRPM);
         telemetry.addData("Motor Power (L/R)", String.format(Locale.US,"%.2f / %.2f", flywheelLeft.getPower(), flywheelRight.getPower()));
         telemetry.addData("Current Voltage", currVoltage);
-
-
+        telemetry.addData("Turret Tracking Mode", getTrackingMode());
     }
 
     public double getTurretDeg() { return turretDeg; }
