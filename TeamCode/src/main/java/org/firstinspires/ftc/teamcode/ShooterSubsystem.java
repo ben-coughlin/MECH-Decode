@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import android.graphics.Color;
 import android.os.SystemClock;
 import android.util.Log;
 
@@ -51,18 +50,18 @@ public class ShooterSubsystem {
     /** Begin shooting sequence */
     public void startShotSequence() {
         if (!isFlywheelReady) return;
-        clock.rampShoot();
+        clock.moveRampToShootPosition();
         shotStartTime = SystemClock.uptimeMillis();
 
         if (SystemClock.uptimeMillis() - shotStartTime >= 600)
         {
-            clock.clockShoot();
+            clock.moveClockToShootPosition();
         }
         if (SystemClock.uptimeMillis() - shotStartTime >= 1200)
         {
             turret.turnOffFlywheel();
-            clock.clockInit();
-            clock.rampInit();
+            clock.resetClock();
+            clock.resetRamp();
             isFlywheelReady = false;
         }
 

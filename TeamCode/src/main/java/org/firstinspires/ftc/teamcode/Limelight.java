@@ -5,6 +5,9 @@ import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 
 import java.util.HashMap;
@@ -41,6 +44,11 @@ public class Limelight extends RobotMasterPinpoint
 
 
     }
+    public double getTx()
+    {
+        return currResult.getTx();
+    }
+
 
 
     /**
@@ -135,6 +143,47 @@ public class Limelight extends RobotMasterPinpoint
           return idToPatternList.get(currObeliskAprilTag);
 
 
+    }
+
+    /**
+     * Calculate the field position of the AprilTag based on vision data
+     * @param robotX - robot's X position on field (inches or meters)
+     * @param robotY - robot's Y position on field
+     * @param robotHeading - robot's heading in degrees (0 = along positive X axis)
+     * @param currentTurretAngle - turret angle relative to robot in degrees (0 = robot forward)
+     * @param limelightTx - Limelight horizontal angle error in degrees
+     * @param distance - distance to AprilTag from Limelight
+     * @return array [tagX, tagY] in field coordinates
+     */
+    public double[] calculateTagFieldPosition(double robotX, double robotY, double robotHeading,
+                                              double currentTurretAngle, double limelightTx,
+                                              double distance) {
+        // Step 1: Calculate the absolute angle to the target in field coordinates
+        // Start with robot heading, add turret angle, add limelight error
+        double totalAngleDegrees = robotHeading + currentTurretAngle + limelightTx;
+        double totalAngleRadians = Math.toRadians(totalAngleDegrees);
+
+        // Step 2: Project the distance along this angle to get field coordinates
+        // Using standard trig: x = distance * cos(angle), y = distance * sin(angle)
+        double tagX = robotX + distance * Math.cos(totalAngleRadians);
+        double tagY = robotY + distance * Math.sin(totalAngleRadians);
+
+        return new double[]{tagX, tagY};
+    }
+
+    /**
+     * Convenience overload if you have a Pose2d object (RoadRunner style)
+     */
+    public double[] calculateTagFieldPosition(Pose2D robotPose, double currentTurretAngle,
+                                              double limelightTx, double distance) {
+        return calculateTagFieldPosition(
+                robotPose.getX(DistanceUnit.INCH),
+                robotPose.getY(DistanceUnit.INCH),
+                Math.toDegrees(robotPose.getHeading(AngleUnit.RADIANS)),
+                currentTurretAngle,
+                limelightTx,
+                distance
+        );
     }
 
 

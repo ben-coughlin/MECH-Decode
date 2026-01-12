@@ -24,7 +24,7 @@ public class TurretTuningRyan extends OpMode
     public void init() {
         turret = new Turret(hardwareMap);
         intakeSubsystem = new IntakeSubsystem(hardwareMap);
-        intakeSubsystem.setKickerPos(0.4);
+      //  intakeSubsystem.setKickerPos(0.4);
     }
 
     @Override
@@ -32,7 +32,7 @@ public class TurretTuningRyan extends OpMode
 
         turret.updateTurret();
         kickerToggle.updateToggle(gamepad1.square);
-        intakeSubsystem.setKickerPos(0.4);
+      //  intakeSubsystem.setKickerPos(0.4);
 
 
         if (gamepad1.right_bumper && !turretActivated) {
@@ -99,7 +99,7 @@ public class TurretTuningRyan extends OpMode
         turret.setTurretPower(turretPower);
         turret.setFlywheelLeftPower(flyLeftPower);
         turret.setFlywheelRightPower(flyRightPower);
-        intakeSubsystem.setKickerPos(kickerPos);
+       // intakeSubsystem.setKickerPos(kickerPos);
 
         telemetry.addData("Current Turret Position", turret.getTurretDeg());
         telemetry.addData("Current Hood Position", turret.getHoodPos());

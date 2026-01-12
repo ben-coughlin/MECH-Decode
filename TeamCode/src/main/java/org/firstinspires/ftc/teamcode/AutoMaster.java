@@ -3,6 +3,10 @@ package org.firstinspires.ftc.teamcode;
 import android.os.SystemClock;
 import android.util.Log;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -108,18 +112,53 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
         if (!isLookingAtObelisk) {
             if (Limelight.getCurrResult() != null && Limelight.getCurrResult().isValid()
                     && isCorrectGoalTag(VisionUtils.getTagId(Limelight.getCurrResult()))) {
-                double llError = Limelight.getCurrResult().getTx();
-                turret.aimTurret(true, llError, gamepad2.right_stick_x, limelight.getDistanceToTag(Limelight.getCurrResult()));
+                if (Limelight.getCurrResult().isValid()) {
+                    // Update last seen position when we have vision
+                    double[] tagFieldCoords = limelight.calculateTagFieldPosition(odo.pos, turret.getTurretDeg(), Limelight.getCurrResult().getTx(), limelight.getDistanceToTag(Limelight.getCurrResult()));
+                    turret.updateLastSeenTagPosition(tagFieldCoords[0], tagFieldCoords[1]);
+                }
+                Pose2D pos = odo.pos;
+
+                turret.aimTurret(
+                        Limelight.getCurrResult().isValid(),
+                        Limelight.getCurrResult().getTx(),
+                        gamepad1.right_stick_x,
+                        Limelight.getDistance(),
+                        pos.getX(DistanceUnit.INCH),
+                        pos.getY(DistanceUnit.INCH),
+                        Math.toDegrees(pos.getHeading(AngleUnit.RADIANS)),
+                        turret.getTurretDeg()
+                );
                 hasFinishedManualAim = true;
             }
         } else {
             if (!hasFinishedManualAim) {
-                turret.aimTurret(false, 0, getManualAimSpeed(), 999);
+                Pose2D pos = odo.pos;
+                turret.aimTurret(
+                        false,
+                        0,
+                        gamepad1.right_stick_x,
+                        999,
+                        pos.getX(DistanceUnit.INCH),
+                        pos.getY(DistanceUnit.INCH),
+                        Math.toDegrees(pos.getHeading(AngleUnit.RADIANS)),
+                        turret.getTurretDeg()
+                );
             }
 
             if (Limelight.getCurrResult() != null && Limelight.getCurrResult().isValid()
                     && isCorrectGoalTag(VisionUtils.getTagId(Limelight.getCurrResult()))) {
-                turret.aimTurret(false, 0, 0, 0);
+                Pose2D pos = odo.pos;
+                turret.aimTurret(
+                        false,
+                        0,
+                        gamepad1.right_stick_x,
+                        999,
+                        pos.getX(DistanceUnit.INCH),
+                        pos.getY(DistanceUnit.INCH),
+                        Math.toDegrees(pos.getHeading(AngleUnit.RADIANS)),
+                        turret.getTurretDeg()
+                );
                 turret.resetEncoder();
                 isLookingAtObelisk = false;
                 return;
