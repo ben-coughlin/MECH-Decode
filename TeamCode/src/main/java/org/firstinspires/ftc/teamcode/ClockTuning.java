@@ -33,7 +33,7 @@ public class ClockTuning extends LinearOpMode {
         IntakeSubsystem intake = new IntakeSubsystem(hardwareMap);
         this.clock = hardwareMap.get(Servo.class, "clock");
         this.ramp = hardwareMap.get(Servo.class, "ramp");
-        clock.setPosition(0.5);
+        clock.setPosition(0.775);
         ramp.setPosition(0.5);
         
         telemetry.addData("Status", "Initialized");
