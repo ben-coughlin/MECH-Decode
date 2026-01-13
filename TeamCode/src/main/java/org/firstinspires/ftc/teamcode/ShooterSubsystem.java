@@ -50,7 +50,7 @@ public class ShooterSubsystem {
     /** Begin shooting sequence */
     public void startShotSequence() {
         if (!isFlywheelReady) return;
-        clock.moveRampToShootPosition();
+        clock.moveRampToShootPower();
         shotStartTime = SystemClock.uptimeMillis();
 
         if (SystemClock.uptimeMillis() - shotStartTime >= 600)
@@ -61,7 +61,7 @@ public class ShooterSubsystem {
         {
             turret.turnOffFlywheel();
             clock.resetClock();
-            clock.resetRamp();
+            clock.stopRamp();
             isFlywheelReady = false;
         }
 

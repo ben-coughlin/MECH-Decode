@@ -4,6 +4,7 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @TeleOp(name = "Clock Tuning")
@@ -13,7 +14,7 @@ public class ClockTuning extends LinearOpMode {
     private double motorPower = 1;
     private final double SERVO_INCREMENT = 0.025;
     public Servo clock = null;
-    public Servo ramp = null;
+    public CRServo ramp = null;
 
     private final ElapsedTime timer = new ElapsedTime();
 
@@ -32,9 +33,9 @@ public class ClockTuning extends LinearOpMode {
         Turret turret = new Turret(hardwareMap);
         IntakeSubsystem intake = new IntakeSubsystem(hardwareMap);
         this.clock = hardwareMap.get(Servo.class, "clock");
-        this.ramp = hardwareMap.get(Servo.class, "ramp");
+        this.ramp = hardwareMap.get(CRServo.class, "ramp");
         clock.setPosition(0.5);
-        ramp.setPosition(0.5);
+        ramp.setPower(0.5);
         
         telemetry.addData("Status", "Initialized");
         telemetry.addLine("Place the robot in front of an AprilTag.");
@@ -51,7 +52,7 @@ public class ClockTuning extends LinearOpMode {
             double distanceToTag = limelight.getDistanceToTag(result);
 
 
-            turret.aimTurret(true, result.getTx(), gamepad1.right_stick_y, distanceToTag);
+            //turret.aimTurret(true, result.getTx(), gamepad1.right_stick_y, distanceToTag);
             
             if (gamepad1.dpad_up && !dpadUpPressed)
             {
@@ -92,7 +93,7 @@ public class ClockTuning extends LinearOpMode {
             currentClockPosition = Math.max(0.0, Math.min(1.0, currentClockPosition));
             currentRampPosition = Math.max(0.0, Math.min(1.0, currentRampPosition));
             clock.setPosition(currentClockPosition);
-            ramp.setPosition(currentRampPosition);
+            ramp.setPower(currentRampPosition);
             motorPower = Math.max(0.0, Math.min(1.0, motorPower));
 
 

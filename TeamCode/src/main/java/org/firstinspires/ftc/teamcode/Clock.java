@@ -2,16 +2,17 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 public class Clock {
-    private Servo clockSpinner;
-    private Servo ramp;
+    private Servo clock;
+    private CRServo ramp;
     private DcMotorEx encoder;
     private final double CLOCK_INIT = 0.44;
     private final double CLOCK_SHOOT = .675;
-    private final double RAMP_INIT = 0.425;
-    private final double RAMP_SHOOT = 0.475;
+    private final double RAMP_INIT = 0;
+    private final double RAMP_SHOOT = 0.5;
     private final int ENCODER_INIT = 0;
     private final int ENCODER_SHOOT = 100;
     private double currentClockPosition = 0;
@@ -20,33 +21,34 @@ public class Clock {
     private int POSITION_TOLERANCE = 20;
 
     public Clock(HardwareMap hwMap) {
-        clockSpinner = hwMap.get(Servo.class, "clock");
-        ramp = hwMap.get(Servo.class, "ramp");
+        clock = hwMap.get(Servo.class, "clock");
+        ramp = hwMap.get(CRServo.class, "ramp");
         encoder = hwMap.get(DcMotorEx.class, "intake");
-        clockSpinner.setPosition(CLOCK_INIT);
-        ramp.setPosition(RAMP_INIT);
+        clock.setPosition(CLOCK_INIT);
+        ramp.setPower(RAMP_INIT);
         encoder.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
         encoder.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
-        currentClockPosition = clockSpinner.getPosition();
-        currentRampPosition = ramp.getPosition();
+        currentClockPosition = clock.getPosition();
+        currentRampPosition = ramp.getPower();
         currentEncoderPosition = encoder.getCurrentPosition();
 
     }
     public void clockUpdate(){
-        currentClockPosition = clockSpinner.getPosition();
-        currentRampPosition = ramp.getPosition();
+        currentClockPosition = clock.getPosition();
+        currentRampPosition = ramp.getPower();
         currentEncoderPosition = encoder.getCurrentPosition();
     }
     public void moveClockToShootPosition()
     {
-        clockSpinner.setPosition(CLOCK_SHOOT);
+        clock.setPosition(CLOCK_SHOOT);
     }
-    public void moveRampToShootPosition()
+    public void moveRampToShootPower()
     {
-        ramp.setPosition(RAMP_SHOOT);
+        ramp.setPower(RAMP_SHOOT);
     }
-    public void resetClock(){clockSpinner.setPosition(CLOCK_INIT);}
-    public void resetRamp(){ramp.setPosition(RAMP_INIT);}
+    public void resetClock(){
+        clock.setPosition(CLOCK_INIT);}
+    public void stopRamp(){ramp.setPower(RAMP_INIT);}
 
 
     public boolean isAtShootPosition()
@@ -64,12 +66,12 @@ public class Clock {
 
     void setClockPos(double pos)
     {
-        clockSpinner.setPosition(pos);
+        clock.setPosition(pos);
 
     }
-    void setRampPos(double pos)
+    void setRampPower(double pos)
     {
-        ramp.setPosition(pos);
+        ramp.setPower(pos);
     }
 
 
