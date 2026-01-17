@@ -81,7 +81,7 @@ public class ClockTuning extends LinearOpMode {
 
             if(gamepad1.triangle)
             {
-                clock.moveRampToShootPower();
+                clock.setRampToShootPower();
                 clock.moveClockToShootPosition();
             }
             if(gamepad1.square)
@@ -96,7 +96,7 @@ public class ClockTuning extends LinearOpMode {
             if(gamepad1.cross)
             {
                 clock.setClockPos(currentClockPosition);
-                clock.setRampPower(currentRampPosition);
+                //clock.setRampPower(currentRampPosition);
             }
 
             if(gamepad2.dpad_up)

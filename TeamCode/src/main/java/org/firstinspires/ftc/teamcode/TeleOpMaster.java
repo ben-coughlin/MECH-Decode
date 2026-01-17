@@ -127,26 +127,22 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
 
         // limelight
         isAutoAiming = autoAimToggle.getState();
-        LLResult result = Limelight.getCurrResult();
-        Pose2D pos = odo.pos; //try not to flood odo with reads
+        Pose2D pos = odo.pos; // try not to flood odo with reads
+        LLResult currVision = Limelight.getCurrResult();
+        boolean hasValidVision = currVision != null
+                && currVision.isValid()
+                && isCorrectGoalTag(VisionUtils.getTagId(currVision));
 
-        if (result != null && result.isValid() && !VisionUtils.isTagObelisk(VisionUtils.getTagId(result))
-                && isCorrectGoalTag(VisionUtils.getTagId(result))) {
-            double llError = result.getTx();
-            turret.aimTurret(result.isValid(), llError, gamepad2.right_stick_x, Limelight.getDistance(), pos.getX(DistanceUnit.INCH), odo.pos.getY(DistanceUnit.INCH), odo.pos.getHeading(AngleUnit.DEGREES), turret.getTurretDeg());
-        } else {
-            // use 999 to ensure that we default to the safer, long range aim controller
-            turret.aimTurret(
-                    false,
-                    0,
-                    gamepad1.right_stick_x,
-                    999,
-                    pos.getX(DistanceUnit.INCH),
-                    pos.getY(DistanceUnit.INCH),
-                    Math.toDegrees(pos.getHeading(AngleUnit.RADIANS)),
-                    turret.getTurretDeg()
-            );
-        }
+
+        // ALWAYS call aimTurret - it will use odometry if vision is lost
+        turret.aimTurret(
+                hasValidVision,
+                hasValidVision ? Limelight.getCurrResult().getTx() : 0,
+                gamepad2.right_stick_x,
+                Limelight.getDistance(),
+                pos.getHeading(AngleUnit.DEGREES),
+                odo.getVelocityComponents()[2]
+        );
 
 
         // honestly no idea why there are two separate statements but it works :P
@@ -176,7 +172,8 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
             }
             // cancels the shot
             else if (gamepad1.circle || gamepad2.circle) {
-                turret.turnOffFlywheel();
+                shooterSubsystem.stopShot();
+
             }
         }
 
@@ -193,9 +190,10 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
         if (programStage == progStates.SHOOT_PREP.ordinal()) {
             if (stageFinished) {
                 initializeStateVariables();
-                turret.turnOnFlywheel();
+                shooterSubsystem.spinUp();
             }
-            if (SystemClock.uptimeMillis() - stateStartTime > getShootPrepTime()) {
+            shooterSubsystem.updateSpin();
+            if (shooterSubsystem.isFlywheelReady) {
                 nextStage(progStates.READY_TO_SHOOT.ordinal());
             }
         }
@@ -205,19 +203,18 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
                 initializeStateVariables();
                 gamepad1.rumble(1, 1, 200);
                 gamepad2.rumble(1, 1, 200);
-                turret.turnOnFlywheel();
             }
         }
 
         if (programStage == progStates.FIRE_BALL.ordinal()) {
+            shooterSubsystem.updateSpin();
             if (stageFinished) {
+                stageFinished = false;
                 initializeStateVariables();
             }
-
-            if (SystemClock.uptimeMillis() - stateStartTime > getClockShootTime()) {
-                clock.moveClockToShootPosition();
-            }
-            if (SystemClock.uptimeMillis() - stateStartTime > getShotCompleteTime()) {
+            shooterSubsystem.startShotSequence();
+            //use the shooterSubsys booleans instead of our own timers because shooterSubsys is a strong independent woman that can handle itself - and so we don't double-time stuff
+            if (!shooterSubsystem.isShotInProgress) {
                 //we reset the clock in idle so no need to do it here
                 nextStage(progStates.IDLE.ordinal());
             }

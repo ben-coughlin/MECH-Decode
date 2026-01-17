@@ -18,7 +18,6 @@ public abstract class RobotMasterPinpoint extends OpMode {
     //hardware - - - - - -
     MecanumDrivePinPoint drive = null;
     Odo odo = null;
-    ColorSensor colorSensor = null;
     Limelight limelight = null;
     IntakeSubsystem intakeSubsystem = null;
     Turret turret = null;
@@ -94,13 +93,12 @@ public abstract class RobotMasterPinpoint extends OpMode {
     public void init() {
 
         drive = new MecanumDrivePinPoint(hardwareMap);
-        colorSensor = new ColorSensor(hardwareMap);
         limelight = new Limelight(hardwareMap);
         intakeSubsystem = new IntakeSubsystem(hardwareMap);
         odo = new Odo(hardwareMap);
         turret = new Turret(hardwareMap);
         clock = new Clock(hardwareMap);
-        shooterSubsystem = new ShooterSubsystem(intakeSubsystem, clock, turret, colorSensor);
+        shooterSubsystem = new ShooterSubsystem(clock, turret);
 
 
 
@@ -148,6 +146,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
         programStage = 0;
         obelisk = limelight.updateObelisk(false);
         if(obelisk == null) {obelisk = new Pattern(Pattern.Ball.EMPTY, Pattern.Ball.EMPTY, Pattern.Ball.EMPTY);} //uh oh someone set the bot up wrong
+
     }
     @Override
     public void stop()
@@ -184,7 +183,6 @@ public abstract class RobotMasterPinpoint extends OpMode {
         lastLoopTime = now;
 
         //read everything once and only once per loop
-        colorSensor.updateDetection();
         limelight.updateLimelight();
         odo.updateOdo();
         turret.updateTurret();
@@ -205,7 +203,6 @@ public abstract class RobotMasterPinpoint extends OpMode {
         pose.displayPoseTelemetry(telemetry, pose, odo.getVelocityComponents()[0], odo.getVelocityComponents()[1], (odo.getHeading() - lastHeading) / dt);
         odo.showOdoTelemetry(telemetry);
         turret.showAimTelemetry(telemetry);
-        colorSensor.showColorSensorTelemetry(telemetry);
 
 
 

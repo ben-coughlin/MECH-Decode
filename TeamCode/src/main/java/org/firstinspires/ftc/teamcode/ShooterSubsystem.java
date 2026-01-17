@@ -5,10 +5,9 @@ import android.util.Log;
 
 public class ShooterSubsystem {
 
-    private final IntakeSubsystem intakeSubsystem;
     private final Clock clock;
     private final Turret turret;
-    private final ColorSensor colorSensor;
+
 
     public boolean isFlywheelReady = false;
     public boolean isShotInProgress = false; //todo: change this back to private after debugging
@@ -17,15 +16,24 @@ public class ShooterSubsystem {
     private long flywheelStartTime = 0;
     private long shotStartTime = 0;
     public int shotsRemaining = 0; //todo: change this back to private after debugging
+    private boolean isStopRequested = false;
 
 
 
-    public ShooterSubsystem(IntakeSubsystem intakeSubsystem, Clock clock, Turret turret, ColorSensor colorSensor) {
-        this.intakeSubsystem = intakeSubsystem;
+    public ShooterSubsystem(Clock clock, Turret turret) {
         this.clock = clock;
         this.turret = turret;
-        this.colorSensor = colorSensor;
     }
+
+    public void stopShot()
+    {
+        isStopRequested = true;
+        turret.turnOffFlywheel();
+        clock.resetClock();
+        clock.stopRamp();
+        isStopRequested = false;
+    }
+
 
     /** Call ONCE to begin flywheel spin up */
     public void spinUp() {
@@ -33,7 +41,7 @@ public class ShooterSubsystem {
             turret.turnOnFlywheel();
             flywheelStartTime = SystemClock.uptimeMillis();
             Log.i("ShooterSubsystem", "SpinUp called at " + flywheelStartTime);
-
+            isShotInProgress = true;
         }
     }
 
@@ -44,25 +52,24 @@ public class ShooterSubsystem {
                     (SystemClock.uptimeMillis() - flywheelStartTime));
 
             isFlywheelReady = true;
+            clock.setRampToShootPower();
+            clock.setClockToPreShootPosition();
         }
     }
 
     /** Begin shooting sequence */
     public void startShotSequence() {
         if (!isFlywheelReady) return;
-        clock.moveRampToShootPower();
-        shotStartTime = SystemClock.uptimeMillis();
 
-        if (SystemClock.uptimeMillis() - shotStartTime >= 600)
-        {
+        shotStartTime = SystemClock.uptimeMillis();
             clock.moveClockToShootPosition();
-        }
-        if (SystemClock.uptimeMillis() - shotStartTime >= 1200)
+        if ((SystemClock.uptimeMillis() - shotStartTime >= 800) || isStopRequested)
         {
             turret.turnOffFlywheel();
             clock.resetClock();
             clock.stopRamp();
             isFlywheelReady = false;
+            isShotInProgress = false;
         }
 
         Log.i("ShooterSubsystem", "shot seq started at " + shotStartTime);
