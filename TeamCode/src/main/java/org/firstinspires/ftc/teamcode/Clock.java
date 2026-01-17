@@ -10,9 +10,8 @@ public class Clock {
     private Servo clock;
     private CRServo ramp;
     private DcMotorEx encoder;
-    private final double CLOCK_INIT = 0.5;
-    private final double CLOCK_PRE_SHOOT = .59;
-    private final double CLOCK_SHOOT = .75;
+    private final double CLOCK_INIT = 0.05;
+    private final double CLOCK_SHOOT = .525;
     private final double RAMP_INIT = 0;
     private final double RAMP_SHOOT = 1;
     private final int ENCODER_INIT = 0;
@@ -46,10 +45,7 @@ public class Clock {
     {
         clock.setPosition(CLOCK_SHOOT);
     }
-    public void setClockToPreShootPosition()
-    {
-        clock.setPosition(CLOCK_PRE_SHOOT);
-    }
+
 
     public void setRampToShootPower()
     {

@@ -53,7 +53,7 @@ public class ShooterSubsystem {
 
             isFlywheelReady = true;
             clock.setRampToShootPower();
-            clock.setClockToPreShootPosition();
+
         }
     }
 

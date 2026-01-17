@@ -173,7 +173,7 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
             // cancels the shot
             else if (gamepad1.circle || gamepad2.circle) {
                 shooterSubsystem.stopShot();
-
+                nextStage(progStates.IDLE.ordinal());
             }
         }
 
