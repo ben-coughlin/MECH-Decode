@@ -6,7 +6,6 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 @TeleOp(name = "Clock Tuning")
 public class ClockTuning extends LinearOpMode {
     private double currentClockPosition = 0.5;
-    private double currentRampPosition = 0.5;
     private double motorPower = 1;
     private final double SERVO_INCREMENT = 0.025;
 
@@ -17,6 +16,7 @@ public class ClockTuning extends LinearOpMode {
     boolean lastDpadLeft = false;
     boolean lastDpadRight = false;
     boolean lastCircle = false; // Added for flywheel toggle if needed
+    boolean rampOn = false;
 
     @Override
     public void runOpMode() {
@@ -34,6 +34,7 @@ public class ClockTuning extends LinearOpMode {
         while (opModeIsActive()) {
             clock.clockUpdate();
             turret.updateTurret();
+
 //            limelight.updateLimelight();
 //            LLResult result = Limelight.getCurrResult();
 //            double distanceToTag = Limelight.getDistance();
@@ -58,15 +59,14 @@ public class ClockTuning extends LinearOpMode {
             }
             lastDpadDown = gamepad1.dpad_down;
 
-            // RAMP: Increment on DPAD LEFT press
-            if (gamepad1.dpad_left && !lastDpadLeft) {
-                currentRampPosition += SERVO_INCREMENT;
-            }
-            lastDpadLeft = gamepad1.dpad_left;
-
             // RAMP: Decrement on DPAD RIGHT press
             if (gamepad1.dpad_right && !lastDpadRight) {
-                currentRampPosition -= SERVO_INCREMENT;
+                 clock.setRampPower(-0.75);
+                 rampOn = true;
+            }
+            else if (gamepad1.dpad_left && ! lastDpadRight) {
+                clock.setRampPower(0);
+                rampOn = false;
             }
             lastDpadRight = gamepad1.dpad_right;
 
@@ -81,7 +81,7 @@ public class ClockTuning extends LinearOpMode {
 
             if(gamepad1.triangle)
             {
-                clock.setRampToShootPower();
+                clock.moveRampToShootPower();
                 clock.moveClockToShootPosition();
             }
             if(gamepad1.square)
@@ -89,14 +89,22 @@ public class ClockTuning extends LinearOpMode {
                 clock.stopRamp();
                 clock.resetClock();
             }
+            if(gamepad1.start)
+            {
+                clock.setClockPos(0.050);
+                clock.setRampPower(-0.75);
+            }
+            else if(gamepad1.options)
+            {
+                clock.setClockPos(0.525);
+                clock.setRampPower(0);
+            }
             // --- BOUNDARY CHECKS & UPDATES ---
             currentClockPosition = Math.max(0.0, Math.min(1.0, currentClockPosition));
-            currentRampPosition = Math.max(0.0, Math.min(1.0, currentRampPosition));
 
             if(gamepad1.cross)
             {
                 clock.setClockPos(currentClockPosition);
-                //clock.setRampPower(currentRampPosition);
             }
 
             if(gamepad2.dpad_up)
@@ -111,8 +119,8 @@ public class ClockTuning extends LinearOpMode {
             // --- TELEMETRY ---
             telemetry.addLine("--- Clock & Ramp Tuning ---");
             //      telemetry.addData("Distance to Tag (in)", "%.2f", distanceToTag);
-            telemetry.addData("Clock Position", "%.3f", currentClockPosition);
-            telemetry.addData("Ramp Position", "%.3f", currentRampPosition);
+            telemetry.addData("Clock Position", currentClockPosition);
+            telemetry.addData("Ramp On?", rampOn);
             //   telemetry.addData("Flywheel Power", "%.2f", turret.flywheelRight.getPower());
 
             // This is useful to see if your Limelight is actually getting data

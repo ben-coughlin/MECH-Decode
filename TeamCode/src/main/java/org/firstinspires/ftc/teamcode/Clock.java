@@ -80,9 +80,9 @@ public class Clock {
         clock.setPosition(pos);
 
     }
-    void setRampPower(double pos)
+    void setRampPower(double pwr)
     {
-        ramp.setPower(pos);
+        ramp.setPower(pwr);
     }
 
 
