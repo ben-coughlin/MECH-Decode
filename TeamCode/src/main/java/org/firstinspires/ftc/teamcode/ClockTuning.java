@@ -89,6 +89,16 @@ public class ClockTuning extends LinearOpMode {
                 clock.stopRamp();
                 clock.resetClock();
             }
+            if(gamepad1.start)
+            {
+                clock.setClockPos(0.050);
+                clock.setRampPower(-0.75);
+            }
+            else if(gamepad1.options)
+            {
+                clock.setClockPos(0.525);
+                clock.setRampPower(0);
+            }
             // --- BOUNDARY CHECKS & UPDATES ---
             currentClockPosition = Math.max(0.0, Math.min(1.0, currentClockPosition));
 
