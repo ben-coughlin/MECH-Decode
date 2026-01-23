@@ -13,11 +13,6 @@ public class AutoBlue extends AutoMaster {
     }
 
     @Override
-    protected double getManualAimSpeed() {
-        return -0.37;
-    }
-
-    @Override
     protected CurvePoint getShootPreloadEndPoint() {
         return new CurvePoint(-31, 0, 0.8 * SCALE_FACTOR, 0.30 * SCALE_FACTOR, 10, 10, Math.toRadians(60), 0.3);
     }
@@ -49,7 +44,7 @@ public class AutoBlue extends AutoMaster {
 
     @Override
     protected CurvePoint getIntakeFirstThreeBallsEndPoint() {
-        return new CurvePoint(-6, 29, 0.115 * SCALE_FACTOR, 0.6 * SCALE_FACTOR, 10, 10, Math.toRadians(60), 0.3);
+        return new CurvePoint(0, 29, 0.3 * SCALE_FACTOR, 0.6 * SCALE_FACTOR, 10, 10, Math.toRadians(60), 0.3);
     }
 
     @Override
@@ -61,6 +56,7 @@ public class AutoBlue extends AutoMaster {
     protected int getIntakeFirstThreeBallsFollowCurveTolerance() {
         return 1;
     }
+
 
     @Override
     protected CurvePoint getShootingPointEndPoint() {
@@ -79,7 +75,7 @@ public class AutoBlue extends AutoMaster {
 
     @Override
     protected CurvePoint getSecondThreeBallsEndPoint() {
-        return new CurvePoint(-33, 55, 0.8 * SCALE_FACTOR, 0.1 * SCALE_FACTOR, 15, 15, Math.toRadians(60), 0.3);
+        return new CurvePoint(-31, 55, 0.8 * SCALE_FACTOR, 0.1 * SCALE_FACTOR, 35, 35, Math.toRadians(60), 0.3);
     }
 
     @Override
@@ -89,17 +85,13 @@ public class AutoBlue extends AutoMaster {
 
     @Override
     protected int getSecondThreeBallsFollowCurveTolerance() {
-        return 1;
+        return 5;
     }
 
-    @Override
-    protected void onDriveToSecondThreeBallsComplete() {
-        nextStage(progStates.endBehavior.ordinal());
-    }
 
     @Override
     protected CurvePoint getIntakeSecondThreeBallsEndPoint() {
-        return new CurvePoint(-6, 55, 0.115 * SCALE_FACTOR, 1 * SCALE_FACTOR, 15, 15, Math.toRadians(60), 0.3);
+        return new CurvePoint(-2, 53, 0.27 * SCALE_FACTOR, 0.1 * SCALE_FACTOR, 35, 35, Math.toRadians(65), 0.3);
     }
 
     @Override
@@ -113,14 +105,30 @@ public class AutoBlue extends AutoMaster {
     }
 
     @Override
-    protected void onIntakeSecondThreeBallsComplete() {
-        isLookingAtObelisk = false;
-        if ((startTime - SystemClock.uptimeMillis()) * 1000 > 26 && clock.isAtShootPosition()) {
-            nextStage(progStates.endBehavior.ordinal());
-        } else {
-            nextStage(progStates.driveToShootPointToEnd.ordinal());
-        }
+    protected CurvePoint getDriveToThirdThreeBallsPoint()
+    {
+        return new CurvePoint(-33, 71, 0.3 * SCALE_FACTOR, 0 * SCALE_FACTOR, 15, 15, Math.toRadians(60), 0.5);
+
     }
+    @Override
+    protected double getDriveToThirdThreeBallsHeading()
+    {
+        return Math.toRadians(45);
+    }
+    @Override
+    protected CurvePoint getIntakeThirdThreeBallsPoint()
+    {
+        return new CurvePoint(-4, 71, 0.3 * SCALE_FACTOR, 0 * SCALE_FACTOR, 15, 15, Math.toRadians(60), 0.5);
+
+    }
+
+    @Override
+    protected double getIntakeThirdThreeBallsHeading()
+    {
+        return Math.toRadians(90);
+    }
+
+
 
     @Override
     protected CurvePoint getShootPointToEndEndPoint() {
@@ -139,7 +147,7 @@ public class AutoBlue extends AutoMaster {
 
     @Override
     protected CurvePoint getDriveOutsideShootZoneEndPoint() {
-        return new CurvePoint(-31, 35, 1 * SCALE_FACTOR, 1 * SCALE_FACTOR, 15, 15, Math.toRadians(60), 0.3);
+        return new CurvePoint(-13, 35, 1 * SCALE_FACTOR, 1 * SCALE_FACTOR, 15, 15, Math.toRadians(60), 0.3);
     }
 
     @Override

@@ -26,7 +26,7 @@ public final class MecanumDrivePinPoint {
     public final DcMotorEx leftFront, leftBack, rightBack, rightFront;
 
     public final VoltageSensor voltageSensor;
-
+    public static boolean isStopCommanded = false;
 
 
     public MecanumDrivePinPoint(HardwareMap hwMap) {
@@ -161,11 +161,14 @@ public final class MecanumDrivePinPoint {
         maxPower = Math.max(maxPower, Math.abs(backRightPower));
         maxPower = Math.max(maxPower, Math.abs(backLeftPower));
 
+        if(!isStopCommanded)
+        {
+            leftFront.setPower(maxSpeed * (frontLeftPower / maxPower));
+            rightFront.setPower(maxSpeed * (frontRightPower / maxPower));
+            leftBack.setPower(maxSpeed * (backLeftPower / maxPower));
+            rightBack.setPower(maxSpeed * (backRightPower / maxPower));
+        }
 
-        leftFront.setPower(maxSpeed * (frontLeftPower / maxPower));
-        rightFront.setPower(maxSpeed * (frontRightPower / maxPower));
-        leftBack.setPower(maxSpeed * (backLeftPower / maxPower));
-        rightBack.setPower(maxSpeed * (backRightPower / maxPower));
     }
 
 

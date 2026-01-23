@@ -36,7 +36,6 @@ public class Odo
     public void updateOdo()
     {
         odo.update();
-        startLoopTime = SystemClock.uptimeMillis();
         pos = odo.getPosition();
 
         velocityComponents[0] = odo.getVelX(DistanceUnit.INCH);
@@ -92,6 +91,16 @@ public class Odo
     {
         String data = String.format(Locale.US, "{X: %d, Y: %d}", odo.getEncoderX(), odo.getEncoderY());
         telemetry.addData("Raw Encoder Values", data);
+    }
+    public void resetOdo()
+    {
+        MecanumDrivePinPoint.isStopCommanded = true;
+        odo.recalibrateIMU();
+
+        MecanumDrivePinPoint.isStopCommanded = false;
+
+
+
     }
 
 

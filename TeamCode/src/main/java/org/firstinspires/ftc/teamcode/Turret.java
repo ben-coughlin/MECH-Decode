@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import android.util.Log;
-
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -12,7 +10,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 import java.util.Locale;
 
@@ -23,21 +20,21 @@ public class Turret
     private final double TURRET_MAX_LIMIT_TICKS = 450;
     private static final double FLYWHEEL_TICKS_PER_REVOLUTION = 28;
     private double lastTurretPower = 0.0;
-    private final double TURRET_SLEW_RATE = 0.1;
+    private final double TURRET_SLEW_RATE = 0.11;
     private final DcMotorEx turret;
     public final DcMotorEx flywheelLeft;
     public final DcMotorEx flywheelRight;
     private final Servo hood;
     private VoltageSensor voltageSensor;
-    private final PIDFController autoAimClose = new PIDFController(0.0055, 0.000001, 0.0014, 0.096);
+    private final PIDFController autoAimClose = new PIDFController(0.0061, 0.000001, 0.0014, 0.096);
     private final PIDFController autoAimFar = new PIDFController(0.007, 0.0001, 0.0009, 0.08);
     private PIDFController activeAutoAimController;
-    private static final double GAIN_SCHEDULING_DISTANCE_THRESHOLD = 72.0;
+    private static final double GAIN_SCHEDULING_DISTANCE_THRESHOLD = 67.0; // ( ͡°👅 ͡°)
     private double turretDeg;
     private double turretPower;
     private double errorToUse = 0;
     private double hoodPos;
-    private double targetRPM;
+    private double targetPower;
     private double currVoltage;
     private final double NOMINAL_VOLTAGE = 12.0;
     private boolean isFlywheelOn;
@@ -45,8 +42,8 @@ public class Turret
     // Multi-stage compensation constants
     private static final double VELOCITY_COMPENSATION_DURATION_MS = 200;
     private static final double HEADING_COMPENSATION_DURATION_MS = 1000;
-    private static final double RETURN_TO_CENTER_DURATION_MS = 2000;
-    private static final double ROTATIONAL_COMPENSATION_GAIN = 0.2; // Tune this
+    private static final double RETURN_TO_CENTER_DURATION_MS = 1500;
+    private static final double ROTATIONAL_COMPENSATION_GAIN = 0.33; // Tune this
 
     // Tracking state
     private enum CompensationMode {
@@ -63,17 +60,19 @@ public class Turret
     private boolean hasSeenTargetThisSession = false;
     private boolean wasTargetVisibleLastLoop = false;
     private double headingVelocityAtEndOfVeloCompensation = 0;
-    private final double HEADING_VELOCITY_COMPENSATION_FACTOR = 0.2;
+    private final double HEADING_VELOCITY_COMPENSATION_FACTOR = 0.4;
 
     private final double[][] launchAngleLookupTable = {
-            { 25, 0.61, 4000},
-            { 36, 0.75, 4050},
-            {42, .77, 4500},
-            {48, .787, 4500},
-            { 60, 0.795, 4800 },
-            { 70, 0.810, 5200 },
-            { 93, 0.765, 5400 },
-            { 125, 0.8, 6000 }
+            { 23, 0.77, 0.725},
+            { 30, 0.755, 0.8},
+            {35, .755, 0.8},
+            {46, .75, .825},
+            { 60, 0.765, .85},
+            { 67, 0.77, .875},
+            { 72, 0.755, .875 },
+            { 95, .98, 0.975 },
+            { 100, 1, 1 }
+
     };
 
     public Turret(HardwareMap hwMap)
@@ -114,12 +113,15 @@ public class Turret
         currVoltage = voltageSensor.getVoltage();
 
         hood.setPosition(getServoPositionFromDistance(currentDistance));
+        targetPower = getPowerFromDistance(currentDistance);
         if ((isFlywheelOn)) {
-            setFlywheelVelocity(getPowerFromDistance(currentDistance));
+            flywheelRight.setPower(targetPower);
+            flywheelLeft.setPower(targetPower);
         } else {
-            setFlywheelVelocity(0);
+            flywheelLeft.setPower(0);
+            flywheelRight.setPower(0);
         }
-        targetRPM = getPowerFromDistance(currentDistance);
+
     }
 
     /**
@@ -134,7 +136,7 @@ public class Turret
     public void aimTurret(boolean hasValidTarget, double limelightError, double manualTurnInput,
                           double distance, double robotHeading, double robotHeadingVelocity) {
         double calculatedPower;
-        boolean useAutoAim = (hasValidTarget || hasSeenTargetThisSession) && !(manualTurnInput > 0.05);
+        boolean useAutoAim = !(Math.abs(manualTurnInput) > 0.05) && (hasValidTarget || hasSeenTargetThisSession);
 
         if (useAutoAim) {
             double errorToUse;
@@ -308,9 +310,6 @@ public class Turret
         double targetTicksPerSecond = targetRPM * (FLYWHEEL_TICKS_PER_REVOLUTION / 60.0);
         flywheelRight.setVelocity(targetTicksPerSecond);
 
-        Log.i("Flywheel RPM (Real/Target)", String.format(Locale.US,"%.2f / %.2f",
-                flywheelRight.getVelocity() / FLYWHEEL_TICKS_PER_REVOLUTION * 60, targetRPM));
-
         double feedforwardPower = targetRPM / 6000.0;
         feedforwardPower = Range.clip(feedforwardPower, -1.0, 1.0);
         feedforwardPower *= (NOMINAL_VOLTAGE / currVoltage);
@@ -362,10 +361,10 @@ public class Turret
                 double distanceRatio = (distance - lowerBound[0]) / distanceRange;
 
                 return Range.clip((lowerBound[2] + (distanceRatio * powerRange)) *
-                        (NOMINAL_VOLTAGE / currVoltage), 4000, 6000);
+                        (NOMINAL_VOLTAGE / currVoltage), 0.65, 1);
             }
         }
-        return 6000;
+        return 0.9;
     }
 
     public void showAimTelemetry(Telemetry telemetry) {
@@ -378,7 +377,7 @@ public class Turret
                 getServoPositionFromDistance(Limelight.getDistance()));
         telemetry.addData("Flywheel RPM", flywheelRight.getVelocity() /
                 FLYWHEEL_TICKS_PER_REVOLUTION * 60);
-        telemetry.addData("Target RPM", targetRPM);
+        telemetry.addData("Target Power", targetPower);
         telemetry.addData("Motor Power (L/R)", String.format(Locale.US,"%.2f / %.2f",
                 flywheelLeft.getPower(), flywheelRight.getPower()));
         telemetry.addData("Current Voltage", currVoltage);

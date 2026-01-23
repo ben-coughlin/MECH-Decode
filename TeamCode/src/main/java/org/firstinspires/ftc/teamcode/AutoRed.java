@@ -10,10 +10,6 @@ public class AutoRed extends AutoMaster {
         return VisionUtils.isTagRedGoal(tagId);
     }
 
-    @Override
-    protected double getManualAimSpeed() {
-        return 0.23;
-    }
 
     @Override
     protected CurvePoint getShootPreloadEndPoint() {
@@ -47,7 +43,7 @@ public class AutoRed extends AutoMaster {
 
     @Override
     protected CurvePoint getIntakeFirstThreeBallsEndPoint() {
-        return new CurvePoint(-8, -29, 0.14 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10, Math.toRadians(60), 0.3);
+        return new CurvePoint(-3, -32, 0.24 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10, Math.toRadians(60), 0.3);
     }
 
     @Override
@@ -62,22 +58,22 @@ public class AutoRed extends AutoMaster {
 
     @Override
     protected CurvePoint getShootingPointEndPoint() {
-        return new CurvePoint(-33, -28, 0.8 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10, Math.toRadians(60), 0.3);
+        return new CurvePoint(-35, -28, 0.7 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 30, 10, Math.toRadians(60), 0.3);
     }
 
     @Override
     protected double getShootingPointHeading() {
-        return Math.toRadians(-90);
+        return Math.toRadians(0);
     }
 
     @Override
     protected int getShootingPointFollowCurveTolerance() {
-        return 2;
+        return 1;
     }
 
     @Override
     protected CurvePoint getSecondThreeBallsEndPoint() {
-        return new CurvePoint(-33, -53, 0.8 * SCALE_FACTOR, 1 * SCALE_FACTOR, 15, 15, Math.toRadians(60), 0.3);
+        return new CurvePoint(-35, -50, 0.8 * SCALE_FACTOR, 1 * SCALE_FACTOR, 30, 30, Math.toRadians(60), 0.3);
     }
 
     @Override
@@ -92,7 +88,7 @@ public class AutoRed extends AutoMaster {
 
     @Override
     protected CurvePoint getIntakeSecondThreeBallsEndPoint() {
-        return new CurvePoint(-8, -54, 0.15 * SCALE_FACTOR, 1 * SCALE_FACTOR, 15, 15, Math.toRadians(60), 0.3);
+        return new CurvePoint(1, -52, 0.27 * SCALE_FACTOR, 1 * SCALE_FACTOR, 35, 35, Math.toRadians(55), 0.3);
     }
 
     @Override
@@ -102,9 +98,33 @@ public class AutoRed extends AutoMaster {
 
     @Override
     protected int getIntakeSecondThreeBallsTolerance() {
-        return 1;
+        return 3;
     }
 
+    @Override
+    protected CurvePoint getDriveToThirdThreeBallsPoint()
+    {
+        return new CurvePoint(-33, -71, 0.3 * SCALE_FACTOR, 0 * SCALE_FACTOR, 20, 20, Math.toRadians(60), 0.5);
+
+    }
+    @Override
+    protected double getDriveToThirdThreeBallsHeading()
+    {
+        return Math.toRadians(180);
+    }
+
+    @Override
+    protected CurvePoint getIntakeThirdThreeBallsPoint()
+    {
+        return new CurvePoint(-4, -71, 0.3 * SCALE_FACTOR, 0 * SCALE_FACTOR, 10, 10, Math.toRadians(60), 0.5);
+
+    }
+
+    @Override
+    protected double getIntakeThirdThreeBallsHeading()
+    {
+        return Math.toRadians(80);
+    }
 
     @Override
     protected CurvePoint getShootPointToEndEndPoint() {
@@ -123,16 +143,19 @@ public class AutoRed extends AutoMaster {
 
     @Override
     protected CurvePoint getDriveOutsideShootZoneEndPoint() {
-        return new CurvePoint(-31, -35, 1 * SCALE_FACTOR, 1 * SCALE_FACTOR, 15, 15, Math.toRadians(60), 0.3);
+        return new CurvePoint(-13, -35, 0.8 * SCALE_FACTOR, 0.8 * SCALE_FACTOR, 10, 10, Math.toRadians(60), 0.3);
     }
 
     @Override
     protected double getDriveOutsideShootZoneHeading() {
-        return Math.toRadians(0);
+        return Math.toRadians(90);
     }
 
     @Override
     protected int getDriveOutsideShootZoneFollowCurveTolerance() {
         return 1;
     }
+
+
+
 }

@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.os.SystemClock;
+
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -10,8 +12,9 @@ public class Clock {
     private Servo clock;
     private CRServo ramp;
     private DcMotorEx encoder;
-    private final double CLOCK_INIT = 0.05;
-    private final double CLOCK_SHOOT = .525;
+    private final double CLOCK_INIT = 0.07;
+    private final double CLOCK_SHOOT = .515;
+    private final double CLOCK_PRE_SHOOT = .2;
     private final double RAMP_INIT = 0;
     private final double RAMP_SHOOT = 1;
     private final int ENCODER_INIT = 0;
@@ -20,14 +23,13 @@ public class Clock {
     private double currentRampPosition = 0;
     private int currentEncoderPosition = 0;
     private int POSITION_TOLERANCE = 20;
+    public long clockResetTime = 0;
 
     public Clock(HardwareMap hwMap) {
         clock = hwMap.get(Servo.class, "clock");
         ramp = hwMap.get(CRServo.class, "ramp");
         encoder = hwMap.get(DcMotorEx.class, "intake");
         ramp.setDirection(DcMotorSimple.Direction.REVERSE);
-        clock.setPosition(CLOCK_INIT);
-        ramp.setPower(RAMP_INIT);
         encoder.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
         encoder.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
         currentClockPosition = clock.getPosition();
@@ -36,6 +38,13 @@ public class Clock {
 
 
     }
+
+    public void initClock()
+    {
+        clock.setPosition(CLOCK_INIT);
+        ramp.setPower(RAMP_INIT);
+    }
+
     public void clockUpdate(){
         currentClockPosition = clock.getPosition();
         currentRampPosition = ramp.getPower();
@@ -45,8 +54,7 @@ public class Clock {
     {
         clock.setPosition(CLOCK_SHOOT);
     }
-
-
+    public void moveClockToPreShootPosition() {clock.setPosition(CLOCK_PRE_SHOOT);}
     public void setRampToShootPower()
     {
         ramp.setPower(RAMP_SHOOT);
@@ -54,7 +62,9 @@ public class Clock {
 
 
     public void resetClock(){
-        clock.setPosition(CLOCK_INIT);}
+        clock.setPosition(CLOCK_INIT);
+
+    }
     public void stopRamp(){ramp.setPower(RAMP_INIT);}
 
 

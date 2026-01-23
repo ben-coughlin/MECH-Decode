@@ -16,18 +16,17 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
 
     protected final double SCALE_FACTOR = 0.9;
     protected long startTime = 0;
-    protected int cycle = 0;
-    protected int driveToGetSampleCycle = 0;
+
     protected boolean hasFinishedManualAim = false;
     protected boolean isLookingAtObelisk = true;
     protected boolean past5In = false;
-    protected double cutOffTime = 22.5;
-    protected String currentState;
-    public int overallCycleToChamber = 0;
+
 
     protected static final String SIMULATOR_HOST = "192.168.43.22";
     protected static final int SIMULATOR_PORT = 7777;
-    public static boolean pickupOffWall = false;
+    private boolean hasClockStartedResetting = false;
+
+
 
     protected enum progStates {
         driveBackwardsFromStartToShootPreload,
@@ -44,9 +43,10 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
         SHOOT,
         endBehavior
     }
+    private int stageAfterShootPointOrdinal = progStates.driveToFirstThreeBalls.ordinal();
 
     protected abstract boolean isCorrectGoalTag(int tagId);
-    protected abstract double getManualAimSpeed();
+
 
     // Override these for alliance-specific coordinates and headings
     protected abstract CurvePoint getShootPreloadEndPoint();
@@ -76,23 +76,22 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
     protected abstract CurvePoint getShootPointToEndEndPoint();
     protected abstract double getShootPointToEndHeading();
     protected abstract int getShootPointToEndFollowCurveTolerance();
-
     protected abstract CurvePoint getDriveOutsideShootZoneEndPoint();
     protected abstract double getDriveOutsideShootZoneHeading();
     protected abstract int getDriveOutsideShootZoneFollowCurveTolerance();
+    protected abstract CurvePoint getIntakeThirdThreeBallsPoint();
+    protected abstract double getIntakeThirdThreeBallsHeading();
+    protected abstract CurvePoint getDriveToThirdThreeBallsPoint();
+    protected abstract double getDriveToThirdThreeBallsHeading();
 
-    // Legacy from Center Stage season
-    protected HashMap<Integer, PointDouble> purpleDrop = new HashMap<Integer, PointDouble>() {{
-        put(0, new PointDouble(105, 26));
-        put(1, new PointDouble(103.24, 35));
-        put(2, new PointDouble(109.62, 36.8));
-    }};
+
 
     @Override
     public void init() {
         super.init();
         //spindexer.setInventory(new Pattern(Pattern.Ball.GREEN, Pattern.Ball.PURPLE, Pattern.Ball.PURPLE)); //todo: we might  need a motif method, check later
         isAuto = true;
+        clock.initClock();
     }
 
     @Override
@@ -109,30 +108,22 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
     @Override
     public void mainLoop() {
         super.mainLoop();
-        Pose2D pos = odo.pos;
+        Pose2D pos = odo.pos; // try not to flood odo with reads
+        LLResult currVision = Limelight.getCurrResult();
+        boolean hasValidVision = currVision != null
+                && currVision.isValid()
+                && isCorrectGoalTag(VisionUtils.getTagId(currVision));
 
-        if (!isLookingAtObelisk) {
-            LLResult currVision = Limelight.getCurrResult();
-            boolean hasValidVision = currVision != null
-                    && currVision.isValid()
-                    && isCorrectGoalTag(VisionUtils.getTagId(currVision));
 
-            // ALWAYS call aimTurret
-            turret.aimTurret(hasValidVision, hasValidVision ? Limelight.getCurrResult().getTx() : 0, 0, Limelight.getDistance(), pos.getX(DistanceUnit.INCH), odo.getVelocityComponents()[2]);
-            hasFinishedManualAim = true;
-
-        } else {
-            // Manual aiming at obelisk
-            turret.aimTurret(false, 0, 0, Limelight.getDistance(), pos.getX(DistanceUnit.INCH), odo.getVelocityComponents()[2]);
-
-            // Check if we can see goal tag to exit manual mode
-            if (Limelight.getCurrResult() != null
-                    && Limelight.getCurrResult().isValid()
-                    && isCorrectGoalTag(VisionUtils.getTagId(Limelight.getCurrResult()))) {
-                turret.resetEncoder();
-                isLookingAtObelisk = false;
-            }
-        }
+        // ALWAYS call aimTurret - it will use odometry if vision is lost
+        turret.aimTurret(
+                hasValidVision,
+                hasValidVision ? Limelight.getCurrResult().getTx() : 0,
+                gamepad2.right_stick_x,
+                Limelight.getDistance(),
+                pos.getHeading(AngleUnit.DEGREES),
+                odo.getVelocityComponents()[2]
+        );
 
         Log.i("DEBUG", "Current stage: " + programStage + " = " + progStates.values()[programStage].name());
         Log.i("DEBUG", "=== LOOP START === Stage: " + programStage + " = " + progStates.values()[programStage].name());
@@ -163,17 +154,16 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
             handleIntakeSecondThreeBalls();
         }
 
-        if (programStage == progStates.driveToShootPointToEnd.ordinal()) {
-            handleDriveToShootPointToEnd();
-        }
 
-        if (programStage == progStates.driveOutsideOfShootZoneToEnd.ordinal()) {
-            handleDriveOutsideOfShootZoneToEnd();
+        if(programStage == progStates.driveToThirdThreeBalls.ordinal())
+        {
+            handleDriveToThirdThreeBalls();
         }
 
         if (programStage == progStates.intakeThirdThreeBalls.ordinal()) {
             handleIntakeThirdThreeBalls();
         }
+
 
         if (programStage == progStates.SHOOT_PREP.ordinal()) {
             handleShootPrep();
@@ -185,6 +175,10 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
 
         if (programStage == progStates.endBehavior.ordinal()) {
             handleEndBehavior();
+        }
+        if(programStage == progStates.driveOutsideOfShootZoneToEnd.ordinal())
+        {
+            handleDriveOutsideOfShootZoneToEnd();
         }
     }
 
@@ -238,6 +232,7 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
         if (Movement.followCurve(points, getIntakeFirstThreeBallsHeading(), getIntakeFirstThreeBallsFollowCurveTolerance())) {
             drive.stopAllMovementDirectionBased();
             shooterSubsystem.isFlywheelSpun = true;
+            stageAfterShootPointOrdinal = getStageAfterShootPointOrdinal(progStates.intakeFirstThreeBalls.ordinal());
             nextStage(progStates.driveToShootingPoint.ordinal());
         }
         drive.applyMovementDirectionBased();
@@ -247,9 +242,8 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
         if (stageFinished) {
             past5In = false;
             initializeStateVariables();
-            shooterSubsystem.isFlywheelReady = false;
             shooterSubsystem.spinUp();
-            intakeSubsystem.turnIntakeOff();
+
         }
         shooterSubsystem.updateSpin();
 
@@ -258,9 +252,8 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
         points.add(getShootingPointEndPoint());
 
         if (Movement.followCurve(points, getShootingPointHeading(), getShootingPointFollowCurveTolerance())) {
-            intakeSubsystem.turnIntakeOff();
             drive.stopAllMovementDirectionBased();
-            nextStage(progStates.SHOOT_PREP.ordinal(), progStates.driveToSecondThreeBalls.ordinal());
+            nextStage(progStates.SHOOT_PREP.ordinal(), stageAfterShootPointOrdinal);
         }
         drive.applyMovementDirectionBased();
     }
@@ -277,14 +270,9 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
 
         if (Movement.followCurve(points, getSecondThreeBallsHeading(), getSecondThreeBallsFollowCurveTolerance())) {
             drive.stopAllMovementDirectionBased();
-            onDriveToSecondThreeBallsComplete();
+            nextStage(progStates.intakeSecondThreeBalls.ordinal());
         }
         drive.applyMovementDirectionBased();
-    }
-
-    // Hook method for alliance-specific behavior after second three balls
-    protected void onDriveToSecondThreeBallsComplete() {
-        nextStage(progStates.endBehavior.ordinal());
     }
 
     protected void handleIntakeSecondThreeBalls() {
@@ -299,41 +287,52 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
         points.add(new CurvePoint(stateStartingX, stateStartingY, 0, 0, 0, 0, 0, 0));
         points.add(getIntakeSecondThreeBallsEndPoint());
 
+
         if (Movement.followCurve(points, getIntakeSecondThreeBallsHeading(), getIntakeSecondThreeBallsTolerance())) {
             drive.stopAllMovementDirectionBased();
-            onIntakeSecondThreeBallsComplete();
+            stageAfterShootPointOrdinal = getStageAfterShootPointOrdinal(progStates.intakeSecondThreeBalls.ordinal());
+            nextStage(progStates.driveToShootingPoint.ordinal());
+
         }
         drive.applyMovementDirectionBased();
     }
 
-    // Hook method for alliance-specific behavior after intake second three balls
-    protected void onIntakeSecondThreeBallsComplete() {
-        if ((startTime - SystemClock.uptimeMillis()) * 1000 > 26) {
-            nextStage(progStates.endBehavior.ordinal());
-        } else {
-            nextStage(progStates.driveToShootPointToEnd.ordinal());
-        }
-    }
-
-    protected void handleDriveToShootPointToEnd() {
-        if (stageFinished) {
+    protected void handleDriveToThirdThreeBalls()
+    {
+        if(stageFinished)
+        {
             past5In = false;
             initializeStateVariables();
-            shooterSubsystem.isFlywheelReady = false;
-            shooterSubsystem.spinUp();
-            intakeSubsystem.turnIntakeOff();
         }
-        shooterSubsystem.updateSpin();
 
         ArrayList<CurvePoint> points = new ArrayList<>();
         points.add(new CurvePoint(stateStartingX, stateStartingY, 0, 0, 0, 0, 0, 0));
-        points.add(getShootPointToEndEndPoint());
+        points.add(getDriveToThirdThreeBallsPoint());
 
-        if (Movement.followCurve(points, getShootPointToEndHeading(), getShootPointToEndFollowCurveTolerance())) {
-            intakeSubsystem.turnIntakeOff();
+        if (Movement.followCurve(points, getDriveToThirdThreeBallsHeading(), 2)) {
             drive.stopAllMovementDirectionBased();
-            shooterSubsystem.isFlywheelSpun = true;
-            nextStage(progStates.SHOOT_PREP.ordinal(), progStates.driveOutsideOfShootZoneToEnd.ordinal());
+            nextStage(progStates.intakeThirdThreeBalls.ordinal());
+
+        }
+        drive.applyMovementDirectionBased();
+
+    }
+
+    protected void handleIntakeThirdThreeBalls() {
+        if (stageFinished) {
+            past5In = false;
+            intakeSubsystem.turnIntakeOn();
+            Log.i("DEBUG", "intakeThirdThreeBalls");
+        }
+
+        ArrayList<CurvePoint> points = new ArrayList<>();
+        points.add(new CurvePoint(stateStartingX, stateStartingY, 0, 0, 0, 0, 0, 0));
+        points.add(getIntakeThirdThreeBallsPoint());
+
+        if (Movement.followCurve(points, getIntakeThirdThreeBallsHeading(), 3)) {
+            drive.stopAllMovementDirectionBased();
+            stageAfterShootPointOrdinal = getStageAfterShootPointOrdinal(progStates.intakeThirdThreeBalls.ordinal());
+            nextStage(progStates.driveToShootingPoint.ordinal());
         }
         drive.applyMovementDirectionBased();
     }
@@ -349,28 +348,33 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
 
         if (Movement.followCurve(points, getDriveOutsideShootZoneHeading(), getDriveOutsideShootZoneFollowCurveTolerance())) {
             drive.stopAllMovementDirectionBased();
-            nextStage(progStates.endBehavior.ordinal());
+
         }
         drive.applyMovementDirectionBased();
     }
 
-    protected void handleIntakeThirdThreeBalls() {
-        if (stageFinished) {
-            past5In = false;
-            intakeSubsystem.turnIntakeOn();
-            Log.i("DEBUG", "intakeThirdThreeBalls");
-        }
-
-        ArrayList<CurvePoint> points = new ArrayList<>();
-        points.add(new CurvePoint(stateStartingX, stateStartingY, 0, 0, 0, 0, 0, 0));
-        points.add(new CurvePoint(-10, 71, 0.14 * SCALE_FACTOR, 0 * SCALE_FACTOR, 15, 15, Math.toRadians(60), 0.5));
-
-        if (Movement.followCurve(points, Math.toRadians(90), 1)) {
-            drive.stopAllMovementDirectionBased();
-            nextStage(progStates.endBehavior.ordinal());
-        }
-        drive.applyMovementDirectionBased();
-    }
+//    protected void handleDriveToShootPointToEnd() {
+//        if (stageFinished) {
+//            past5In = false;
+//            initializeStateVariables();
+//            shooterSubsystem.isFlywheelReady = false;
+//            shooterSubsystem.spinUp();
+//            intakeSubsystem.turnIntakeOff();
+//        }
+//        shooterSubsystem.updateSpin();
+//
+//        ArrayList<CurvePoint> points = new ArrayList<>();
+//        points.add(new CurvePoint(stateStartingX, stateStartingY, 0, 0, 0, 0, 0, 0));
+//        points.add(getShootPointToEndEndPoint());
+//
+//        if (Movement.followCurve(points, getShootPointToEndHeading(), getShootPointToEndFollowCurveTolerance())) {
+//            intakeSubsystem.turnIntakeOff();
+//            drive.stopAllMovementDirectionBased();
+//            shooterSubsystem.isFlywheelSpun = true;
+//            nextStage(progStates.SHOOT_PREP.ordinal(), progStates.driveOutsideOfShootZoneToEnd.ordinal());
+//        }
+//        drive.applyMovementDirectionBased();
+//    }
 
     protected void handleShootPrep() {
         if (stageFinished) {
@@ -380,17 +384,29 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
         shooterSubsystem.updateSpin();
 
         if (shooterSubsystem.isFlywheelReady) {
+            clock.moveClockToPreShootPosition();
             nextStage(progStates.SHOOT.ordinal());
         }
     }
 
     protected void handleShoot() {
-        shooterSubsystem.updateSpin();
         if (stageFinished) {
             stageFinished = false;
             initializeStateVariables();
+            intakeSubsystem.turnIntakeOff();
         }
         shooterSubsystem.startShotSequence();
+        if(!shooterSubsystem.isShotInProgress || SystemClock.uptimeMillis() - stateStartTime > 4000)
+        {
+            clock.resetClock();
+        }
+        if(SystemClock.uptimeMillis() - stateStartTime > 4800)
+        {
+            nextStage(stageAfterShotOrdinal);
+        }
+
+
+
     }
 
     protected void handleEndBehavior() {
@@ -400,4 +416,30 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
         }
         drive.stopAllMovementDirectionBased();
     }
+
+    /**
+     * determines what state we go to after the shoot point since we reuse that state
+     * @return int ordinal of the state to go to after we're done shooting
+     */
+    private int getStageAfterShootPointOrdinal(int ordinal)
+    {
+       if(ordinal == progStates.intakeFirstThreeBalls.ordinal())
+       {
+           return progStates.driveToSecondThreeBalls.ordinal();
+       }
+       else if(ordinal == progStates.intakeSecondThreeBalls.ordinal())
+       {
+           return progStates.driveOutsideOfShootZoneToEnd.ordinal();
+       }
+       else if(ordinal == progStates.intakeThirdThreeBalls.ordinal())
+       {
+           return progStates.driveOutsideOfShootZoneToEnd.ordinal();
+       }
+       else
+       {
+           //this shouldn't happen
+           return progStates.endBehavior.ordinal();
+       }
+    }
+
 }

@@ -1,8 +1,9 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-
+@Disabled
 @TeleOp(name = "Clock Tuning")
 public class ClockTuning extends LinearOpMode {
     private double currentClockPosition = 0.5;
@@ -81,7 +82,7 @@ public class ClockTuning extends LinearOpMode {
 
             if(gamepad1.triangle)
             {
-                clock.moveRampToShootPower();
+
                 clock.moveClockToShootPosition();
             }
             if(gamepad1.square)

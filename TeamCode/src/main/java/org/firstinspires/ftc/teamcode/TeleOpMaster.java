@@ -78,6 +78,7 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
     @Override
     public void start() {
         super.start();
+        clock.initClock();
     }
 
     @Override
@@ -101,6 +102,13 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
         squareToggle.updateToggle(gamepad1.square);
         autoAimToggle.updateToggle(gamepad2.guide);
         intakeToggle.updateToggle(gamepad1.right_trigger > 0.1);
+
+
+        if (gamepad1.guide)
+        {
+
+            odo.resetOdo();
+        }
 
         // driving stuff
         movement_y = gamepad1.left_stick_y;
@@ -145,9 +153,12 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
         );
 
 
+
+
         // honestly no idea why there are two separate statements but it works :P
         if (programStage == progStates.IDLE.ordinal()) {
             if (gamepad1.left_bumper || gamepad2.dpad_up) {
+                shooterSubsystem.isFlywheelReady = false;
                 nextStage(progStates.SHOOT_PREP.ordinal());
             } else if (gamepad1.left_trigger > 0.1) {
                 intakeSubsystem.turnIntakeOff();
@@ -161,6 +172,7 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
                 turret.turnOffFlywheel();
                 intakeSubsystem.turnIntakeOff();
                 clock.resetClock();
+                clock.stopRamp();
             }
         }
 
@@ -213,11 +225,11 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
                 initializeStateVariables();
             }
             shooterSubsystem.startShotSequence();
-            //use the shooterSubsys booleans instead of our own timers because shooterSubsys is a strong independent woman that can handle itself - and so we don't double-time stuff
-            if (!shooterSubsystem.isShotInProgress) {
-                //we reset the clock in idle so no need to do it here
+            if (gamepad1.circle || gamepad2.circle) {
+                shooterSubsystem.stopShot();
                 nextStage(progStates.IDLE.ordinal());
             }
+
         }
 
         if (programStage == progStates.OUTTAKE.ordinal()) {

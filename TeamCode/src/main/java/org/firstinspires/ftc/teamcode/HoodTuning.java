@@ -1,28 +1,38 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+@Disabled
 @TeleOp(name = "Hood Tuning")
 public class HoodTuning extends LinearOpMode {
-    private double currentServoPosition = 0;
-    private double motorPower = 1;
+    private double currentServoPosition = 0.5; // Start at middle position
+    private double motorPower = 0.0; // Start with motors off
+
+    private final double SERVO_INCREMENT = 0.005;
     private final double MOTOR_INCREMENT = 0.025;
 
     private final ElapsedTime timer = new ElapsedTime();
 
-    // State variables for shooting sequence
-    private boolean shootingSequenceActive = false;
+    // State variables
+    private boolean flywheelActive = false;
 
-    // Debounce for servo controls
+    // Debounce variables
     private boolean dpadUpPressed = false;
     private boolean dpadDownPressed = false;
     private boolean dpadLeftPressed = false;
     private boolean dpadRightPressed = false;
+    private boolean circlePressed = false;
+    private boolean crossPressed = false;
+    private boolean trianglePressed = false;
+    private boolean squarePressed = false;
+    private boolean rightTriggerPressed = false;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -30,67 +40,65 @@ public class HoodTuning extends LinearOpMode {
         Servo launchServo = hardwareMap.get(Servo.class, "hood");
         Turret turret = new Turret(hardwareMap);
         IntakeSubsystem intake = new IntakeSubsystem(hardwareMap);
-
-
-
-
-
+        Clock clock = new Clock(hardwareMap);
 
 
         telemetry.addData("Status", "Initialized");
-        telemetry.addLine("Place the robot in front of an AprilTag.");
-        telemetry.addLine("Use DPAD UP/DOWN to adjust the launcher angle, press the circle button to toggle the flywheel");
-        telemetry.addLine("Record the 'Distance' and 'Servo Position' for your lookup table.");
+        telemetry.addLine("=== CONTROLS ===");
+        telemetry.addLine("DPAD UP/DOWN: Adjust hood angle");
+        telemetry.addLine("DPAD LEFT/RIGHT: Adjust motor power");
+        telemetry.addLine("CIRCLE: Toggle flywheel ON");
+        telemetry.addLine("CROSS: Turn flywheel OFF");
+        telemetry.addLine("TRIANGLE: Shoot (move clock to shoot position)");
+        telemetry.addLine("SQUARE: Reset (move clock to pre-shoot position)");
+        telemetry.addLine("================");
         telemetry.update();
-
+        clock.initClock();
         waitForStart();
 
         while (opModeIsActive()) {
-
+            // Update limelight data
             limelight.updateLimelight();
             LLResult result = Limelight.getCurrResult();
             double distanceToTag = limelight.getDistanceToTag(result);
 
 
-           // turret.aimTurret(true, result.getTx(), gamepad1.right_stick_y, distanceToTag);
+            boolean hasValidVision = result != null
+                    && result.isValid();
 
-            if (gamepad1.circle && !shootingSequenceActive)
-            {
-                shootingSequenceActive = true;
+            // ALWAYS call aimTurret - it will use odometry if vision is lost
+            turret.aimTurret(
+                    hasValidVision,
+                    hasValidVision ? Limelight.getCurrResult().getTx() : 0,
+                    gamepad2.right_stick_x,
+                   999, //so we dont get annoying oscillation
+                    0,
+                    0
+            );
 
-                turret.flywheelRight.setPower(motorPower);
-                turret.flywheelLeft.setPower(motorPower);
-            }
-            if (gamepad1.cross) {
-                turret.flywheelRight.setPower(0);
-                turret.flywheelLeft.setPower(0);
-                shootingSequenceActive = false;
-            }
-
-
-
-            double SERVO_INCREMENT = 0.005;
+            // === HOOD SERVO CONTROLS ===
             if (gamepad1.dpad_up && !dpadUpPressed) {
                 currentServoPosition += SERVO_INCREMENT;
-
                 dpadUpPressed = true;
             } else if (!gamepad1.dpad_up) {
                 dpadUpPressed = false;
             }
-            if (gamepad1.dpad_down && !dpadDownPressed) {
-               currentServoPosition -= SERVO_INCREMENT;
 
+            if (gamepad1.dpad_down && !dpadDownPressed) {
+                currentServoPosition -= SERVO_INCREMENT;
                 dpadDownPressed = true;
             } else if (!gamepad1.dpad_down) {
                 dpadDownPressed = false;
             }
 
+            // === MOTOR POWER CONTROLS ===
             if (gamepad1.dpad_left && !dpadLeftPressed) {
                 motorPower += MOTOR_INCREMENT;
                 dpadLeftPressed = true;
             } else if (!gamepad1.dpad_left) {
                 dpadLeftPressed = false;
             }
+
             if (gamepad1.dpad_right && !dpadRightPressed) {
                 motorPower -= MOTOR_INCREMENT;
                 dpadRightPressed = true;
@@ -98,22 +106,85 @@ public class HoodTuning extends LinearOpMode {
                 dpadRightPressed = false;
             }
 
+           if(gamepad1.right_trigger > 0.05)
+           {
+               intake.turnIntakeOn();
+           }
+           else {
+               intake.turnIntakeOff();
+           }
 
-            // Constrain the servo position to the valid range [0.0, 1.0]
+            // === FLYWHEEL TOGGLE CONTROLS ===
+            if (gamepad1.circle && !circlePressed) {
+                flywheelActive = true;
+                turret.flywheelRight.setPower(motorPower);
+                turret.flywheelLeft.setPower(motorPower);
+                clock.setRampToShootPower();
+                circlePressed = true;
+            } else if (!gamepad1.circle) {
+                circlePressed = false;
+            }
+
+            if (gamepad1.cross && !crossPressed) {
+                flywheelActive = false;
+                turret.flywheelRight.setPower(0);
+                turret.flywheelLeft.setPower(0);
+                clock.stopRamp();
+                clock.initClock();
+                crossPressed = true;
+            } else if (!gamepad1.cross) {
+                crossPressed = false;
+            }
+
+            // === CLOCK (BALL HANDLER) CONTROLS ===
+            if (gamepad1.triangle && !trianglePressed) {
+                clock.moveClockToShootPosition();
+                trianglePressed = true;
+            } else if (!gamepad1.triangle) {
+                trianglePressed = false;
+            }
+
+            if (gamepad1.square && !squarePressed) {
+                clock.moveClockToPreShootPosition();
+                squarePressed = true;
+            } else if (!gamepad1.square) {
+                squarePressed = false;
+            }
+
+            // Update flywheel power if active (allows live adjustment)
+            if (flywheelActive) {
+                turret.flywheelRight.setPower(motorPower);
+                turret.flywheelLeft.setPower(motorPower);
+            }
+
+            // Constrain values to valid ranges
             currentServoPosition = Math.max(0.0, Math.min(1.0, currentServoPosition));
             motorPower = Math.max(0.0, Math.min(1.0, motorPower));
 
-            // Set the servo's position
+            // Set the servo position
             launchServo.setPosition(currentServoPosition);
+            telemetry.addLine("=== CONTROLS ===");
+            telemetry.addLine("DPAD UP/DOWN: Adjust hood angle");
+            telemetry.addLine("DPAD LEFT/RIGHT: Adjust motor power");
+            telemetry.addLine("CIRCLE: Toggle flywheel ON");
+            telemetry.addLine("CROSS: Turn flywheel OFF");
+            telemetry.addLine("TRIANGLE: Shoot (move clock to shoot position)");
+            telemetry.addLine("SQUARE: Reset (move clock to pre-shoot position)");
+            telemetry.addLine("================");
 
-
-            // --- Telemetry ---
-            telemetry.addLine("--- Launcher Tuning ---");
-            telemetry.addLine("Use DPAD UP/DOWN to change servo position.");
+            // === TELEMETRY ===
+            telemetry.addLine("=== LAUNCHER TUNING ===");
             telemetry.addData("Distance to Tag (in)", "%.2f", distanceToTag);
-            telemetry.addData("Servo Position", "%.3f", currentServoPosition);
-            telemetry.addData("Motor Power", "%.3f", turret.flywheelLeft.getPower());
-            telemetry.addData("Desired Power", "%.3f", motorPower);
+            telemetry.addLine();
+            telemetry.addData("Hood Servo Position", "%.3f", currentServoPosition);
+            telemetry.addData("Flywheel Status", flywheelActive ? "ON" : "OFF");
+            telemetry.addData("Flywheel Power", "%.3f", motorPower);
+            telemetry.addData("Actual Motor Power", "%.3f", turret.flywheelLeft.getPower());
+            telemetry.addLine();
+            telemetry.addLine("--- Record These Values ---");
+            telemetry.addData("Distance", "%.2f in", distanceToTag);
+            telemetry.addData("Hood Position", "%.3f", currentServoPosition);
+            telemetry.addData("Power", "%.3f", motorPower);
             telemetry.update();
         }
     }
