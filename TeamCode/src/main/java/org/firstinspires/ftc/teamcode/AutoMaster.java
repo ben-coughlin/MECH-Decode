@@ -396,11 +396,11 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
             intakeSubsystem.turnIntakeOff();
         }
         shooterSubsystem.startShotSequence();
-        if(!shooterSubsystem.isShotInProgress || SystemClock.uptimeMillis() - stateStartTime > 4000)
+        if(!shooterSubsystem.isShotInProgress || SystemClock.uptimeMillis() - stateStartTime > 3700)
         {
             clock.resetClock();
         }
-        if(SystemClock.uptimeMillis() - stateStartTime > 4800)
+        if(SystemClock.uptimeMillis() - stateStartTime > 4300)
         {
             nextStage(stageAfterShotOrdinal);
         }

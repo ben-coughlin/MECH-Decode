@@ -13,8 +13,8 @@ public class Clock {
     private CRServo ramp;
     private DcMotorEx encoder;
     private final double CLOCK_INIT = 0.07;
-    private final double CLOCK_SHOOT = .515;
-    private final double CLOCK_PRE_SHOOT = .2;
+    private final double CLOCK_SHOOT = .355; // 1:1 = .285 | 2:1 = .515
+    private final double CLOCK_PRE_SHOOT = .17; // 1:1 = .13 | 2:1 = .2
     private final double RAMP_INIT = 0;
     private final double RAMP_SHOOT = 1;
     private final int ENCODER_INIT = 0;

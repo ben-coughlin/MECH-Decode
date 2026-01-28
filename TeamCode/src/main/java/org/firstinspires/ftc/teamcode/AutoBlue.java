@@ -44,7 +44,7 @@ public class AutoBlue extends AutoMaster {
 
     @Override
     protected CurvePoint getIntakeFirstThreeBallsEndPoint() {
-        return new CurvePoint(0, 29, 0.3 * SCALE_FACTOR, 0.6 * SCALE_FACTOR, 10, 10, Math.toRadians(60), 0.3);
+        return new CurvePoint(1, 29, 0.3 * SCALE_FACTOR, 0.6 * SCALE_FACTOR, 10, 10, Math.toRadians(60), 0.3);
     }
 
     @Override

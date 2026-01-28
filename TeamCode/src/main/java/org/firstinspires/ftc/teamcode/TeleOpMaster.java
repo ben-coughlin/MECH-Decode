@@ -141,6 +141,16 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
                 && currVision.isValid()
                 && isCorrectGoalTag(VisionUtils.getTagId(currVision));
 
+        //rumble when we're not using vision
+        if(turret.getTrackingModeForTelemetry().contains("VELOCITY"))
+        {
+            gamepad2.rumble(50);
+        }
+        //blip the gamepad so i know it's about to auto-center
+        else if(turret.getTrackingModeForTelemetry().contains("HEADING"))
+        {
+            gamepad2.rumbleBlips(20);
+        }
 
         // ALWAYS call aimTurret - it will use odometry if vision is lost
         turret.aimTurret(

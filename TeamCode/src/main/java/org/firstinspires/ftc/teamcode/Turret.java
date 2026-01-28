@@ -43,7 +43,7 @@ public class Turret
     private static final double VELOCITY_COMPENSATION_DURATION_MS = 200;
     private static final double HEADING_COMPENSATION_DURATION_MS = 1000;
     private static final double RETURN_TO_CENTER_DURATION_MS = 1500;
-    private static final double ROTATIONAL_COMPENSATION_GAIN = 0.33; // Tune this
+    private static final double ROTATIONAL_COMPENSATION_GAIN = 0.35; // Tune this
 
     // Tracking state
     private enum CompensationMode {
@@ -291,7 +291,7 @@ public class Turret
     /**
      * Get current compensation mode for telemetry
      */
-    public String getTrackingMode() {
+    public String getTrackingModeForTelemetry() {
         switch (currentMode) {
             case VISION: return "VISION";
             case VELOCITY_COMP:
@@ -381,7 +381,7 @@ public class Turret
         telemetry.addData("Motor Power (L/R)", String.format(Locale.US,"%.2f / %.2f",
                 flywheelLeft.getPower(), flywheelRight.getPower()));
         telemetry.addData("Current Voltage", currVoltage);
-        telemetry.addData("Turret Tracking Mode", getTrackingMode());
+        telemetry.addData("Turret Tracking Mode", getTrackingModeForTelemetry());
     }
 
     public double getTurretDeg() { return turretDeg; }
@@ -391,6 +391,10 @@ public class Turret
     public void setFlywheelRightPower(double flywheelRightPower) { flywheelRight.setPower(flywheelRightPower); }
     public double getHoodPos() { return hoodPos; }
     public void setHoodPos(double hoodPos) { hood.setPosition(hoodPos); }
+
+
+
+    
 
     public void resetEncoder()
     {
