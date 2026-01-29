@@ -23,7 +23,8 @@ public abstract class RobotMasterPinpoint extends OpMode {
     Turret turret = null;
     Clock clock = null;
     PoseFusion pose = new PoseFusion();
-    ShooterSubsystem shooterSubsystem;
+    ShooterSubsystem shooterSubsystem = null;
+    Breakbeam breakbeam;
     static Pattern obelisk = null;
 
 
@@ -31,7 +32,6 @@ public abstract class RobotMasterPinpoint extends OpMode {
     private UdpClientFieldSim client;
     private UdpClientPlot clientPlot;
 
-    private boolean DEBUGGING = false;
     //global keyvalue store
     public HashMap<String, String> debugKeyValues = new HashMap<>();
 
@@ -99,15 +99,8 @@ public abstract class RobotMasterPinpoint extends OpMode {
         turret = new Turret(hardwareMap);
         clock = new Clock(hardwareMap);
         shooterSubsystem = new ShooterSubsystem(clock, turret, intakeSubsystem);
+        breakbeam = new Breakbeam(hardwareMap);
 
-
-
-
-
-        if(gamepad1.options) {
-            DEBUGGING = true;
-
-        }
         initDebugTools();
 
     }
@@ -193,22 +186,14 @@ public abstract class RobotMasterPinpoint extends OpMode {
         pose.updateFromLimelight(limelight.getPose(), Math.toRadians(turret.getTurretDeg()), limelight.getCurrLatency());
         pose.updateMotionComponents();
         lastHeading = odo.getHeading();
-
-
-        telemetry.addData("Obelisk", "[%s] [%s] [%s]",
-                obelisk.spindexSlotOne,
-                obelisk.spindexSlotTwo,
-                obelisk.spindexSlotThree);
-
-        pose.displayPoseTelemetry(telemetry, pose, odo.getVelocityComponents()[0], odo.getVelocityComponents()[1], (odo.getHeading() - lastHeading) / dt);
+        //pose.displayPoseTelemetry(telemetry, pose, odo.getVelocityComponents()[0], odo.getVelocityComponents()[1], (odo.getHeading() - lastHeading) / dt);
         odo.showOdoTelemetry(telemetry);
         turret.showAimTelemetry(telemetry);
-
-
+        breakbeam.displayBreakbeamTelemetry(telemetry);
 
         telemetry.addData("Superstructure State", currentState);
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
-        addDebugData();
+        //addDebugData();
 
         telemetry.update();
         Log.i("Loop Time", String.valueOf(SystemClock.uptimeMillis() - startLoopTime));
