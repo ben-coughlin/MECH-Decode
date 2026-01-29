@@ -97,7 +97,7 @@ public abstract class AutoMasterFar extends RobotMasterPinpoint {
 
         if (shooterSubsystem.isFlywheelReady) {
             clock.moveClockToPreShootPosition();
-            nextStage(progStates.SHOOT.ordinal());
+            ishouldremovetheselater(progStates.SHOOT.ordinal());
         }
     }
 
@@ -114,7 +114,7 @@ public abstract class AutoMasterFar extends RobotMasterPinpoint {
         }
         if(SystemClock.uptimeMillis() - stateStartTime > 4800)
         {
-            nextStage(stageAfterShotOrdinal);
+            ishouldremovetheselater(stageAfterShotOrdinal);
         }
 
 

@@ -9,9 +9,9 @@ import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 public class Clock {
-    private Servo clock;
-    private CRServo ramp;
-    private DcMotorEx encoder;
+    private final Servo clock;
+    private final CRServo ramp;
+    private final DcMotorEx encoder;
     private final double CLOCK_INIT = 0.07;
     private final double CLOCK_SHOOT = .355; // 1:1 = .285 | 2:1 = .515
     private final double CLOCK_PRE_SHOOT = .17; // 1:1 = .13 | 2:1 = .2

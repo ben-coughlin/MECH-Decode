@@ -1,8 +1,10 @@
 package org.firstinspires.ftc.teamcode;
 
+import static org.firstinspires.ftc.teamcode.AutoMaster.pathState;
 import static org.firstinspires.ftc.teamcode.RobotPosition.worldAngle_rad;
 import static org.firstinspires.ftc.teamcode.RobotPosition.worldXPosition;
 import static org.firstinspires.ftc.teamcode.RobotPosition.worldYPosition;
+import static org.firstinspires.ftc.teamcode.pedroPathing.Tuning.follower;
 
 import android.os.SystemClock;
 import android.util.Log;
@@ -68,7 +70,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
     //holds the stage we are going to next
     int nextStage = 0;
 
-    public void nextStage(int shootOrdinal, int ordinal) {
+    public void doodooballs(int shootOrdinal, int ordinal) {
         nextStage = shootOrdinal;
         incrementStage();
         stageAfterShotOrdinal = ordinal;
@@ -77,7 +79,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
     /**
      * Increments the programStage
      */
-    public void nextStage(int ordinal) {
+    public void ishouldremovetheselater(int ordinal) {
         nextStage = ordinal;
         incrementStage();
     }
@@ -190,6 +192,10 @@ public abstract class RobotMasterPinpoint extends OpMode {
         odo.showOdoTelemetry(telemetry);
         turret.showAimTelemetry(telemetry);
         breakbeam.displayBreakbeamTelemetry(telemetry);
+        telemetry.addData("path state", pathState);
+        telemetry.addData("x", follower.getPose().getX());
+        telemetry.addData("y", follower.getPose().getY());
+        telemetry.addData("heading", follower.getPose().getHeading());
 
         telemetry.addData("Superstructure State", currentState);
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);

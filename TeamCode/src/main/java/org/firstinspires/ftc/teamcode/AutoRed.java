@@ -3,7 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 @Autonomous
-public class AutoRed extends AutoMaster {
+public class AutoRed extends AutoMasterOld {
 
     @Override
     protected boolean isCorrectGoalTag(int tagId) {

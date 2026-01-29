@@ -1,11 +1,9 @@
 package org.firstinspires.ftc.teamcode;
 
-import android.os.SystemClock;
-
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 @Autonomous
-public class AutoBlue extends AutoMaster {
+public class AutoBlue extends AutoMasterOld {
 
     @Override
     protected boolean isCorrectGoalTag(int tagId) {

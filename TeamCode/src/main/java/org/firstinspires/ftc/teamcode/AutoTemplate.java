@@ -2,8 +2,6 @@ package org.firstinspires.ftc.teamcode;
 
 import static org.firstinspires.ftc.teamcode.RobotPosition.AngleWrap;
 
-import android.os.SystemClock;
-
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
@@ -76,7 +74,7 @@ public class AutoTemplate extends RobotMasterPinpoint {
 
             if (Movement.followCurve(points, Math.toRadians(90),2)) { //the second term is the **DIRECTION THE BOT SHOULD DRIVE IN, NOT THE DIRECTION IT IS CURRENTLY FACING**
                 drive.stopAllMovementDirectionBased();
-                nextStage(progStates.strafeLeft.ordinal());
+                ishouldremovetheselater(progStates.strafeLeft.ordinal());
             }
 
             drive.applyMovementDirectionBased(); // always put at end of state
@@ -98,7 +96,7 @@ public class AutoTemplate extends RobotMasterPinpoint {
 
             if (Movement.followCurve(points, Math.toRadians(0),2)) {
                 drive.stopAllMovementDirectionBased();
-                nextStage(progStates.driveBackward.ordinal());
+                ishouldremovetheselater(progStates.driveBackward.ordinal());
             }
 
             drive.applyMovementDirectionBased(); // always put at end of state
@@ -120,7 +118,7 @@ public class AutoTemplate extends RobotMasterPinpoint {
 
             if (Movement.followCurve(points, Math.toRadians(-90),2)) {
                 drive.stopAllMovementDirectionBased();
-                nextStage(progStates.strafeRight.ordinal());
+                ishouldremovetheselater(progStates.strafeRight.ordinal());
             }
 
             drive.applyMovementDirectionBased(); // always put at end of state
@@ -142,7 +140,7 @@ public class AutoTemplate extends RobotMasterPinpoint {
 
             if (Movement.followCurve(points, Math.toRadians(180),2)) {
                 drive.stopAllMovementDirectionBased();
-                nextStage(progStates.endBehavior.ordinal());
+                ishouldremovetheselater(progStates.endBehavior.ordinal());
             }
 
             drive.applyMovementDirectionBased(); // always put at end of state

@@ -4,13 +4,10 @@ import static org.firstinspires.ftc.teamcode.MovementVars.movement_turn;
 import static org.firstinspires.ftc.teamcode.MovementVars.movement_x;
 import static org.firstinspires.ftc.teamcode.MovementVars.movement_y;
 
-import android.os.SystemClock;
-
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 
 public abstract class TeleOpMaster extends RobotMasterPinpoint {
@@ -169,10 +166,10 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
         if (programStage == progStates.IDLE.ordinal()) {
             if (gamepad1.left_bumper || gamepad2.dpad_up) {
                 shooterSubsystem.isFlywheelReady = false;
-                nextStage(progStates.SHOOT_PREP.ordinal());
+                ishouldremovetheselater(progStates.SHOOT_PREP.ordinal());
             } else if (gamepad1.left_trigger > 0.1) {
                 intakeSubsystem.turnIntakeOff();
-                nextStage(progStates.OUTTAKE.ordinal());
+                ishouldremovetheselater(progStates.OUTTAKE.ordinal());
             }
         }
         // safe home state
@@ -190,20 +187,20 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
         if (programStage == progStates.READY_TO_SHOOT.ordinal()) {
 
             if (gamepad1.right_bumper || gamepad2.dpad_down) {
-                nextStage(progStates.FIRE_BALL.ordinal());
+                ishouldremovetheselater(progStates.FIRE_BALL.ordinal());
             }
             // cancels the shot
             else if (gamepad1.circle || gamepad2.circle) {
                 shooterSubsystem.stopShot();
-                nextStage(progStates.IDLE.ordinal());
+                ishouldremovetheselater(progStates.IDLE.ordinal());
             }
         }
 
         if (intakeToggle.getState()) {
-            nextStage(progStates.INTAKE.ordinal());
+            ishouldremovetheselater(progStates.INTAKE.ordinal());
         } else { // WHEN the trigger is RELEASED
             if (programStage == progStates.INTAKE.ordinal()) {
-                nextStage(progStates.IDLE.ordinal());
+                ishouldremovetheselater(progStates.IDLE.ordinal());
             }
         }
 
@@ -216,7 +213,7 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
             }
             shooterSubsystem.updateSpin();
             if (shooterSubsystem.isFlywheelReady) {
-                nextStage(progStates.READY_TO_SHOOT.ordinal());
+                ishouldremovetheselater(progStates.READY_TO_SHOOT.ordinal());
             }
         }
 
@@ -237,7 +234,7 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
             shooterSubsystem.startShotSequence();
             if (gamepad1.circle || gamepad2.circle) {
                 shooterSubsystem.stopShot();
-                nextStage(progStates.IDLE.ordinal());
+                ishouldremovetheselater(progStates.IDLE.ordinal());
             }
 
         }
@@ -248,7 +245,7 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
             }
             if (stateTimer.seconds() >= getOuttakeTime()) {
                 intakeSubsystem.outtake();
-                nextStage(progStates.IDLE.ordinal());
+                ishouldremovetheselater(progStates.IDLE.ordinal());
             }
         }
 
