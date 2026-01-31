@@ -1,170 +1,164 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.BezierCurve;
+import com.pedropathing.geometry.BezierLine;
+import com.pedropathing.geometry.Pose;
+import com.pedropathing.paths.PathChain;
 
-@Autonomous
-public class AutoBlue extends AutoMasterOld {
+import java.util.Collections;
+import java.util.Set;
 
+public class AutoBlue extends AutoMaster {
+
+
+    //other general differences
+
+    @Override
+    protected Set<Integer> getSkippedStages() {
+        //return Set.of(AutoStage.hitGate.ordinal()); //this would skip hitting the gate
+        return Collections.emptySet();
+    }
     @Override
     protected boolean isCorrectGoalTag(int tagId) {
         return VisionUtils.isTagBlueGoal(tagId);
     }
 
     @Override
-    protected CurvePoint getShootPreloadEndPoint() {
-        return new CurvePoint(-31, 0, 0.8 * SCALE_FACTOR, 0.30 * SCALE_FACTOR, 10, 10, Math.toRadians(60), 0.3);
-    }
-
-    @Override
-    protected double getShootPreloadHeading() {
-        return Math.toRadians(-90);
-    }
-
-    @Override
-    protected int getShootPreloadFollowCurveTolerance() {
-        return 1;
-    }
-
-    @Override
-    protected CurvePoint getFirstThreeBallsEndPoint() {
-        return new CurvePoint(-28, 29, 0.8 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10, Math.toRadians(60), 0.3);
-    }
-
-    @Override
-    protected double getFirstThreeBallsHeading() {
-        return Math.toRadians(0);
-    }
-
-    @Override
-    protected int getFirstThreeBallsFollowCurveTolerance() {
-        return 1;
-    }
-
-    @Override
-    protected CurvePoint getIntakeFirstThreeBallsEndPoint() {
-        return new CurvePoint(1, 29, 0.3 * SCALE_FACTOR, 0.6 * SCALE_FACTOR, 10, 10, Math.toRadians(60), 0.3);
-    }
-
-    @Override
-    protected double getIntakeFirstThreeBallsHeading() {
-        return Math.toRadians(90);
-    }
-
-    @Override
-    protected int getIntakeFirstThreeBallsFollowCurveTolerance() {
-        return 1;
+    protected int getStateAfterHitGate() {
+        return AutoStage.scoreFirstBalls.ordinal(); // Hit gate after first score
     }
 
 
+
+    //pathing
     @Override
-    protected CurvePoint getShootingPointEndPoint() {
-        return new CurvePoint(-31, 30, 0.8 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10, Math.toRadians(60), 0.3);
+    protected Pose getStartPose() {
+        return new Pose(9, 116, Math.toRadians(180));
     }
 
     @Override
-    protected double getShootingPointHeading() {
-        return Math.toRadians(-90);
+    protected PathChain getScorePreload(Follower follower) {
+        return follower.pathBuilder().addPath(
+                        new BezierLine(
+                                new Pose(9.000, 115.000),
+
+                                new Pose(50.000, 115.000)
+                        )
+                ).setTangentHeadingInterpolation()
+
+                .build();
     }
 
     @Override
-    protected int getShootingPointFollowCurveTolerance() {
-        return 3;
+    protected PathChain getGrabPickup1(Follower follower) {
+        return follower.pathBuilder().addPath(
+                        new BezierCurve(
+                                new Pose(50.000, 115.000),
+                                new Pose(62.354, 78.608),
+                                new Pose(16.421, 85.000)
+                        )
+                ).setTangentHeadingInterpolation()
+
+                .build();
     }
 
     @Override
-    protected CurvePoint getSecondThreeBallsEndPoint() {
-        return new CurvePoint(-31, 55, 0.8 * SCALE_FACTOR, 0.1 * SCALE_FACTOR, 35, 35, Math.toRadians(60), 0.3);
+    protected PathChain getHitGate(Follower follower) {
+        return follower.pathBuilder().addPath(
+                        new BezierCurve(
+                                new Pose(16.421, 85.000),
+                                new Pose(34.868, 73.737),
+                                new Pose(15.000, 70.000)
+                        )
+                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(270))
+
+                .build();
     }
 
     @Override
-    protected double getSecondThreeBallsHeading() {
-        return Math.toRadians(45);
+    protected PathChain getScorePickup1(Follower follower) {
+        return follower.pathBuilder().addPath(
+                        new BezierLine(
+                                new Pose(15.000, 70.000),
+
+                                new Pose(40.000, 105.000)
+                        )
+                ).setLinearHeadingInterpolation(Math.toRadians(270), Math.toRadians(135))
+
+                .build();
     }
 
     @Override
-    protected int getSecondThreeBallsFollowCurveTolerance() {
-        return 5;
-    }
+    protected PathChain getGrabPickup2(Follower follower) {
+        return follower.pathBuilder().addPath(
+                        new BezierCurve(
+                                new Pose(40.000, 105.000),
+                                new Pose(64.518, 54.099),
+                                new Pose(15.000, 60.000)
+                        )
+                ).setTangentHeadingInterpolation()
 
-
-    @Override
-    protected CurvePoint getIntakeSecondThreeBallsEndPoint() {
-        return new CurvePoint(-2, 53, 0.27 * SCALE_FACTOR, 0.1 * SCALE_FACTOR, 35, 35, Math.toRadians(65), 0.3);
-    }
-
-    @Override
-    protected double getIntakeSecondThreeBallsHeading() {
-        return Math.toRadians(90);
+                .build();
     }
 
     @Override
-    protected int getIntakeSecondThreeBallsTolerance() {
-        return 1;
-    }
+    protected PathChain getScorePickup2(Follower follower) {
+        return follower.pathBuilder().addPath(
+                        new BezierCurve(
+                                new Pose(15.000, 60.000),
+                                new Pose(36.306, 78.223),
+                                new Pose(40.000, 105.000)
+                        )
+                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(135))
 
-    @Override
-    protected CurvePoint getDriveToThirdThreeBallsPoint()
-    {
-        return new CurvePoint(-33, 71, 0.3 * SCALE_FACTOR, 0 * SCALE_FACTOR, 15, 15, Math.toRadians(60), 0.5);
-
-    }
-    @Override
-    protected double getDriveToThirdThreeBallsHeading()
-    {
-        return Math.toRadians(45);
-    }
-    @Override
-    protected CurvePoint getIntakeThirdThreeBallsPoint()
-    {
-        return new CurvePoint(-4, 71, 0.3 * SCALE_FACTOR, 0 * SCALE_FACTOR, 15, 15, Math.toRadians(60), 0.5);
+                .build();
 
     }
 
     @Override
-    protected double getIntakeThirdThreeBallsHeading()
-    {
-        return Math.toRadians(90);
-    }
+    protected PathChain getGrabPickup3(Follower follower) {
+        return follower.pathBuilder().addPath(
+                        new BezierCurve(
+                                new Pose(40.000, 105.000),
+                                new Pose(68.678, 27.502),
+                                new Pose(15.000, 36.000)
+                        )
+                ).setTangentHeadingInterpolation()
 
+                .build();
 
-
-    @Override
-    protected CurvePoint getShootPointToEndEndPoint() {
-        return new CurvePoint(-31, 25, 1 * SCALE_FACTOR, 0.3 * SCALE_FACTOR, 10, 10, Math.toRadians(60), 0.3);
-    }
-
-    @Override
-    protected double getShootPointToEndHeading() {
-        return Math.toRadians(-90);
     }
 
     @Override
-    protected int getShootPointToEndFollowCurveTolerance() {
-        return 1;
+    protected PathChain getScorePickup3(Follower follower) {
+        return  follower.pathBuilder().addPath(
+                        new BezierCurve(
+                                new Pose(15.000, 36.000),
+                                new Pose(17.284, 48.690),
+                                new Pose(31.430, 55.779),
+                                new Pose(13.456, 77.070),
+                                new Pose(44.305, 79.392),
+                                new Pose(34.111, 93.135),
+                                new Pose(40.000, 105.000)
+                        )
+                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(135))
+
+                .build();
     }
 
     @Override
-    protected CurvePoint getDriveOutsideShootZoneEndPoint() {
-        return new CurvePoint(-13, 35, 1 * SCALE_FACTOR, 1 * SCALE_FACTOR, 15, 15, Math.toRadians(60), 0.3);
+    protected PathChain getPark(Follower follower) {
+        return follower.pathBuilder().addPath(
+                        new BezierLine(
+                                new Pose(40.000, 105.000),
+
+                                new Pose(25.000, 93.000)
+                        )
+                ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(180))
+
+                .build();
     }
 
-    @Override
-    protected double getDriveOutsideShootZoneHeading() {
-        return Math.toRadians(0);
-    }
 
-    @Override
-    protected int getDriveOutsideShootZoneFollowCurveTolerance() {
-        return 1;
-    }
-
-    @Override
-    protected void handleDriveToSecondThreeBalls() {
-        if (stageFinished) {
-            past5In = false;
-            isLookingAtObelisk = true;  // Blue-specific behavior
-            initializeStateVariables();
-        }
-        super.handleDriveToSecondThreeBalls();
-    }
 }

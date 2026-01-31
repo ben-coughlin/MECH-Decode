@@ -1,5 +1,9 @@
 package org.firstinspires.ftc.teamcode;
 
+
+import static org.firstinspires.ftc.teamcode.Breakbeam.intakeState;
+import static org.firstinspires.ftc.teamcode.Breakbeam.turretState;
+
 import android.os.SystemClock;
 
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -7,6 +11,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class Clock {
     private final Servo clock;
@@ -17,13 +22,19 @@ public class Clock {
     private final double CLOCK_PRE_SHOOT = .17; // 1:1 = .13 | 2:1 = .2
     private final double RAMP_INIT = 0;
     private final double RAMP_SHOOT = 1;
-    private final int ENCODER_INIT = 0;
+
     private final int ENCODER_SHOOT = 100;
-    private double currentClockPosition = 0;
-    private double currentRampPosition = 0;
+    private boolean intakeBallDetected;
+    private boolean lastIntakeDetected;
+    private boolean turretBallDetected;
+    private boolean lastTurretDetected;
+
     private int currentEncoderPosition = 0;
     private int POSITION_TOLERANCE = 20;
-    public long clockResetTime = 0;
+    private int numBallsInClock = 0;
+    public boolean isClockResetting;
+    private long clockResetTimer;
+
 
     public Clock(HardwareMap hwMap) {
         clock = hwMap.get(Servo.class, "clock");
@@ -32,10 +43,8 @@ public class Clock {
         ramp.setDirection(DcMotorSimple.Direction.REVERSE);
         encoder.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
         encoder.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
-        currentClockPosition = clock.getPosition();
-        currentRampPosition = ramp.getPower();
-        currentEncoderPosition = encoder.getCurrentPosition();
 
+        currentEncoderPosition = encoder.getCurrentPosition();
 
     }
 
@@ -45,10 +54,50 @@ public class Clock {
         ramp.setPower(RAMP_INIT);
     }
 
-    public void clockUpdate(){
-        currentClockPosition = clock.getPosition();
-        currentRampPosition = ramp.getPower();
+    public void clockUpdate() {
         currentEncoderPosition = encoder.getCurrentPosition();
+        intakeNewBall();
+        recordShotBall();
+        if(SystemClock.uptimeMillis() - clockResetTimer >= 300 && isClockResetting) { isClockResetting = false; }
+        updateLEDColor();
+    }
+
+    private void intakeNewBall() {
+        if (!IntakeSubsystem.isIntakeRunning) {
+            intakeBallDetected = false; // Reset when intake stops
+            return;
+        }
+
+        if (!lastIntakeDetected && intakeState && !intakeBallDetected) {
+            intakeBallDetected = true;
+            numBallsInClock++;
+        }
+
+        // Reset on falling edge (ball passed sensor)
+        if (lastIntakeDetected && !intakeState) {
+            intakeBallDetected = false;
+        }
+
+        lastIntakeDetected = intakeState;
+    }
+
+    private void recordShotBall() {
+        if (!Turret.isFlywheelRunning) {
+            turretBallDetected = false; // Reset when flywheel stops
+            return;
+        }
+
+        if (!lastTurretDetected && turretState && !turretBallDetected) {
+            turretBallDetected = true;
+            numBallsInClock--;
+        }
+
+        // Reset on falling edge (ball passed sensor)
+        if (lastTurretDetected && !turretState) {
+            turretBallDetected = false;
+        }
+
+        lastTurretDetected = turretState;
     }
     public void moveClockToShootPosition()
     {
@@ -63,6 +112,8 @@ public class Clock {
 
     public void resetClock(){
         clock.setPosition(CLOCK_INIT);
+        isClockResetting = true;
+        clockResetTimer = SystemClock.uptimeMillis();
 
     }
     public void stopRamp(){ramp.setPower(RAMP_INIT);}
@@ -81,15 +132,41 @@ public class Clock {
         }
     }
 
-    void setClockPos(double pos)
+    public void setClockPos(double pos)
     {
         clock.setPosition(pos);
 
     }
-    void setRampPower(double pwr)
+    public void setRampPower(double pwr)
     {
         ramp.setPower(pwr);
     }
+
+    private void updateLEDColor()
+    {
+        if(isClockResetting)
+        {
+           IndicatorLight.setLightRed();
+        }
+        else if(numBallsInClock == 0)
+        {
+            IndicatorLight.setLightBlue();
+        }
+        else if(numBallsInClock == 1)
+        {
+            IndicatorLight.setLightOrange();
+        }
+        else if(numBallsInClock == 2)
+        {
+            IndicatorLight.setLightYellow();
+        }
+        else if(numBallsInClock == 3)
+        {
+            IndicatorLight.setLightGreen();
+        }
+
+    }
+
 
 
 }

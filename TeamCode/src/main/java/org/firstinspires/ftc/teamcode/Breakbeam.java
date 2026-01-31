@@ -1,26 +1,42 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.util.Log;
+
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 public class Breakbeam {
-    private final DigitalChannel breakbeam;
+    private final DigitalChannel intake;
+    private final DigitalChannel turret;
+    public static boolean intakeState = false;
+    public static boolean turretState = false;
+
 
     public Breakbeam(HardwareMap hwMap)
     {
-        breakbeam = hwMap.get(DigitalChannel.class, "breakbeam");
+        intake = hwMap.get(DigitalChannel.class, "intakeBreakbeam");
+        turret = hwMap.get(DigitalChannel.class, "turretBreakbeam");
     }
 
-    public boolean getBreakbeamStatus()
+    public boolean getIntakeBreakbeamStatus()
     {
-        return breakbeam.getState();
+        intakeState = intake.getState();
+        return intake.getState();
     }
+    public boolean getTurretBreakbeamStatus()
+    {
+        turretState = turret.getState();
+        return turret.getState();
+    }
+
+
 
     public void displayBreakbeamTelemetry(Telemetry telemetry)
     {
-        telemetry.addData("Is breakbeam broken? ", breakbeam.getState());
+        telemetry.addData("Is intake breakbeam broken? ", intake.getState());
+        telemetry.addData("Is turret breakbeam broken? ", turret.getState());
     }
 
 

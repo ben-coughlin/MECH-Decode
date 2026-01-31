@@ -69,12 +69,9 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
     //holds the stage we are going to next
     int nextStage = 0;
+    static boolean[] breakbeamStates;
 
-    public void doodooballs(int shootOrdinal, int ordinal) {
-        nextStage = shootOrdinal;
-        incrementStage();
-        stageAfterShotOrdinal = ordinal;
-    }
+
 
     /**
      * Increments the programStage
@@ -121,6 +118,8 @@ public abstract class RobotMasterPinpoint extends OpMode {
         pose.updateFromLimelight(limelight.getPose(), Math.toRadians(turret.getTurretDeg()), limelight.getCurrLatency());
         pose.updateMotionComponents();
         lastHeading = odo.getHeading();
+        breakbeamStates[0] = breakbeam.getIntakeBreakbeamStatus();
+        breakbeamStates[1] = breakbeam.getTurretBreakbeamStatus();
 
 
         obelisk = limelight.updateObelisk(true);
@@ -182,6 +181,8 @@ public abstract class RobotMasterPinpoint extends OpMode {
         odo.updateOdo();
         turret.updateTurret();
         clock.clockUpdate();
+        breakbeamStates[0] = breakbeam.getIntakeBreakbeamStatus();
+        breakbeamStates[1] = breakbeam.getTurretBreakbeamStatus();
 
 
         pose.predict(odo.getVelocityComponents()[0], odo.getVelocityComponents()[1], (odo.getHeading() - lastHeading) / dt, dt);
@@ -192,10 +193,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
         odo.showOdoTelemetry(telemetry);
         turret.showAimTelemetry(telemetry);
         breakbeam.displayBreakbeamTelemetry(telemetry);
-        telemetry.addData("path state", pathState);
-        telemetry.addData("x", follower.getPose().getX());
-        telemetry.addData("y", follower.getPose().getY());
-        telemetry.addData("heading", follower.getPose().getHeading());
+
 
         telemetry.addData("Superstructure State", currentState);
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);

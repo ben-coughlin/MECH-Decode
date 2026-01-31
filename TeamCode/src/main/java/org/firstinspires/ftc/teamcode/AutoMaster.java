@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+
+
 import android.os.SystemClock;
 
 import com.pedropathing.follower.Follower;
@@ -18,12 +20,14 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
+import java.util.Collections;
+import java.util.Set;
+
 
 public abstract class AutoMaster extends RobotMasterPinpoint {
 
     private Follower follower;
     private Timer pathTimer, stageStartTimer, opmodeTimer;
-    protected int pathStateEndOverride = -2; //use this if at any point we want to stop progressing - likely to work w someone
     protected boolean stageInit;
     protected enum AutoStage
     {
@@ -36,34 +40,42 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
         grabThirdBalls,
         scoreThirdBalls,
         park,
+        endBehavior,
         shootPrep,
         shoot,
-        endBehavior
-    }
-    public static int pathState = AutoStage.scorePreload.ordinal();
 
+    }
+
+    public static int pathState = AutoStage.scorePreload.ordinal();
+    private int pathAfterStateShotOrdinal = -1;
+    protected abstract int getStateAfterHitGate();
     protected abstract boolean isCorrectGoalTag(int tagId);
+
+    protected Set<Integer> getSkippedStages() {
+        return Collections.emptySet();  // Default: skip nothing
+    }
     //points
     protected abstract Pose getStartPose();
-    protected abstract Pose getScorePose();
-    protected abstract Pose getGrabFirstBallsPose();
-    protected abstract Pose getFirstBallsControlPose();
-    protected abstract Pose getHitGatePose();
-    protected abstract Pose getHitGateControlPose();
-    protected abstract Pose getGrabSecondBallsPose();
-    protected abstract Pose getSecondBallsControlPose();
-    protected abstract Pose getGrabThirdBallsPose();
-    protected abstract Pose getThirdBallsControlPose();
-    protected abstract Pose getParkPose();
+    protected abstract PathChain getScorePreload(Follower follower);
+    protected abstract PathChain getGrabPickup1(Follower follower);
+    protected abstract PathChain getHitGate(Follower follower);
+    protected abstract PathChain getScorePickup1(Follower follower);
+    protected abstract PathChain getGrabPickup2(Follower follower);
+    protected abstract PathChain getScorePickup2(Follower follower);
+    protected abstract PathChain getGrabPickup3(Follower follower);
+    protected abstract PathChain getScorePickup3(Follower follower);
+    protected abstract PathChain getPark(Follower follower);
 
-    private Path scorePreload;
-    private PathChain grabPickup1, hitGate, scorePickup1, grabPickup2, scorePickup2, grabPickup3, scorePickup3, park;
+
+    private PathChain scorePreload, grabPickup1, hitGate, scorePickup1, grabPickup2, scorePickup2, grabPickup3, scorePickup3, park;
+
 
     @Override
     public void loop() {
         super.mainLoop();
         // These loop the movements of the robot, these must be called continuously in order to work
         follower.update();
+        updatePaths();
 
         Pose2D pos = odo.pos; // try not to flood odo with reads
         LLResult currVision = Limelight.getCurrResult();
@@ -97,9 +109,9 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
         opmodeTimer.resetTimer();
 
 
-//        follower = Constants.createFollower(hardwareMap);
-//        buildPaths();
-//        follower.setStartingPose(startPose);
+        follower = Constants.createFollower(hardwareMap);
+        buildPaths();
+        follower.setStartingPose(getStartPose());
 
     }
 
@@ -132,59 +144,24 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
     }
 
     public void buildPaths() {
-        /* This is our scorePreload path. We are using a BezierLine, which is a straight line. */
-        scorePreload = new Path(new BezierLine(getStartPose(), getScorePose()));
-        scorePreload.setLinearHeadingInterpolation(getStartPose().getHeading(), getScorePose().getHeading());
 
-    /* Here is an example for Constant Interpolation
-    scorePreload.setConstantInterpolation(startPose.getHeading()); */
+        scorePreload = getScorePreload(follower);
 
-        /* This is our grabPickup1 PathChain. We are using a single path with a BezierLine, which is a straight line. */
-        grabPickup1 = follower.pathBuilder()
-                .addPath(new BezierCurve(getScorePose(), getFirstBallsControlPose(), getGrabFirstBallsPose()))
-                .setLinearHeadingInterpolation(getScorePose().getHeading(), getGrabFirstBallsPose().getHeading())
-                .build();
+        grabPickup1 = getGrabPickup1(follower);
 
-        hitGate = follower.pathBuilder()
-                .addPath(new BezierCurve(getGrabFirstBallsPose(), getHitGateControlPose(), getHitGatePose()))
-                .setLinearHeadingInterpolation(getGrabFirstBallsPose().getHeading(), getHitGatePose().getHeading())
-                .build();
+        hitGate = getHitGate(follower);
 
+        scorePickup1 = getScorePickup1(follower);
 
-        /* This is our scorePickup1 PathChain. We are using a BezierCurve */
-        scorePickup1 = follower.pathBuilder()
-                .addPath(new BezierLine(getHitGatePose(), getScorePose()))
-                .setLinearHeadingInterpolation(getHitGatePose().getHeading(), getScorePose().getHeading())
-                .build();
+        grabPickup2 = getGrabPickup2(follower);
 
-        /* This is our grabPickup2 PathChain. */
-        grabPickup2 = follower.pathBuilder()
-                .addPath(new BezierCurve(getScorePose(), getSecondBallsControlPose(), getGrabSecondBallsPose()))
-                .setLinearHeadingInterpolation(getScorePose().getHeading(), getGrabSecondBallsPose().getHeading())
-                .build();
+        scorePickup2 = getScorePickup2(follower);
 
-        /* This is our scorePickup2 PathChain.  */
-        scorePickup2 = follower.pathBuilder()
-                .addPath(new BezierLine(getGrabSecondBallsPose(), getScorePose()))
-                .setLinearHeadingInterpolation(getGrabSecondBallsPose().getHeading(), getScorePose().getHeading())
-                .build();
+        grabPickup3 = getGrabPickup3(follower);
 
-        /* This is our grabPickup3 PathChain. */
-        grabPickup3 = follower.pathBuilder()
-                .addPath(new BezierCurve(getScorePose(), getThirdBallsControlPose(), getGrabThirdBallsPose()))
-                .setLinearHeadingInterpolation(getScorePose().getHeading(), getGrabThirdBallsPose().getHeading())
-                .build();
+        scorePickup3 = getScorePickup3(follower);
 
-        /* This is our scorePickup3 PathChain.  */
-        scorePickup3 = follower.pathBuilder()
-                .addPath(new BezierLine(getGrabThirdBallsPose(), getScorePose()))
-                .setLinearHeadingInterpolation(getGrabThirdBallsPose().getHeading(), getScorePose().getHeading())
-                .build();
-
-        park = follower.pathBuilder()
-                .addPath(new BezierLine(getScorePose(), getParkPose()))
-                .setLinearHeadingInterpolation(getScorePose().getHeading(), getParkPose().getHeading())
-                .build();
+        park = getPark(follower);
     }
 
     public void updatePaths() {
@@ -194,21 +171,159 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
                 shooterSubsystem.spinUp();
                 initState();
             }
-            follower.followPath(scorePreload);
             shooterSubsystem.updateSpin();
+            if(scorePreload != null) { follower.followPath(scorePreload); }
+            else { nextStage(); }
 
             if(!follower.isBusy())
             {
-                nextStage(AutoStage.shootPrep.ordinal());
+                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabFirstBalls.ordinal());
             }
         }
 
+        if(pathState == AutoStage.grabFirstBalls.ordinal())
+        {
+            if(stageInit)
+            {
+                initState();
+                intakeSubsystem.turnIntakeOn();
+            }
+            if(grabPickup1 != null) { follower.followPath(grabPickup1); }
+            else { nextStage(); }
 
+            if(!follower.isBusy())
+            {
+                intakeSubsystem.turnIntakeOff();
+                nextStage(AutoStage.hitGate.ordinal());
+            }
+        }
 
+        if(pathState == AutoStage.hitGate.ordinal())
+        {
+            if(stageInit)
+            {
+                initState();
+            }
+            if(grabPickup2 != null) { follower.followPath(hitGate); }
+            else { nextStage(); }
 
+            if(!follower.isBusy())
+            {
+                nextStage(AutoStage.scoreFirstBalls.ordinal());
+            }
+        }
 
+         if(pathState == AutoStage.scoreFirstBalls.ordinal())
+         {
+             if(stageInit)
+             {
+                 shooterSubsystem.spinUp();
+                 initState();
+             }
+             shooterSubsystem.updateSpin();
+             if(scorePickup1 != null) { follower.followPath(scorePickup1); }
+             else { nextStage(); }
 
+             if(!follower.isBusy()) {
+                 // Check if we should hit gate after first score
+                 if(getStateAfterHitGate() == AutoStage.scoreFirstBalls.ordinal()) {
+                     nextStage(AutoStage.hitGate.ordinal());
+                 } else {
+                     nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabSecondBalls.ordinal());
+                 }
+             }
+         }
 
+         if(pathState == AutoStage.grabSecondBalls.ordinal())
+         {
+             if(stageInit)
+             {
+                 intakeSubsystem.turnIntakeOn();
+                 initState();
+             }
+             shooterSubsystem.updateSpin();
+             if(grabPickup2 != null) { follower.followPath(grabPickup2); }
+             else { nextStage(); }
+
+             if(!follower.isBusy())
+             {
+                 intakeSubsystem.turnIntakeOff();
+                 nextStage(AutoStage.scoreSecondBalls.ordinal());
+
+             }
+
+             if(pathState == AutoStage.scoreSecondBalls.ordinal())
+             {
+                 if(stageInit)
+                 {
+                     shooterSubsystem.spinUp();
+                     initState();
+                 }
+                 shooterSubsystem.updateSpin();
+                 if(scorePickup2 != null) { follower.followPath(scorePickup2); }
+                 else { nextStage(); }
+
+                 if(!follower.isBusy()) {
+                     // Check if we should hit gate after second score
+                     if(getStateAfterHitGate() == AutoStage.scoreSecondBalls.ordinal()) {
+                         nextStage(AutoStage.hitGate.ordinal());
+                     } else {
+                         nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabThirdBalls.ordinal());
+                     }
+                 }
+             }
+             if(pathState == AutoStage.grabThirdBalls.ordinal())
+             {
+                 if(stageInit)
+                 {
+                     intakeSubsystem.turnIntakeOn();
+                     initState();
+                 }
+                 if(grabPickup3 != null) { follower.followPath(grabPickup3); }
+                 else { nextStage(); }
+
+                 if(!follower.isBusy())
+                 {
+                     intakeSubsystem.turnIntakeOff();
+                     nextStage(AutoStage.scoreThirdBalls.ordinal());
+
+                 }
+             }
+
+             if(pathState == AutoStage.scoreThirdBalls.ordinal())
+             {
+                 if(stageInit)
+                 {
+                     shooterSubsystem.spinUp();
+                     initState();
+                 }
+                 shooterSubsystem.updateSpin();
+                 if(scorePickup3 != null) { follower.followPath(scorePickup3); }
+                 else { nextStage(); }
+
+                 if(!follower.isBusy())
+                 {
+                     nextStage(AutoStage.shootPrep.ordinal(), AutoStage.park.ordinal());
+                 }
+
+             }
+
+             if(pathState == AutoStage.park.ordinal())
+             {
+                 if(stageInit)
+                 {
+                     initState();
+                 }
+                 if(park != null) { follower.followPath(park); }
+                 else { nextStage(); }
+
+                 if(!follower.isBusy())
+                 {
+                     nextStage(AutoStage.endBehavior.ordinal());
+                 }
+             }
+
+         }
 
         if(pathState == AutoStage.shootPrep.ordinal())
         {
@@ -232,49 +347,68 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
                 initState();
             }
             shooterSubsystem.startShotSequence();
-            if(!shooterSubsystem.isShotInProgress || SystemClock.uptimeMillis() - stateStartTime > 3700)
+
+            if(!shooterSubsystem.isShotInProgress)
             {
-                clock.resetClock();
-            }
-            if(SystemClock.uptimeMillis() - stateStartTime > 4300)
-            {
-                ishouldremovetheselater(stageAfterShotOrdinal);
+                nextStage(pathAfterStateShotOrdinal);
             }
         }
+        if(pathState == AutoStage.endBehavior.ordinal())
+        {
+            drive.stopAllMovementDirectionBased();
+            turret.turnOffFlywheel();
+            clock.resetClock();
+            intakeSubsystem.turnIntakeOff();
+            IndicatorLight.setLightWhite();
+
+            if(!follower.isBusy()){nextStage(-1);}
+
+        }
+
     }
 
     protected void nextStage() {
+        pathState++;
 
-        //once we get to the state we define as the "end early" (if we do) then we end
-        if(pathState == pathStateEndOverride)
-        {
-            pathState = -1;
-        }
-        else
-        {
+        // Skip stages if they're in the skip set
+        while (getSkippedStages().contains(pathState)) {
             pathState++;
         }
+
         pathTimer.resetTimer();
         stageInit = true;
     }
-    protected void nextStage(int stage)
-    {
-        //once we get to the state we define as the "end early" (if we do) then we end
-        if(pathState == pathStateEndOverride)
-        {
-            pathState = -1;
+
+    protected void nextStage(int stage) {
+        pathState = stage;
+
+        // Skip stages if they're in the skip set
+        while (getSkippedStages().contains(pathState)) {
+            pathState++;
         }
-        else
-        {
-            pathState = stage;
-        }
+
         pathTimer.resetTimer();
         stageInit = true;
     }
+
+    protected void nextStage(int stage, int afterShotOrdinal) {
+        pathAfterStateShotOrdinal = afterShotOrdinal;
+        pathState = stage;
+
+        // Skip stages if they're in the skip set
+        while (getSkippedStages().contains(pathState)) {
+            pathState++;
+        }
+
+        pathTimer.resetTimer();
+        stageInit = true;
+    }
+
     protected void initState()
     {
         turret.resetPID();
         opmodeTimer.resetTimer();
+
 
         stageInit = false;
     }

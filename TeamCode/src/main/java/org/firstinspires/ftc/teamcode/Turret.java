@@ -26,24 +26,27 @@ public class Turret
     public final DcMotorEx flywheelRight;
     private final Servo hood;
     private VoltageSensor voltageSensor;
-    private final PIDFController autoAimClose = new PIDFController(0.0061, 0.000001, 0.0014, 0.096);
-    private final PIDFController autoAimFar = new PIDFController(0.007, 0.0001, 0.0009, 0.08);
-    private PIDFController activeAutoAimController;
-    private static final double GAIN_SCHEDULING_DISTANCE_THRESHOLD = 67.0; // ( ͡°👅 ͡°)
     private double turretDeg;
     private double turretPower;
-    private double errorToUse = 0;
     private double hoodPos;
     private double targetPower;
     private double currVoltage;
     private final double NOMINAL_VOLTAGE = 12.0;
     private boolean isFlywheelOn;
+    public static boolean isFlywheelRunning = false;
 
-    // Multi-stage compensation constants
+    //turret stuff
+    private final PIDFController autoAimClose = new PIDFController(0.0061, 0.000001, 0.0014, 0.096);
+    private final PIDFController autoAimFar = new PIDFController(0.007, 0.0001, 0.0009, 0.08);
+    private final PIDFController autoAimSlow = new PIDFController(0.004, 0.00005, 0.0008, 0.0);
+    private PIDFController activeAutoAimController;
+    private static final double GAIN_SCHEDULING_DISTANCE_THRESHOLD = 67.0; // ( ͡°👅 ͡°)
+    private static final double VELOCITY_THRESHOLD = 2.0;
     private static final double VELOCITY_COMPENSATION_DURATION_MS = 200;
     private static final double HEADING_COMPENSATION_DURATION_MS = 1000;
     private static final double RETURN_TO_CENTER_DURATION_MS = 1500;
-    private static final double ROTATIONAL_COMPENSATION_GAIN = 0.35; // Tune this
+    private static final double ROTATIONAL_COMPENSATION_GAIN = 0.35;
+
 
     // Tracking state
     private enum CompensationMode {
@@ -63,15 +66,15 @@ public class Turret
     private final double HEADING_VELOCITY_COMPENSATION_FACTOR = 0.4;
 
     private final double[][] launchAngleLookupTable = {
-            { 23, 0.77, 0.725},
-            { 30, 0.755, 0.8},
-            {35, .755, 0.8},
-            {46, .75, .825},
-            { 60, 0.765, .85},
-            { 67, 0.77, .875},
-            { 72, 0.755, .875 },
-            { 95, .98, 0.975 },
-            { 100, 1, 1 }
+            { 20, 0.80, 0.55}, //inches, servo, power
+            { 31, 0.89, 0.55},
+            {40, .89, 0.6},
+            {50, .89, .6},
+            {60, 0.895, .65},
+            {71, 0.92, .65},
+            {100, 1, .75},
+            {106, 1, 0.8},
+            {113, 1, .8}
 
     };
 
@@ -101,6 +104,7 @@ public class Turret
         activeAutoAimController = autoAimClose;
         autoAimFar.setReference(0);
         autoAimClose.setReference(0);
+        autoAimSlow.setReference(0);
         resetTracking();
     }
 
@@ -115,9 +119,11 @@ public class Turret
         hood.setPosition(getServoPositionFromDistance(currentDistance));
         targetPower = getPowerFromDistance(currentDistance);
         if ((isFlywheelOn)) {
+            isFlywheelRunning = true;
             flywheelRight.setPower(targetPower);
             flywheelLeft.setPower(targetPower);
         } else {
+            isFlywheelRunning = false;
             flywheelLeft.setPower(0);
             flywheelRight.setPower(0);
         }
@@ -146,15 +152,27 @@ public class Turret
                 currentMode = CompensationMode.VISION;
 
 
-                // Select PID gains based on distance
-                if (distance < GAIN_SCHEDULING_DISTANCE_THRESHOLD && distance > 0) {
+                double angularVelocity = Math.abs(robotHeadingVelocity);
+
+                if (angularVelocity < VELOCITY_THRESHOLD) {
+                    // Robot is stopped or moving slowly - use stationary controller
+                    if (activeAutoAimController != autoAimSlow) {
+                        autoAimClose.reset();
+                        autoAimFar.reset();
+                    }
+                    activeAutoAimController = autoAimSlow;
+                } else if (distance < GAIN_SCHEDULING_DISTANCE_THRESHOLD && distance > 0) {
+                    // Moving and close distance
                     if (activeAutoAimController != autoAimClose) {
                         autoAimFar.reset();
+                        autoAimSlow.reset();
                     }
                     activeAutoAimController = autoAimClose;
                 } else {
+                    // Moving and far distance
                     if (activeAutoAimController != autoAimFar) {
                         autoAimClose.reset();
+                        autoAimSlow.reset();
                     }
                     activeAutoAimController = autoAimFar;
                 }
@@ -371,7 +389,6 @@ public class Turret
         telemetry.addLine("--- Aim ---");
         telemetry.addData("Turret PID Power", turret.getPower());
         telemetry.addData("Turret Degrees", turretDeg);
-        telemetry.addData("error To Use ", errorToUse);
         telemetry.addData("Distance to Goal", "%.2f inches", Limelight.getDistance());
         telemetry.addData("Interpolated Servo Position", "%.2f",
                 getServoPositionFromDistance(Limelight.getDistance()));

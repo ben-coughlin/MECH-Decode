@@ -9,7 +9,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-@Disabled
 @TeleOp(name = "Hood Tuning")
 public class HoodTuning extends LinearOpMode {
     private double currentServoPosition = 0.5; // Start at middle position

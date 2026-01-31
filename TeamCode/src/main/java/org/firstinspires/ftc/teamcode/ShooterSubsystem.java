@@ -10,12 +10,12 @@ public class ShooterSubsystem {
     private final IntakeSubsystem intake;
 
     public boolean isFlywheelReady = false;
-    public boolean isShotInProgress = false; //todo: change this back to private after debugging
+    public boolean isShotInProgress = false;
     public boolean isFlywheelSpun = false;
 
     private long flywheelStartTime = 0;
     private long shotStartTime = 0;
-    public int shotsRemaining = 0; //todo: change this back to private after debugging
+    public int shotsRemaining = 0;
 
 
 
@@ -64,9 +64,12 @@ public class ShooterSubsystem {
         if (!isFlywheelReady) return;
         shotStartTime = SystemClock.uptimeMillis();
         clock.moveClockToShootPosition();
-        if ((SystemClock.uptimeMillis() - shotStartTime >= 2800)) {
+        if ((SystemClock.uptimeMillis() - shotStartTime >= 3700)) {
+            clock.resetClock();
+        }
+        if(!clock.isClockResetting)
+        {
             runStopActions();
-            return;
         }
 
         Log.i("ShooterSubsystem", "shot seq started at " + shotStartTime);
@@ -74,7 +77,7 @@ public class ShooterSubsystem {
 
     public void runStopActions() {
         turret.turnOffFlywheel();
-        clock.resetClock();
+
         clock.stopRamp();
         isFlywheelReady = false;
         isShotInProgress = false;
