@@ -11,11 +11,12 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import java.util.HashSet;
 import java.util.Set;
 @Disabled
-@Autonomous(name = "Blue Auto Far")
-public class AutoBlueFar extends AutoMaster {
+@Autonomous(name = "Red Auto Far")
+public class AutoRedFar extends AutoMaster {
 
     public static boolean DO_FIRST_CYCLE = true;
     public static boolean DO_SECOND_CYCLE = true;
+
     public static boolean DO_PARK = true;
 
     @Override
@@ -41,23 +42,23 @@ public class AutoBlueFar extends AutoMaster {
 
     @Override
     protected boolean isCorrectGoalTag(int tagId) {
-        return VisionUtils.isTagBlueGoal(tagId);
+        return VisionUtils.isTagRedGoal(tagId);
     }
 
 
     //pathing
     @Override
     protected Pose getStartPose() {
-        return new Pose(56, 8, Math.toRadians(90));
+        return new Pose(88, 8, Math.toRadians(90));
     }
 
     @Override
     protected PathChain getScorePreload(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(56.000, 8.000),
+                                new Pose(88.000, 8.000),
 
-                                new Pose(56.000, 8.000)
+                                new Pose(88.000, 8.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(90))
 
@@ -68,11 +69,11 @@ public class AutoBlueFar extends AutoMaster {
     protected PathChain getGrabPickup1(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(56.000, 8.000),
-                                new Pose(48.278, 39.009),
-                                new Pose(15.000, 36.000)
+                                new Pose(88.000, 8.000),
+                                new Pose(95.722, 39.009),
+                                new Pose(129.000, 36.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(180))
+                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(0))
 
                 .build();
     }
@@ -87,9 +88,9 @@ public class AutoBlueFar extends AutoMaster {
     protected PathChain getScorePickup1(Follower follower) {
         return  follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(15.000, 36.000),
-                                new Pose(49.925, 30.471),
-                                new Pose(56.000, 8.000)
+                                new Pose(129.000, 36.000),
+                                new Pose(94.075, 30.471),
+                                new Pose(88.000, 8.000)
                         )
                 ).setTangentHeadingInterpolation()
                 .setReversed()
@@ -101,14 +102,13 @@ public class AutoBlueFar extends AutoMaster {
     protected PathChain getGrabPickup2(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(56.000, 8.000),
-                                new Pose(58.514, 64.321),
-                                new Pose(15.000, 60.000)
+                                new Pose(88.000, 8.000),
+                                new Pose(85.486, 64.321),
+                                new Pose(129.000, 60.000)
                         )
                 ).setTangentHeadingInterpolation()
 
                 .build();
-
     }
 
 
@@ -117,14 +117,13 @@ public class AutoBlueFar extends AutoMaster {
     protected PathChain getScorePickup2(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(15.000, 60.000),
-                                new Pose(62.912, 51.828),
-                                new Pose(56.000, 8.000)
+                                new Pose(129.000, 60.000),
+                                new Pose(81.088, 51.828),
+                                new Pose(88.000, 8.000)
                         )
                 ).setTangentHeadingInterpolation()
                 .setReversed()
                 .build();
-
     }
 
     @Override
@@ -141,11 +140,11 @@ public class AutoBlueFar extends AutoMaster {
     protected PathChain getPark(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(56.000, 8.000),
+                                new Pose(88.000, 8.000),
 
-                                new Pose(40.000, 15.000)
+                                new Pose(104.000, 15.000)
                         )
-                ).setConstantHeadingInterpolation(Math.toRadians(180))
+                ).setConstantHeadingInterpolation(Math.toRadians(0))
 
                 .build();
     }

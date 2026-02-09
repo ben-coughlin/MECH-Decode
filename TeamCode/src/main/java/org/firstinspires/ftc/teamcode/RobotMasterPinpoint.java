@@ -7,81 +7,55 @@ import static org.firstinspires.ftc.teamcode.RobotPosition.worldYPosition;
 import android.os.SystemClock;
 import android.util.Log;
 
-import com.bylazar.telemetry.PanelsTelemetry;
-import com.bylazar.telemetry.TelemetryManager;
-import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.Pose;
-import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
-
-import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
-
-import java.util.function.Supplier;
-
 
 import java.util.HashMap;
 
 public abstract class RobotMasterPinpoint extends OpMode {
 
-    //hardware - - - - - -
-    MecanumDrivePinPoint drive = null;
-  //  Odo odo = null;
-    Limelight limelight = null;
-    IntakeSubsystem intakeSubsystem = null;
-    Turret turret = null;
-    Clock clock = null;
-    PoseFusion pose = new PoseFusion();
-    ShooterSubsystem shooterSubsystem = null;
-    Breakbeam breakbeam;
-    IndicatorLight light;
-
-    static Pattern obelisk = null;
-
-
-    // ftcsim stuff - - - - - - - -
-    private UdpClientFieldSim client;
-    private UdpClientPlot clientPlot;
-
-    //global keyvalue store
-    public HashMap<String, String> debugKeyValues = new HashMap<>();
-
     //misc
     public static boolean isAuto = false;
     public static boolean resetEncoders = false;
-    double lastHeading = 0;
+    public static int programStage = 0;
+    static Pattern obelisk = null;
+    static boolean[] breakbeamStates = {false, false};
+    //global keyvalue store
+    public HashMap<String, String> debugKeyValues = new HashMap<>();
     public boolean isMovementDone = false;
-    int stageAfterShotOrdinal = 0;
-    
-
-
-
-    //clocks
-
-    ElapsedTime runtime = new ElapsedTime();
-    long lastLoopTime = System.nanoTime();
-
-
-    //////// STATE MACHINE STUFF BELOW DO NOT TOUCH ////////
+    /// ///// STATE MACHINE STUFF BELOW DO NOT TOUCH ////////
     public boolean stageFinished = true;
     public long stateStartTime = 0;
-    public static int programStage = 0;
     public String currentState;
-
     /**
      * STATE STARTING VARIABLES
      */
     public double stateStartingX = 0;
     public double stateStartingY = 0;
     public double stateStartingAngle_rad = 0;
+    //hardware - - - - - -
+    MecanumDrivePinPoint drive = null;
+    //  Odo odo = null;
+    Limelight limelight = null;
+    IntakeSubsystem intakeSubsystem = null;
+    Turret turret = null;
+    Clock clock = null;
 
 
+    //clocks
+    PoseFusion pose = new PoseFusion();
+    ShooterSubsystem shooterSubsystem = null;
+    Breakbeam breakbeam;
+    IndicatorLight light;
+    double lastHeading = 0;
+    int stageAfterShotOrdinal = 0;
+    ElapsedTime runtime = new ElapsedTime();
+    long lastLoopTime = System.nanoTime();
     //holds the stage we are going to next
     int nextStage = 0;
-    static boolean[] breakbeamStates = {false, false};
-
-
+    // ftcsim stuff - - - - - - - -
+    private UdpClientFieldSim client;
+    private UdpClientPlot clientPlot;
 
     /**
      * Increments the programStage
@@ -91,8 +65,6 @@ public abstract class RobotMasterPinpoint extends OpMode {
         programStage = nextStage;
         stageFinished = true;
     }
-
-
 
 
     @Override
@@ -130,7 +102,7 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
 
         obelisk = limelight.updateObelisk(true);
-        if(obelisk != null) {
+        if (obelisk != null) {
             telemetry.addData("Obelisk", "[%s] [%s] [%s]",
                     obelisk.spindexSlotOne,
                     obelisk.spindexSlotTwo,
@@ -146,19 +118,21 @@ public abstract class RobotMasterPinpoint extends OpMode {
     public void start() {
         clock.resetClock();
         programStage = 0;
-        if(obelisk == null) {obelisk = new Pattern(Pattern.Ball.EMPTY, Pattern.Ball.EMPTY, Pattern.Ball.EMPTY);} //uh oh someone set the bot up wrong
+        if (obelisk == null) {
+            obelisk = new Pattern(Pattern.Ball.EMPTY, Pattern.Ball.EMPTY, Pattern.Ball.EMPTY);
+        } //uh oh someone set the bot up wrong
 
     }
+
     @Override
-    public void stop()
-    {
+    public void stop() {
         drive.stopAllMovementDirectionBased();
     }
 
 
     @Override
     public void loop() {
-       mainLoop();
+        mainLoop();
     }
 
     public void initializeStateVariables() {
@@ -171,8 +145,6 @@ public abstract class RobotMasterPinpoint extends OpMode {
         isMovementDone = false;
         turret.resetPID();
     }
-
-
 
 
     public void mainLoop() {
@@ -207,11 +179,9 @@ public abstract class RobotMasterPinpoint extends OpMode {
     /**
      * adds debug telemetry when in debug mode - we don't want this normally bc of loop times
      */
-    private void addDebugData()
-    {
+    private void addDebugData() {
 
-        for(String k : debugKeyValues.keySet())
-        {
+        for (String k : debugKeyValues.keySet()) {
             client.sendKeyValue(k, debugKeyValues.get(k));
         }
 
@@ -219,22 +189,14 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
 
     }
-    private void initDebugTools()
-    {
+
+    private void initDebugTools() {
         client = new UdpClientFieldSim("192.168.43.240", 7777);
         clientPlot = new UdpClientPlot("192.168.43.240  ", 7778);
 
         clientPlot.sendYLimits(SystemClock.uptimeMillis(), 0.5, 0);
         clientPlot.sendYUnits(SystemClock.uptimeMillis() + 1, "PID");
     }
-
-
-
-
-
-
-
-
 
 
 }

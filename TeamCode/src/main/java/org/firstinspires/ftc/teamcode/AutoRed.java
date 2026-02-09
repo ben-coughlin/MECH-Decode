@@ -6,32 +6,56 @@ import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
-
+@Disabled
 @Autonomous(name = "Red Auto")
 
 public class AutoRed extends AutoMaster {
 
 
-    //other general differences
+    public static boolean GATE_HIT = true;
+    public static boolean DO_FIRST_CYCLE = true;
+    public static boolean DO_SECOND_CYCLE = true;
+    public static boolean DO_THIRD_CYCLE = true;
+    public static boolean DO_PARK = true;
 
     @Override
     protected Set<Integer> getSkippedStages() {
-        //return Set.of(AutoStage.hitGate.ordinal()); //this would skip hitting the gate
-        return Set.of(AutoStage.hitGate.ordinal(), AutoStage.grabThirdBalls.ordinal(), AutoStage.scoreThirdBalls.ordinal());
+        Set<Integer> skipped = new HashSet<Integer>() {};
+
+        // Build the skip set based on gate settings
+        if (!GATE_HIT) {
+            skipped.add(AutoStage.hitGate.ordinal());
+        }
+
+        if (!DO_FIRST_CYCLE) {
+            skipped.add(AutoStage.grabFirstBalls.ordinal());
+            skipped.add(AutoStage.scoreFirstBalls.ordinal());
+        }
+
+        if (!DO_SECOND_CYCLE) {
+            skipped.add(AutoStage.grabSecondBalls.ordinal());
+            skipped.add(AutoStage.scoreSecondBalls.ordinal());
+        }
+
+        if (!DO_THIRD_CYCLE) {
+            skipped.add(AutoStage.grabThirdBalls.ordinal());
+            skipped.add(AutoStage.scoreThirdBalls.ordinal());
+        }
+
+        if (!DO_PARK) {
+            skipped.add(AutoStage.park.ordinal());
+        }
+
+        return skipped;
     }
     @Override
     protected boolean isCorrectGoalTag(int tagId) {
         return VisionUtils.isTagRedGoal(tagId);
     }
-
-    @Override
-    protected int getStateAfterHitGate() {
-        return AutoStage.scoreFirstBalls.ordinal(); // Hit gate after first score
-    }
-
 
 
     //pathing
@@ -44,9 +68,23 @@ public class AutoRed extends AutoMaster {
     protected PathChain getScorePreload(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(120.678, 119.908),
+                                new Pose(135.000, 115.000),
 
-                                new Pose(85.000, 120.000)
+                                new Pose(94.000, 115.000)
+                        )
+                ).setTangentHeadingInterpolation()
+                .setReversed()
+                .build();
+
+    }
+
+    @Override
+    protected PathChain getGrabPickup1(Follower follower) {
+        return  follower.pathBuilder().addPath(
+                        new BezierCurve(
+                                new Pose(94.000, 115.000),
+                                new Pose(81.646, 78.608),
+                                new Pose(127.579, 85.000)
                         )
                 ).setTangentHeadingInterpolation()
                 .setReversed()
@@ -54,57 +92,44 @@ public class AutoRed extends AutoMaster {
     }
 
     @Override
-    protected PathChain getGrabPickup1(Follower follower) {
-        return follower.pathBuilder().addPath(
-                        new BezierCurve(
-                                new Pose(85.000, 120.000),
-                                new Pose(77.218, 82.927),
-                                new Pose(119.222, 90.422)
-                        )
-                ).setTangentHeadingInterpolation()
-
-                .build();
-
-    }
-
-    @Override
     protected PathChain getHitGate(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(119.222, 90.422),
-                                new Pose(87.927, 113.270),
-                                new Pose(118.990, 87.437)
+                                new Pose(127.579, 85.000),
+                                new Pose(109.132, 73.737),
+                                new Pose(129.000, 70.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(90))
+                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(-90))
 
                 .build();
+
 
     }
 
     @Override
     protected PathChain getScorePickup1(Follower follower) {
         return follower.pathBuilder().addPath(
-                        new BezierCurve(
-                                new Pose(118.990, 87.437),
-                                new Pose(93.537, 81.321),
-                                new Pose(106.673, 108.282),
-                                new Pose(93.158, 105.385)
+                        new BezierLine(
+                                new Pose(129.000, 70.000),
+
+                                new Pose(104.000, 105.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(40))
+                ).setLinearHeadingInterpolation(Math.toRadians(-90), Math.toRadians(45))
 
                 .build();
+
     }
 
     @Override
     protected PathChain getGrabPickup2(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(93.158, 105.385),
-                                new Pose(66.771, 57.761),
-                                new Pose(120.349, 60.657)
+                                new Pose(104.000, 105.000),
+                                new Pose(79.482, 54.099),
+                                new Pose(129.000, 60.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(40), Math.toRadians(0))
-
+                ).setTangentHeadingInterpolation()
+                .setReversed()
                 .build();
     }
 
@@ -112,41 +137,57 @@ public class AutoRed extends AutoMaster {
     protected PathChain getScorePickup2(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(120.349, 60.657),
-                                new Pose(104.837, 78.065),
-                                new Pose(127.374, 119.506),
-                                new Pose(97.256, 108.758)
+                                new Pose(129.000, 60.000),
+                                new Pose(107.694, 78.223),
+                                new Pose(104.000, 105.000)
                         )
-                ).setTangentHeadingInterpolation()
-                .setReversed()
+                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(45))
+
                 .build();
-
-
-
     }
 
     @Override
     protected PathChain getGrabPickup3(Follower follower) {
-        return null;
+        return follower.pathBuilder().addPath(
+                        new BezierCurve(
+                                new Pose(104.000, 105.000),
+                                new Pose(75.322, 27.502),
+                                new Pose(129.000, 36.000)
+                        )
+                ).setTangentHeadingInterpolation()
+                .setReversed()
+                .build();
     }
 
     @Override
     protected PathChain getScorePickup3(Follower follower) {
-        return null;
+        return follower.pathBuilder().addPath(
+                        new BezierCurve(
+                                new Pose(129.000, 36.000),
+                                new Pose(126.716, 48.690),
+                                new Pose(112.570, 55.779),
+                                new Pose(130.544, 77.070),
+                                new Pose(99.695, 79.392),
+                                new Pose(109.889, 93.135),
+                                new Pose(104.000, 105.000)
+                        )
+                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(45))
+
+                .build();
+
     }
 
     @Override
     protected PathChain getPark(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(97.256, 108.758),
+                                new Pose(104.000, 105.000),
 
-                                new Pose(102.362, 79.464)
+                                new Pose(119.000, 93.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(43), Math.toRadians(0))
+                ).setLinearHeadingInterpolation(Math.toRadians(45), Math.toRadians(0))
 
                 .build();
-
     }
 
 

@@ -1,24 +1,13 @@
 package org.firstinspires.ftc.teamcode;
 
 
-
-import android.os.SystemClock;
-
-import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.BezierCurve;
-import com.pedropathing.geometry.BezierLine;
+
 import com.pedropathing.geometry.Pose;
-import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.hardware.limelightvision.LLResult;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 import java.util.Collections;
@@ -28,7 +17,6 @@ import java.util.Set;
 public abstract class AutoMaster extends RobotMasterPinpoint {
 
     private Follower follower;
-    private TelemetryManager telemetryM;
     private Timer pathTimer, stageStartTimer, opmodeTimer;
     protected boolean stageInit = true;
 
@@ -51,7 +39,6 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
 
     public static int pathState = AutoStage.scorePreload.ordinal();
     private int pathAfterStateShotOrdinal = AutoStage.grabFirstBalls.ordinal();
-    protected abstract int getStateAfterHitGate();
     protected abstract boolean isCorrectGoalTag(int tagId);
 
     protected Set<Integer> getSkippedStages() {
@@ -387,12 +374,11 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
 
 
     protected void nextStage() {
-        pathState++;
 
         // Skip stages if they're in the skip set
-        while (getSkippedStages().contains(pathState)) {
+        do {
             pathState++;
-        }
+        } while (getSkippedStages().contains(pathState));
 
         pathTimer.resetTimer();
         stageInit = true;

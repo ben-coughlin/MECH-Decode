@@ -6,32 +6,55 @@ import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
+@Disabled
 @Autonomous(name = "Blue Auto")
 
 public class AutoBlue extends AutoMaster {
 
-
-    //other general differences
+    public static boolean GATE_HIT = true;
+     public static boolean DO_FIRST_CYCLE = true;
+    public static boolean DO_SECOND_CYCLE = true;
+    public static boolean DO_THIRD_CYCLE = true;
+    public static boolean DO_PARK = true;
 
     @Override
     protected Set<Integer> getSkippedStages() {
-        //return Set.of(AutoStage.hitGate.ordinal()); //this would skip hitting the gate
-        return Set.of(AutoStage.hitGate.ordinal(),AutoStage.grabThirdBalls.ordinal(), AutoStage.scoreThirdBalls.ordinal());
-    }
+                Set<Integer> skipped = new HashSet<Integer>() {};
+
+                // Build the skip set based on gate settings
+                if (!GATE_HIT) {
+                        skipped.add(AutoStage.hitGate.ordinal());
+                    }
+
+                if (!DO_FIRST_CYCLE) {
+                        skipped.add(AutoStage.grabFirstBalls.ordinal());
+                        skipped.add(AutoStage.scoreFirstBalls.ordinal());
+                    }
+
+                if (!DO_SECOND_CYCLE) {
+                        skipped.add(AutoStage.grabSecondBalls.ordinal());
+                        skipped.add(AutoStage.scoreSecondBalls.ordinal());
+                    }
+
+                if (!DO_THIRD_CYCLE) {
+                        skipped.add(AutoStage.grabThirdBalls.ordinal());
+                        skipped.add(AutoStage.scoreThirdBalls.ordinal());
+                    }
+
+                if (!DO_PARK) {
+                        skipped.add(AutoStage.park.ordinal());
+                    }
+
+                return skipped;
+            }
     @Override
     protected boolean isCorrectGoalTag(int tagId) {
         return VisionUtils.isTagBlueGoal(tagId);
     }
-
-    @Override
-    protected int getStateAfterHitGate() {
-        return AutoStage.scoreFirstBalls.ordinal(); // Hit gate after first score
-    }
-
-
 
     //pathing
     @Override
@@ -44,9 +67,11 @@ public class AutoBlue extends AutoMaster {
         return follower.pathBuilder().addPath(
                         new BezierLine(
                                 new Pose(9.000, 115.000),
+
                                 new Pose(50.000, 115.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+                ).setTangentHeadingInterpolation()
+
                 .build();
     }
 
@@ -56,7 +81,7 @@ public class AutoBlue extends AutoMaster {
                         new BezierCurve(
                                 new Pose(50.000, 115.000),
                                 new Pose(62.354, 78.608),
-                                new Pose(12.421, 85.000)
+                                new Pose(16.421, 85.000)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -69,7 +94,7 @@ public class AutoBlue extends AutoMaster {
                         new BezierCurve(
                                 new Pose(16.421, 85.000),
                                 new Pose(34.868, 73.737),
-                                new Pose(12.000, 72.000)
+                                new Pose(15.000, 70.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(270))
 
@@ -80,10 +105,11 @@ public class AutoBlue extends AutoMaster {
     protected PathChain getScorePickup1(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(16.421, 85.000),
-                                new Pose(46.597, 96.634)
+                                new Pose(15.000, 70.000),
+
+                                new Pose(40.000, 105.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+                ).setLinearHeadingInterpolation(Math.toRadians(270), Math.toRadians(135))
 
                 .build();
     }
@@ -94,10 +120,9 @@ public class AutoBlue extends AutoMaster {
                         new BezierCurve(
                                 new Pose(40.000, 105.000),
                                 new Pose(64.518, 54.099),
-                                new Pose(16.500, 60.000)
+                                new Pose(15.000, 60.000)
                         )
                 ).setTangentHeadingInterpolation()
-
 
                 .build();
     }
@@ -108,12 +133,11 @@ public class AutoBlue extends AutoMaster {
                         new BezierCurve(
                                 new Pose(15.000, 60.000),
                                 new Pose(36.306, 78.223),
-                                new Pose(42.092, 111.275)
+                                new Pose(40.000, 105.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(135))
 
                 .build();
-
     }
 
     @Override
@@ -153,9 +177,9 @@ public class AutoBlue extends AutoMaster {
                         new BezierLine(
                                 new Pose(40.000, 105.000),
 
-                                new Pose(18.000, 70.000)
+                                new Pose(25.000, 93.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+                ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(180))
 
                 .build();
     }
