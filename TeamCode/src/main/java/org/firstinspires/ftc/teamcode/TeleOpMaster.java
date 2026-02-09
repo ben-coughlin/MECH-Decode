@@ -1,30 +1,24 @@
 package org.firstinspires.ftc.teamcode;
 
-import static org.firstinspires.ftc.teamcode.MovementVars.movement_turn;
-import static org.firstinspires.ftc.teamcode.MovementVars.movement_x;
-import static org.firstinspires.ftc.teamcode.MovementVars.movement_y;
-
 
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
-import com.pedropathing.paths.PathChain;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.teamcode.subsystems.IndicatorLight;
+import org.firstinspires.ftc.teamcode.subsystems.Limelight;
+import org.firstinspires.ftc.teamcode.utils.Toggle;
+import org.firstinspires.ftc.teamcode.utils.VisionUtils;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
-import java.util.function.Supplier;
 
-public abstract class TeleOpMaster extends RobotMasterPinpoint {
+public abstract class TeleOpMaster extends RobotMaster {
 
     private Follower follower;
     public static Pose startingPose;
-    private boolean automatedDrive;
-    private Supplier<PathChain> pathChain;
+
     private TelemetryManager telemetryM;
 
     //state machines!!
@@ -42,7 +36,6 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
 
     private final ElapsedTime stateTimer = new ElapsedTime();
     private final ElapsedTime clockResetTimer = new ElapsedTime();
-    PIDFController headingHold = new PIDFController(0.03, 0, 0.0001);
     Toggle circleToggle = new Toggle(false);
     Toggle squareToggle = new Toggle(false);
     Toggle autoAimToggle = new Toggle(true);
@@ -50,26 +43,10 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
 
     public static boolean hasClockReset = false;
     boolean isAutoAiming = false;
-    double targetHeading = 0.0;
-    public boolean wasBallIntakeSuccessful;
+
 
     protected abstract boolean isCorrectGoalTag(int tagId);
 
-    protected double getShootPrepTime() {
-        return 2700;
-    }
-
-    protected double getKickerVerticalTime() {
-        return 200;
-    }
-
-    protected double getClockShootTime() {
-        return 500;
-    }
-
-    protected double getShotCompleteTime() {
-        return 1000;
-    }
 
     protected double getOuttakeTime() {
         return 2;
@@ -260,7 +237,7 @@ public abstract class TeleOpMaster extends RobotMasterPinpoint {
                 if (stageFinished) {
                     initializeStateVariables();
                 }
-                drive.stopAllMovementDirectionBased();
+                follower.setTeleOpDrive(0,0,0);
                 intakeSubsystem.turnIntakeOff();
                 //turret.turnOffFlywheel();
                 break;

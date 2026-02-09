@@ -3,6 +3,11 @@ package org.firstinspires.ftc.teamcode;
 import com.pedropathing.telemetry.SelectableOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
+import org.firstinspires.ftc.teamcode.autos.AutoBlue;
+import org.firstinspires.ftc.teamcode.autos.AutoBlueFar;
+import org.firstinspires.ftc.teamcode.autos.AutoRed;
+import org.firstinspires.ftc.teamcode.autos.AutoRedFar;
+
 /**
  * Selectable Auto Menu
  * Allows you to choose which autonomous to run at init time

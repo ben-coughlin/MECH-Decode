@@ -8,13 +8,16 @@ import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.hardware.limelightvision.LLResult;
 
+import org.firstinspires.ftc.teamcode.subsystems.IndicatorLight;
+import org.firstinspires.ftc.teamcode.subsystems.Limelight;
+import org.firstinspires.ftc.teamcode.utils.VisionUtils;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 import java.util.Collections;
 import java.util.Set;
 
 
-public abstract class AutoMaster extends RobotMasterPinpoint {
+public abstract class AutoMaster extends RobotMaster {
 
     private Follower follower;
     private Timer pathTimer, stageStartTimer, opmodeTimer;
@@ -363,7 +366,8 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
         }
         if(pathState == AutoStage.endBehavior.ordinal())
         {
-            drive.stopAllMovementDirectionBased();
+            follower.breakFollowing();
+            drive.hardStopMotors();
             turret.turnOffFlywheel();
             clock.resetClock();
             intakeSubsystem.turnIntakeOff();
