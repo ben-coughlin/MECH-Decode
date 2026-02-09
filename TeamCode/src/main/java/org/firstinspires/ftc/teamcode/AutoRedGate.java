@@ -7,12 +7,11 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-import java.util.Collections;
 import java.util.Set;
 
-@Autonomous(name = "Red Auto")
+@Autonomous(name = "Red Auto Gate")
 
-public class AutoRed extends AutoMaster {
+public class AutoRedGate extends AutoMaster {
 
 
     //other general differences
@@ -20,7 +19,7 @@ public class AutoRed extends AutoMaster {
     @Override
     protected Set<Integer> getSkippedStages() {
         //return Set.of(AutoStage.hitGate.ordinal()); //this would skip hitting the gate
-        return Set.of(AutoStage.hitGate.ordinal(), AutoStage.grabThirdBalls.ordinal(), AutoStage.scoreThirdBalls.ordinal());
+        return Set.of(AutoStage.grabThirdBalls.ordinal(), AutoStage.scoreThirdBalls.ordinal());
     }
     @Override
     protected boolean isCorrectGoalTag(int tagId) {
@@ -72,7 +71,7 @@ public class AutoRed extends AutoMaster {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(119.222, 90.422),
-                                new Pose(87.927, 113.270),
+                                new Pose(93.398, 110.535),
                                 new Pose(118.990, 87.437)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(90))
@@ -100,8 +99,8 @@ public class AutoRed extends AutoMaster {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(93.158, 105.385),
-                                new Pose(66.771, 57.761),
-                                new Pose(120.349, 60.657)
+                                new Pose(69.989, 62.588),
+                                new Pose(118.579, 64.197)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(40), Math.toRadians(0))
 
@@ -112,7 +111,7 @@ public class AutoRed extends AutoMaster {
     protected PathChain getScorePickup2(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(120.349, 60.657),
+                                new Pose(118.901, 66.127),
                                 new Pose(104.837, 78.065),
                                 new Pose(127.374, 119.506),
                                 new Pose(97.256, 108.758)
@@ -120,8 +119,6 @@ public class AutoRed extends AutoMaster {
                 ).setTangentHeadingInterpolation()
                 .setReversed()
                 .build();
-
-
 
     }
 

@@ -16,34 +16,38 @@ import java.util.Locale;
 public class Turret
 {
     private final double TURRET_TICKS_PER_DEGREE = 2.34426;
-    private final double TURRET_MIN_LIMIT_TICKS = -450;
-    private final double TURRET_MAX_LIMIT_TICKS = 450;
+    private final double TURRET_MIN_LIMIT_TICKS = -400;
+    private final double TURRET_MAX_LIMIT_TICKS = 400;
     private static final double FLYWHEEL_TICKS_PER_REVOLUTION = 28;
     private double lastTurretPower = 0.0;
-    private final double TURRET_SLEW_RATE = 0.11;
+    private final double TURRET_SLEW_RATE = 0.115;
     private final DcMotorEx turret;
     public final DcMotorEx flywheelLeft;
     public final DcMotorEx flywheelRight;
     private final Servo hood;
     private VoltageSensor voltageSensor;
-    private final PIDFController autoAimClose = new PIDFController(0.0061, 0.000001, 0.0014, 0.096);
-    private final PIDFController autoAimFar = new PIDFController(0.007, 0.0001, 0.0009, 0.08);
-    private PIDFController activeAutoAimController;
-    private static final double GAIN_SCHEDULING_DISTANCE_THRESHOLD = 67.0; // ( ͡°👅 ͡°)
     private double turretDeg;
     private double turretPower;
-    private double errorToUse = 0;
     private double hoodPos;
     private double targetPower;
     private double currVoltage;
-    private final double NOMINAL_VOLTAGE = 12.0;
     private boolean isFlywheelOn;
+    public static boolean isFlywheelRunning = false;
 
-    // Multi-stage compensation constants
+    //turret stuff
+    private final PIDFController autoAimClose = new PIDFController(0.0063, 0, 0.0014, 0.096);
+    private final PIDFController autoAimFar = new PIDFController(0.007, 0.0001, 0.0009, 0.08);
+    private final PIDFController autoAimSlow = new PIDFController(0.004, 0.00005, 0.0008, 0.0);
+    private PIDFController activeAutoAimController;
+    private static final double GAIN_SCHEDULING_DISTANCE_THRESHOLD = 67.0; // ( ͡°👅 ͡°)
+    private static final double VELOCITY_THRESHOLD = 0.1;
     private static final double VELOCITY_COMPENSATION_DURATION_MS = 200;
     private static final double HEADING_COMPENSATION_DURATION_MS = 1000;
-    private static final double RETURN_TO_CENTER_DURATION_MS = 1500;
-    private static final double ROTATIONAL_COMPENSATION_GAIN = 0.33; // Tune this
+    private static final double AUTO_HEADING_COMPENSATION_DURATION_MS = 200;
+    private static final double RETURN_TO_CENTER_DURATION_MS = 1400;
+    private static final double ROTATIONAL_COMPENSATION_GAIN = 0.34;
+
+
 
     // Tracking state
     private enum CompensationMode {
@@ -62,16 +66,19 @@ public class Turret
     private double headingVelocityAtEndOfVeloCompensation = 0;
     private final double HEADING_VELOCITY_COMPENSATION_FACTOR = 0.4;
 
+
     private final double[][] launchAngleLookupTable = {
-            { 23, 0.77, 0.725},
-            { 30, 0.755, 0.8},
-            {35, .755, 0.8},
-            {46, .75, .825},
-            { 60, 0.765, .85},
-            { 67, 0.77, .875},
-            { 72, 0.755, .875 },
-            { 95, .98, 0.975 },
-            { 100, 1, 1 }
+            { 21, .72, .56}, //inches, servo, powa
+            { 31, .72, .565},
+            {36, .74, .575},
+            {40, .74, .59},
+            {50, .820, .635},
+            {60, .86, .650},
+            {71, .87, .685},
+            {80, .94, .745},
+            {96, .97, .79},
+            {103, .98, .795},
+            {115, .99, .83}
 
     };
 
@@ -90,6 +97,8 @@ public class Turret
 
         flywheelLeft.setDirection(DcMotorSimple.Direction.FORWARD);
         flywheelRight.setDirection(DcMotorSimple.Direction.REVERSE);
+        flywheelLeft.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
+        flywheelRight.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
 
         flywheelLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         flywheelRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -101,6 +110,7 @@ public class Turret
         activeAutoAimController = autoAimClose;
         autoAimFar.setReference(0);
         autoAimClose.setReference(0);
+        autoAimSlow.setReference(0);
         resetTracking();
     }
 
@@ -115,9 +125,11 @@ public class Turret
         hood.setPosition(getServoPositionFromDistance(currentDistance));
         targetPower = getPowerFromDistance(currentDistance);
         if ((isFlywheelOn)) {
+            isFlywheelRunning = true;
             flywheelRight.setPower(targetPower);
             flywheelLeft.setPower(targetPower);
         } else {
+            isFlywheelRunning = false;
             flywheelLeft.setPower(0);
             flywheelRight.setPower(0);
         }
@@ -134,7 +146,7 @@ public class Turret
      * @param robotHeadingVelocity - rate of robot rotation in degrees/second
      */
     public void aimTurret(boolean hasValidTarget, double limelightError, double manualTurnInput,
-                          double distance, double robotHeading, double robotHeadingVelocity) {
+                          double distance, double robotHeading, double robotHeadingVelocity, double avgXYVelocity) {
         double calculatedPower;
         boolean useAutoAim = !(Math.abs(manualTurnInput) > 0.05) && (hasValidTarget || hasSeenTargetThisSession);
 
@@ -146,15 +158,27 @@ public class Turret
                 currentMode = CompensationMode.VISION;
 
 
-                // Select PID gains based on distance
-                if (distance < GAIN_SCHEDULING_DISTANCE_THRESHOLD && distance > 0) {
+                double angularVelocity = Math.abs(robotHeadingVelocity);
+
+                if (angularVelocity < VELOCITY_THRESHOLD || avgXYVelocity < VELOCITY_THRESHOLD) {
+                    // Robot is stopped or moving slowly - use stationary controller
+                    if (activeAutoAimController != autoAimSlow) {
+                        autoAimClose.reset();
+                        autoAimFar.reset();
+                    }
+                    activeAutoAimController = autoAimSlow;
+                } else if (distance < GAIN_SCHEDULING_DISTANCE_THRESHOLD && distance > 0) {
+                    // Moving and close distance
                     if (activeAutoAimController != autoAimClose) {
                         autoAimFar.reset();
+                        autoAimSlow.reset();
                     }
                     activeAutoAimController = autoAimClose;
                 } else {
+                    // Moving and far distance
                     if (activeAutoAimController != autoAimFar) {
                         autoAimClose.reset();
+                        autoAimSlow.reset();
                     }
                     activeAutoAimController = autoAimFar;
                 }
@@ -192,7 +216,7 @@ public class Turret
                     headingVelocityAtEndOfVeloCompensation = robotHeadingVelocity;
                     return;
 
-                } else if (timeSinceLost < VELOCITY_COMPENSATION_DURATION_MS + HEADING_COMPENSATION_DURATION_MS) {
+                } else if (timeSinceLost < VELOCITY_COMPENSATION_DURATION_MS + ((RobotMasterPinpoint.isAuto) ? AUTO_HEADING_COMPENSATION_DURATION_MS : HEADING_COMPENSATION_DURATION_MS)) {
                     currentMode = CompensationMode.HEADING_COMP;
 
                     //figure out which direction to rotate; signum example: -0.5 = -1.0, 0 = 0, 15 = 1
@@ -291,7 +315,7 @@ public class Turret
     /**
      * Get current compensation mode for telemetry
      */
-    public String getTrackingMode() {
+    public String getTrackingModeForTelemetry() {
         switch (currentMode) {
             case VISION: return "VISION";
             case VELOCITY_COMP:
@@ -312,7 +336,7 @@ public class Turret
 
         double feedforwardPower = targetRPM / 6000.0;
         feedforwardPower = Range.clip(feedforwardPower, -1.0, 1.0);
-        feedforwardPower *= (NOMINAL_VOLTAGE / currVoltage);
+
 
         flywheelLeft.setPower(feedforwardPower);
     }
@@ -360,8 +384,8 @@ public class Turret
                 double powerRange = upperBound[2] - lowerBound[2];
                 double distanceRatio = (distance - lowerBound[0]) / distanceRange;
 
-                return Range.clip((lowerBound[2] + (distanceRatio * powerRange)) *
-                        (NOMINAL_VOLTAGE / currVoltage), 0.65, 1);
+                return Range.clip((lowerBound[2] + (distanceRatio * powerRange))
+                   , 0.40, 1);
             }
         }
         return 0.9;
@@ -371,7 +395,6 @@ public class Turret
         telemetry.addLine("--- Aim ---");
         telemetry.addData("Turret PID Power", turret.getPower());
         telemetry.addData("Turret Degrees", turretDeg);
-        telemetry.addData("error To Use ", errorToUse);
         telemetry.addData("Distance to Goal", "%.2f inches", Limelight.getDistance());
         telemetry.addData("Interpolated Servo Position", "%.2f",
                 getServoPositionFromDistance(Limelight.getDistance()));
@@ -381,7 +404,7 @@ public class Turret
         telemetry.addData("Motor Power (L/R)", String.format(Locale.US,"%.2f / %.2f",
                 flywheelLeft.getPower(), flywheelRight.getPower()));
         telemetry.addData("Current Voltage", currVoltage);
-        telemetry.addData("Turret Tracking Mode", getTrackingMode());
+        telemetry.addData("Turret Tracking Mode", getTrackingModeForTelemetry());
     }
 
     public double getTurretDeg() { return turretDeg; }
@@ -391,6 +414,10 @@ public class Turret
     public void setFlywheelRightPower(double flywheelRightPower) { flywheelRight.setPower(flywheelRightPower); }
     public double getHoodPos() { return hoodPos; }
     public void setHoodPos(double hoodPos) { hood.setPosition(hoodPos); }
+
+
+
+
 
     public void resetEncoder()
     {
@@ -407,5 +434,6 @@ public class Turret
     {
         autoAimClose.reset();
         autoAimFar.reset();
+        autoAimSlow.reset();
     }
 }

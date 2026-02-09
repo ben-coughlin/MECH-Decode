@@ -1,114 +1,132 @@
 package org.firstinspires.ftc.teamcode;
 
+
+
 import android.os.SystemClock;
-import android.util.Log;
 
+import com.bylazar.telemetry.TelemetryManager;
+import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.BezierCurve;
+import com.pedropathing.geometry.BezierLine;
+import com.pedropathing.geometry.Pose;
+import com.pedropathing.paths.Path;
+import com.pedropathing.paths.PathChain;
+import com.pedropathing.util.Timer;
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.Set;
+
 
 public abstract class AutoMaster extends RobotMasterPinpoint {
 
-    protected final double SCALE_FACTOR = 0.9;
-    protected long startTime = 0;
+    private Follower follower;
+    private TelemetryManager telemetryM;
+    private Timer pathTimer, stageStartTimer, opmodeTimer;
+    protected boolean stageInit = true;
 
-    protected boolean hasFinishedManualAim = false;
-    protected boolean isLookingAtObelisk = true;
-    protected boolean past5In = false;
+    protected enum AutoStage
+    {
+        scorePreload,
+        grabFirstBalls,
+        hitGate,
+        scoreFirstBalls,
+        grabSecondBalls,
+        scoreSecondBalls,
+        grabThirdBalls,
+        scoreThirdBalls,
+        park,
+        endBehavior,
+        shootPrep,
+        shoot,
 
-
-    protected static final String SIMULATOR_HOST = "192.168.43.22";
-    protected static final int SIMULATOR_PORT = 7777;
-    private boolean hasClockStartedResetting = false;
-
-
-
-    protected enum progStates {
-        driveBackwardsFromStartToShootPreload,
-        driveToFirstThreeBalls,
-        intakeFirstThreeBalls,
-        driveToShootingPoint,
-        driveToSecondThreeBalls,
-        intakeSecondThreeBalls,
-        driveToShootPointToEnd,
-        driveOutsideOfShootZoneToEnd,
-        driveToThirdThreeBalls,
-        intakeThirdThreeBalls,
-        SHOOT_PREP,
-        SHOOT,
-        endBehavior
     }
-    private int stageAfterShootPointOrdinal = progStates.driveToFirstThreeBalls.ordinal();
 
+    public static int pathState = AutoStage.scorePreload.ordinal();
+    private int pathAfterStateShotOrdinal = AutoStage.grabFirstBalls.ordinal();
+    protected abstract int getStateAfterHitGate();
     protected abstract boolean isCorrectGoalTag(int tagId);
 
+    protected Set<Integer> getSkippedStages() {
+        return Collections.emptySet();  // Default: skip nothing
+    }
+    //points
+    protected abstract Pose getStartPose();
+    protected abstract PathChain getScorePreload(Follower follower);
+    protected abstract PathChain getGrabPickup1(Follower follower);
+    protected abstract PathChain getHitGate(Follower follower);
+    protected abstract PathChain getScorePickup1(Follower follower);
+    protected abstract PathChain getGrabPickup2(Follower follower);
+    protected abstract PathChain getScorePickup2(Follower follower);
+    protected abstract PathChain getGrabPickup3(Follower follower);
+    protected abstract PathChain getScorePickup3(Follower follower);
+    protected abstract PathChain getPark(Follower follower);
 
-    // Override these for alliance-specific coordinates and headings
-    protected abstract CurvePoint getShootPreloadEndPoint();
-    protected abstract double getShootPreloadHeading();
-    protected abstract int getShootPreloadFollowCurveTolerance();
-
-    protected abstract CurvePoint getFirstThreeBallsEndPoint();
-    protected abstract double getFirstThreeBallsHeading();
-    protected abstract int getFirstThreeBallsFollowCurveTolerance();
-
-    protected abstract CurvePoint getIntakeFirstThreeBallsEndPoint();
-    protected abstract double getIntakeFirstThreeBallsHeading();
-    protected abstract int getIntakeFirstThreeBallsFollowCurveTolerance();
-
-    protected abstract CurvePoint getShootingPointEndPoint();
-    protected abstract double getShootingPointHeading();
-    protected abstract int getShootingPointFollowCurveTolerance();
-
-    protected abstract CurvePoint getSecondThreeBallsEndPoint();
-    protected abstract double getSecondThreeBallsHeading();
-    protected abstract int getSecondThreeBallsFollowCurveTolerance();
-
-    protected abstract CurvePoint getIntakeSecondThreeBallsEndPoint();
-    protected abstract double getIntakeSecondThreeBallsHeading();
-    protected abstract int getIntakeSecondThreeBallsTolerance();
-
-    protected abstract CurvePoint getShootPointToEndEndPoint();
-    protected abstract double getShootPointToEndHeading();
-    protected abstract int getShootPointToEndFollowCurveTolerance();
-    protected abstract CurvePoint getDriveOutsideShootZoneEndPoint();
-    protected abstract double getDriveOutsideShootZoneHeading();
-    protected abstract int getDriveOutsideShootZoneFollowCurveTolerance();
-    protected abstract CurvePoint getIntakeThirdThreeBallsPoint();
-    protected abstract double getIntakeThirdThreeBallsHeading();
-    protected abstract CurvePoint getDriveToThirdThreeBallsPoint();
-    protected abstract double getDriveToThirdThreeBallsHeading();
+    private PathChain scorePreload, grabPickup1,  hitGate, scorePickup1, grabPickup2, scorePickup2, grabPickup3, scorePickup3, park;
 
 
 
+
+    /**
+     * This method is called once at the init of the OpMode.
+     **/
     @Override
     public void init() {
         super.init();
-        //spindexer.setInventory(new Pattern(Pattern.Ball.GREEN, Pattern.Ball.PURPLE, Pattern.Ball.PURPLE)); //todo: we might  need a motif method, check later
         isAuto = true;
-        clock.initClock();
+        pathTimer = new Timer();
+        opmodeTimer = new Timer();
+        stageStartTimer = new Timer();
+        opmodeTimer.resetTimer();
+
+
+        follower = Constants.createFollower(hardwareMap);
+        buildPaths();
+        follower.setStartingPose(getStartPose());
+
     }
 
+    /**
+     * This method is called continuously after Init while waiting for "play".
+     **/
     @Override
     public void init_loop() {
         super.init_loop();
+
     }
 
+    /**
+     * This method is called once at the start of the OpMode.
+     * It runs all the setup actions, including building paths and starting the path system
+     **/
     @Override
     public void start() {
         super.start();
-        startTime = SystemClock.uptimeMillis();
-    }
+        opmodeTimer.resetTimer();
 
+    }
     @Override
-    public void mainLoop() {
-        super.mainLoop();
-        Pose2D pos = odo.pos; // try not to flood odo with reads
+    public void loop() {
+        //super.mainLoop();
+        // These loop the movements of the robot, these must be called continuously in order to work
+        follower.update();
+        turret.showAimTelemetry(telemetry);
+
+
+        // read everything once and only once per loop
+        limelight.updateLimelight();
+        turret.updateTurret();
+        clock.clockUpdate();
+        breakbeamStates[0] = breakbeam.getIntakeBreakbeamStatus();
+        breakbeamStates[1] = breakbeam.getTurretBreakbeamStatus();
+
         LLResult currVision = Limelight.getCurrResult();
         boolean hasValidVision = currVision != null
                 && currVision.isValid()
@@ -121,325 +139,297 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
                 hasValidVision ? Limelight.getCurrResult().getTx() : 0,
                 gamepad2.right_stick_x,
                 Limelight.getDistance(),
-                pos.getHeading(AngleUnit.DEGREES),
-                odo.getVelocityComponents()[2]
+                follower.getHeading(),
+                follower.getAngularVelocity(),
+                follower.getVelocity().getMagnitude()
         );
 
-        Log.i("DEBUG", "Current stage: " + programStage + " = " + progStates.values()[programStage].name());
-        Log.i("DEBUG", "=== LOOP START === Stage: " + programStage + " = " + progStates.values()[programStage].name());
-        Log.i("DEBUG", "isShotInProgress: " + shooterSubsystem.isShotInProgress + ", shotsRemaining: " + shooterSubsystem.shotsRemaining);
+        updatePaths();
+        telemetry.addData("superstructure state", pathState);
 
-        // State machine
-        if (programStage == progStates.driveBackwardsFromStartToShootPreload.ordinal()) {
-            handleDriveBackwardsFromStartToShootPreload();
-        }
-
-        if (programStage == progStates.driveToFirstThreeBalls.ordinal()) {
-            handleDriveToFirstThreeBalls();
-        }
-
-        if (programStage == progStates.intakeFirstThreeBalls.ordinal()) {
-            handleIntakeFirstThreeBalls();
-        }
-
-        if (programStage == progStates.driveToShootingPoint.ordinal()) {
-            handleDriveToShootingPoint();
-        }
-
-        if (programStage == progStates.driveToSecondThreeBalls.ordinal()) {
-            handleDriveToSecondThreeBalls();
-        }
-
-        if (programStage == progStates.intakeSecondThreeBalls.ordinal()) {
-            handleIntakeSecondThreeBalls();
-        }
-
-
-        if(programStage == progStates.driveToThirdThreeBalls.ordinal())
-        {
-            handleDriveToThirdThreeBalls();
-        }
-
-        if (programStage == progStates.intakeThirdThreeBalls.ordinal()) {
-            handleIntakeThirdThreeBalls();
-        }
-
-
-        if (programStage == progStates.SHOOT_PREP.ordinal()) {
-            handleShootPrep();
-        }
-
-        if (programStage == progStates.SHOOT.ordinal()) {
-            handleShoot();
-        }
-
-        if (programStage == progStates.endBehavior.ordinal()) {
-            handleEndBehavior();
-        }
-        if(programStage == progStates.driveOutsideOfShootZoneToEnd.ordinal())
-        {
-            handleDriveOutsideOfShootZoneToEnd();
-        }
-    }
-
-    protected void handleDriveBackwardsFromStartToShootPreload() {
-        if (stageFinished) {
-            past5In = false;
-            initializeStateVariables();
-            shooterSubsystem.spinUp();
-        }
-        shooterSubsystem.updateSpin();
-
-        ArrayList<CurvePoint> points = new ArrayList<>();
-        points.add(new CurvePoint(stateStartingX, stateStartingY, 0, 0, 0, 0, 0, 0));
-        points.add(getShootPreloadEndPoint());
-
-        if (Movement.followCurve(points, getShootPreloadHeading(), getShootPreloadFollowCurveTolerance())) {
-            drive.stopAllMovementDirectionBased();
-            nextStage(progStates.SHOOT_PREP.ordinal(), progStates.driveToFirstThreeBalls.ordinal());
-        }
-        drive.applyMovementDirectionBased();
-    }
-
-    protected void handleDriveToFirstThreeBalls() {
-        if (stageFinished) {
-            past5In = false;
-            initializeStateVariables();
-        }
-
-        ArrayList<CurvePoint> points = new ArrayList<>();
-        points.add(new CurvePoint(stateStartingX, stateStartingY, 0, 0, 0, 0, 0, 0));
-        points.add(getFirstThreeBallsEndPoint());
-
-        if (Movement.followCurve(points, getFirstThreeBallsHeading(), getFirstThreeBallsFollowCurveTolerance())) {
-            drive.stopAllMovementDirectionBased();
-            nextStage(progStates.intakeFirstThreeBalls.ordinal());
-        }
-        drive.applyMovementDirectionBased();
-    }
-
-    protected void handleIntakeFirstThreeBalls() {
-        if (stageFinished) {
-            past5In = false;
-            initializeStateVariables();
-            intakeSubsystem.turnIntakeOn();
-        }
-
-        ArrayList<CurvePoint> points = new ArrayList<>();
-        points.add(new CurvePoint(stateStartingX, stateStartingY, 0, 0, 0, 0, 0, 0));
-        points.add(getIntakeFirstThreeBallsEndPoint());
-
-        if (Movement.followCurve(points, getIntakeFirstThreeBallsHeading(), getIntakeFirstThreeBallsFollowCurveTolerance())) {
-            drive.stopAllMovementDirectionBased();
-            shooterSubsystem.isFlywheelSpun = true;
-            stageAfterShootPointOrdinal = getStageAfterShootPointOrdinal(progStates.intakeFirstThreeBalls.ordinal());
-            nextStage(progStates.driveToShootingPoint.ordinal());
-        }
-        drive.applyMovementDirectionBased();
-    }
-
-    protected void handleDriveToShootingPoint() {
-        if (stageFinished) {
-            past5In = false;
-            initializeStateVariables();
-            shooterSubsystem.spinUp();
-
-        }
-        shooterSubsystem.updateSpin();
-
-        ArrayList<CurvePoint> points = new ArrayList<>();
-        points.add(new CurvePoint(stateStartingX, stateStartingY, 0, 0, 0, 0, 0, 0));
-        points.add(getShootingPointEndPoint());
-
-        if (Movement.followCurve(points, getShootingPointHeading(), getShootingPointFollowCurveTolerance())) {
-            drive.stopAllMovementDirectionBased();
-            nextStage(progStates.SHOOT_PREP.ordinal(), stageAfterShootPointOrdinal);
-        }
-        drive.applyMovementDirectionBased();
-    }
-
-    protected void handleDriveToSecondThreeBalls() {
-        if (stageFinished) {
-            past5In = false;
-            initializeStateVariables();
-        }
-
-        ArrayList<CurvePoint> points = new ArrayList<>();
-        points.add(new CurvePoint(stateStartingX, stateStartingY, 0, 0, 0, 0, 0, 0));
-        points.add(getSecondThreeBallsEndPoint());
-
-        if (Movement.followCurve(points, getSecondThreeBallsHeading(), getSecondThreeBallsFollowCurveTolerance())) {
-            drive.stopAllMovementDirectionBased();
-            nextStage(progStates.intakeSecondThreeBalls.ordinal());
-        }
-        drive.applyMovementDirectionBased();
-    }
-
-    protected void handleIntakeSecondThreeBalls() {
-        if (stageFinished) {
-            past5In = false;
-            intakeSubsystem.turnIntakeOn();
-            shooterSubsystem.spinUp();
-            Log.i("DEBUG", "intakeSecondThreeBalls");
-        }
-
-        ArrayList<CurvePoint> points = new ArrayList<>();
-        points.add(new CurvePoint(stateStartingX, stateStartingY, 0, 0, 0, 0, 0, 0));
-        points.add(getIntakeSecondThreeBallsEndPoint());
-
-
-        if (Movement.followCurve(points, getIntakeSecondThreeBallsHeading(), getIntakeSecondThreeBallsTolerance())) {
-            drive.stopAllMovementDirectionBased();
-            stageAfterShootPointOrdinal = getStageAfterShootPointOrdinal(progStates.intakeSecondThreeBalls.ordinal());
-            nextStage(progStates.driveToShootingPoint.ordinal());
-
-        }
-        drive.applyMovementDirectionBased();
-    }
-
-    protected void handleDriveToThirdThreeBalls()
-    {
-        if(stageFinished)
-        {
-            past5In = false;
-            initializeStateVariables();
-        }
-
-        ArrayList<CurvePoint> points = new ArrayList<>();
-        points.add(new CurvePoint(stateStartingX, stateStartingY, 0, 0, 0, 0, 0, 0));
-        points.add(getDriveToThirdThreeBallsPoint());
-
-        if (Movement.followCurve(points, getDriveToThirdThreeBallsHeading(), 2)) {
-            drive.stopAllMovementDirectionBased();
-            nextStage(progStates.intakeThirdThreeBalls.ordinal());
-
-        }
-        drive.applyMovementDirectionBased();
-
-    }
-
-    protected void handleIntakeThirdThreeBalls() {
-        if (stageFinished) {
-            past5In = false;
-            intakeSubsystem.turnIntakeOn();
-            Log.i("DEBUG", "intakeThirdThreeBalls");
-        }
-
-        ArrayList<CurvePoint> points = new ArrayList<>();
-        points.add(new CurvePoint(stateStartingX, stateStartingY, 0, 0, 0, 0, 0, 0));
-        points.add(getIntakeThirdThreeBallsPoint());
-
-        if (Movement.followCurve(points, getIntakeThirdThreeBallsHeading(), 3)) {
-            drive.stopAllMovementDirectionBased();
-            stageAfterShootPointOrdinal = getStageAfterShootPointOrdinal(progStates.intakeThirdThreeBalls.ordinal());
-            nextStage(progStates.driveToShootingPoint.ordinal());
-        }
-        drive.applyMovementDirectionBased();
-    }
-
-    protected void handleDriveOutsideOfShootZoneToEnd() {
-        if (stageFinished) {
-            past5In = false;
-        }
-
-        ArrayList<CurvePoint> points = new ArrayList<>();
-        points.add(new CurvePoint(stateStartingX, stateStartingY, 0, 0, 0, 0, 0, 0));
-        points.add(getDriveOutsideShootZoneEndPoint());
-
-        if (Movement.followCurve(points, getDriveOutsideShootZoneHeading(), getDriveOutsideShootZoneFollowCurveTolerance())) {
-            drive.stopAllMovementDirectionBased();
-
-        }
-        drive.applyMovementDirectionBased();
-    }
-
-//    protected void handleDriveToShootPointToEnd() {
-//        if (stageFinished) {
-//            past5In = false;
-//            initializeStateVariables();
-//            shooterSubsystem.isFlywheelReady = false;
-//            shooterSubsystem.spinUp();
-//            intakeSubsystem.turnIntakeOff();
-//        }
-//        shooterSubsystem.updateSpin();
-//
-//        ArrayList<CurvePoint> points = new ArrayList<>();
-//        points.add(new CurvePoint(stateStartingX, stateStartingY, 0, 0, 0, 0, 0, 0));
-//        points.add(getShootPointToEndEndPoint());
-//
-//        if (Movement.followCurve(points, getShootPointToEndHeading(), getShootPointToEndFollowCurveTolerance())) {
-//            intakeSubsystem.turnIntakeOff();
-//            drive.stopAllMovementDirectionBased();
-//            shooterSubsystem.isFlywheelSpun = true;
-//            nextStage(progStates.SHOOT_PREP.ordinal(), progStates.driveOutsideOfShootZoneToEnd.ordinal());
-//        }
-//        drive.applyMovementDirectionBased();
-//    }
-
-    protected void handleShootPrep() {
-        if (stageFinished) {
-            initializeStateVariables();
-            shooterSubsystem.spinUp();
-        }
-        shooterSubsystem.updateSpin();
-
-        if (shooterSubsystem.isFlywheelReady) {
-            clock.moveClockToPreShootPosition();
-            nextStage(progStates.SHOOT.ordinal());
-        }
-    }
-
-    protected void handleShoot() {
-        if (stageFinished) {
-            stageFinished = false;
-            initializeStateVariables();
-            intakeSubsystem.turnIntakeOff();
-        }
-        shooterSubsystem.startShotSequence();
-        if(!shooterSubsystem.isShotInProgress || SystemClock.uptimeMillis() - stateStartTime > 4000)
-        {
-            clock.resetClock();
-        }
-        if(SystemClock.uptimeMillis() - stateStartTime > 4800)
-        {
-            nextStage(stageAfterShotOrdinal);
-        }
-
-
-
-    }
-
-    protected void handleEndBehavior() {
-        if (stageFinished) {
-            past5In = false;
-            initializeStateVariables();
-        }
-        drive.stopAllMovementDirectionBased();
     }
 
     /**
-     * determines what state we go to after the shoot point since we reuse that state
-     * @return int ordinal of the state to go to after we're done shooting
-     */
-    private int getStageAfterShootPointOrdinal(int ordinal)
-    {
-       if(ordinal == progStates.intakeFirstThreeBalls.ordinal())
-       {
-           return progStates.driveToSecondThreeBalls.ordinal();
-       }
-       else if(ordinal == progStates.intakeSecondThreeBalls.ordinal())
-       {
-           return progStates.driveOutsideOfShootZoneToEnd.ordinal();
-       }
-       else if(ordinal == progStates.intakeThirdThreeBalls.ordinal())
-       {
-           return progStates.driveOutsideOfShootZoneToEnd.ordinal();
-       }
-       else
-       {
-           //this shouldn't happen
-           return progStates.endBehavior.ordinal();
-       }
+     * We do not use this because everything should automatically disable
+     **/
+    @Override
+    public void stop() {
+        super.stop();
     }
 
+    public void buildPaths() {
+
+        scorePreload = getScorePreload(follower);
+
+        grabPickup1 = getGrabPickup1(follower);
+        hitGate = getHitGate(follower);
+
+        scorePickup1 = getScorePickup1(follower);
+
+        grabPickup2 = getGrabPickup2(follower);
+
+        scorePickup2 = getScorePickup2(follower);
+
+        grabPickup3 = getGrabPickup3(follower);
+
+        scorePickup3 = getScorePickup3(follower);
+
+        park = getPark(follower);
+    }
+
+    public void updatePaths() {
+        telemetry.addData("Current Stage", AutoStage.values()[pathState].name());
+        telemetry.addData("stageInit", stageInit);
+
+        if(pathState == AutoStage.scorePreload.ordinal()){
+            if(stageInit)
+            {
+                intakeSubsystem.turnIntakeOn();
+                shooterSubsystem.spinUp();
+                clock.moveClockToPreShootPosition();
+                initState();
+                if(scorePreload != null) { follower.followPath(scorePreload); }
+                else { nextStage(); }
+            }
+            shooterSubsystem.updateSpin();
+
+            if(!follower.isBusy())
+            {
+
+                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabFirstBalls.ordinal());
+            }
+        }
+
+        if(pathState == AutoStage.grabFirstBalls.ordinal())
+        {
+            if(stageInit)
+            {
+                initState();
+                intakeSubsystem.turnIntakeOn();
+                if(grabPickup1 != null) { follower.followPath(grabPickup1, 0.75, false); }
+                else { nextStage(); }
+
+            }
+
+            if(!follower.isBusy())
+            {
+
+                nextStage(AutoStage.hitGate.ordinal());
+            }
+        }
+
+        if(pathState == AutoStage.hitGate.ordinal())
+        {
+            if(stageInit)
+            {
+                initState();
+                if(grabPickup2 != null) { follower.followPath(hitGate); }
+                else { nextStage(); }
+            }
+
+
+            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 2200)
+            {
+                nextStage(AutoStage.scoreFirstBalls.ordinal());
+
+            }
+        }
+
+        if(pathState == AutoStage.scoreFirstBalls.ordinal())
+        {
+            if(stageInit)
+            {
+                shooterSubsystem.spinUp();
+
+                if(scorePickup1 != null) { follower.followPath(scorePickup1, 0.9, false); }
+                else { nextStage(); }
+                initState();
+            }
+            intakeSubsystem.turnIntakeOn();
+            shooterSubsystem.updateSpin();
+
+
+            if(!follower.isBusy())
+            {
+
+                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabSecondBalls.ordinal());
+            }
+        }
+
+        if(pathState == AutoStage.grabSecondBalls.ordinal())
+        {
+            if(stageInit)
+            {
+
+                intakeSubsystem.turnIntakeOn();
+                if(grabPickup1 != null) { follower.followPath(grabPickup2, 0.74, false); }
+                else { nextStage(); }
+                initState();
+
+            }
+
+            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 400)
+            {
+
+                nextStage(AutoStage.scoreSecondBalls.ordinal());
+            }
+        }
+        if(pathState == AutoStage.scoreSecondBalls.ordinal())
+        {
+            if(stageInit)
+            {
+                initState();
+                shooterSubsystem.spinUp();
+                if(scorePickup1 != null) { follower.followPath(scorePickup2, 0.9, false); }
+                else { nextStage(); }
+
+            }
+            intakeSubsystem.turnIntakeOn();
+            shooterSubsystem.updateSpin();
+
+
+            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 200)
+            {
+
+                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabThirdBalls.ordinal());
+            }
+        }
+        if(pathState == AutoStage.grabThirdBalls.ordinal())
+        {
+            if(stageInit)
+            {
+                intakeSubsystem.turnIntakeOn();
+                if(grabPickup3 != null) { follower.followPath(grabPickup3, 0.8, false); }
+                else { nextStage(); }
+                initState();
+            }
+
+            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 200) //keeps skipping this state idk why so we wanna make sure we don't jump
+            {
+                nextStage(AutoStage.scoreThirdBalls.ordinal());
+            }
+        }
+
+        if(pathState == AutoStage.scoreThirdBalls.ordinal())
+        {
+            if(stageInit)
+            {
+                shooterSubsystem.spinUp();
+                intakeSubsystem.turnIntakeOn();
+                if(scorePickup3 != null) { follower.followPath(scorePickup3); }
+                else { nextStage(); }
+                initState();
+            }
+            shooterSubsystem.updateSpin();
+
+
+            if(!follower.isBusy())
+            {
+
+                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.park.ordinal());
+            }
+
+        }
+
+        if(pathState == AutoStage.park.ordinal())
+        {
+            if(stageInit)
+            {
+                if(park != null) { follower.followPath(park); }
+                else { nextStage(); }
+                initState();
+            }
+
+
+            if(!follower.isBusy())
+            {
+                nextStage(AutoStage.endBehavior.ordinal());
+            }
+        }
+        if(pathState == AutoStage.shootPrep.ordinal())
+        {
+            if(stageInit)
+            {
+                shooterSubsystem.spinUp();
+                initState();
+            }
+            shooterSubsystem.updateSpin();
+
+            if(shooterSubsystem.isFlywheelReady && !follower.isBusy())
+            {
+                nextStage(AutoStage.shoot.ordinal());
+            }
+        }
+        if(pathState == AutoStage.shoot.ordinal())
+        {
+            if (stageInit) {
+                initState();
+            }
+            shooterSubsystem.startShotSequence(isAuto);
+
+            if(stageStartTimer.getElapsedTime() > 4500)
+            {
+                shooterSubsystem.stopAutoShot();
+                intakeSubsystem.turnIntakeOff();
+                nextStage(pathAfterStateShotOrdinal);
+            }
+        }
+        if(pathState == AutoStage.endBehavior.ordinal())
+        {
+            drive.stopAllMovementDirectionBased();
+            turret.turnOffFlywheel();
+            clock.resetClock();
+            intakeSubsystem.turnIntakeOff();
+            IndicatorLight.setLightIndigo();
+
+        }
+    }
+
+
+    protected void nextStage() {
+        pathState++;
+
+        // Skip stages if they're in the skip set
+        while (getSkippedStages().contains(pathState)) {
+            pathState++;
+        }
+
+        pathTimer.resetTimer();
+        stageInit = true;
+    }
+
+    protected void nextStage(int stage) {
+        pathState = stage;
+
+        // Skip stages if they're in the skip set
+        while (getSkippedStages().contains(pathState)) {
+            pathState++;
+        }
+
+        pathTimer.resetTimer();
+        stageInit = true;
+    }
+
+    protected void nextStage(int stage, int afterShotOrdinal) {
+        pathAfterStateShotOrdinal = afterShotOrdinal;
+        pathState = stage;
+
+        // Skip stages if they're in the skip set
+        while (getSkippedStages().contains(pathState)) {
+            pathState++;
+        }
+
+        pathTimer.resetTimer();
+        stageInit = true;
+    }
+
+    protected void initState()
+    {
+
+        turret.resetPID();
+        opmodeTimer.resetTimer();
+        stageStartTimer.resetTimer();
+        stageInit = false;
+    }
 }
+

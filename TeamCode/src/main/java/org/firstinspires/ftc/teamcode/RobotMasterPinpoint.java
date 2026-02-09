@@ -7,8 +7,18 @@ import static org.firstinspires.ftc.teamcode.RobotPosition.worldYPosition;
 import android.os.SystemClock;
 import android.util.Log;
 
+import com.bylazar.telemetry.PanelsTelemetry;
+import com.bylazar.telemetry.TelemetryManager;
+import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.Pose;
+import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
+
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+
+import java.util.function.Supplier;
 
 
 import java.util.HashMap;
@@ -17,13 +27,16 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
     //hardware - - - - - -
     MecanumDrivePinPoint drive = null;
-    Odo odo = null;
+  //  Odo odo = null;
     Limelight limelight = null;
     IntakeSubsystem intakeSubsystem = null;
     Turret turret = null;
     Clock clock = null;
     PoseFusion pose = new PoseFusion();
-    ShooterSubsystem shooterSubsystem;
+    ShooterSubsystem shooterSubsystem = null;
+    Breakbeam breakbeam;
+    IndicatorLight light;
+
     static Pattern obelisk = null;
 
 
@@ -31,7 +44,6 @@ public abstract class RobotMasterPinpoint extends OpMode {
     private UdpClientFieldSim client;
     private UdpClientPlot clientPlot;
 
-    private boolean DEBUGGING = false;
     //global keyvalue store
     public HashMap<String, String> debugKeyValues = new HashMap<>();
 
@@ -67,25 +79,19 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
     //holds the stage we are going to next
     int nextStage = 0;
+    static boolean[] breakbeamStates = {false, false};
 
-    public void nextStage(int shootOrdinal, int ordinal) {
-        nextStage = shootOrdinal;
-        incrementStage();
-        stageAfterShotOrdinal = ordinal;
-    }
+
 
     /**
      * Increments the programStage
      */
-    public void nextStage(int ordinal) {
+    public void incrementStage(int ordinal) {
         nextStage = ordinal;
-        incrementStage();
-    }
-
-    private void incrementStage() {
         programStage = nextStage;
         stageFinished = true;
     }
+
 
 
 
@@ -95,19 +101,16 @@ public abstract class RobotMasterPinpoint extends OpMode {
         drive = new MecanumDrivePinPoint(hardwareMap);
         limelight = new Limelight(hardwareMap);
         intakeSubsystem = new IntakeSubsystem(hardwareMap);
-        odo = new Odo(hardwareMap);
+        //odo = new Odo(hardwareMap);
         turret = new Turret(hardwareMap);
         clock = new Clock(hardwareMap);
         shooterSubsystem = new ShooterSubsystem(clock, turret, intakeSubsystem);
+        breakbeam = new Breakbeam(hardwareMap);
+        light = new IndicatorLight(hardwareMap);
 
 
+        IndicatorLight.setLightWhite();
 
-
-
-        if(gamepad1.options) {
-            DEBUGGING = true;
-
-        }
         initDebugTools();
 
     }
@@ -121,11 +124,9 @@ public abstract class RobotMasterPinpoint extends OpMode {
         lastLoopTime = now;
 
         limelight.updateLimelight();
-        odo.updateOdo();
-        pose.predict(odo.getVelocityComponents()[0], odo.getVelocityComponents()[1], (odo.getHeading() - lastHeading) / dt, dt);
-        pose.updateFromLimelight(limelight.getPose(), Math.toRadians(turret.getTurretDeg()), limelight.getCurrLatency());
-        pose.updateMotionComponents();
-        lastHeading = odo.getHeading();
+//
+        breakbeamStates[0] = breakbeam.getIntakeBreakbeamStatus();
+        breakbeamStates[1] = breakbeam.getTurretBreakbeamStatus();
 
 
         obelisk = limelight.updateObelisk(true);
@@ -143,8 +144,8 @@ public abstract class RobotMasterPinpoint extends OpMode {
 
     @Override
     public void start() {
+        clock.resetClock();
         programStage = 0;
-        obelisk = limelight.updateObelisk(false);
         if(obelisk == null) {obelisk = new Pattern(Pattern.Ball.EMPTY, Pattern.Ball.EMPTY, Pattern.Ball.EMPTY);} //uh oh someone set the bot up wrong
 
     }
@@ -169,7 +170,6 @@ public abstract class RobotMasterPinpoint extends OpMode {
         stageFinished = false;
         isMovementDone = false;
         turret.resetPID();
-        Log.i("DEBUG 2", "stateStartingX:" + stateStartingX + " stateStartingY:" + stateStartingY + " stateStartingAngle_deg:" + Math.toDegrees(stateStartingAngle_rad));
     }
 
 
@@ -183,32 +183,22 @@ public abstract class RobotMasterPinpoint extends OpMode {
         lastLoopTime = now;
 
         //read everything once and only once per loop
+
         limelight.updateLimelight();
-        odo.updateOdo();
         turret.updateTurret();
         clock.clockUpdate();
+        breakbeamStates[0] = breakbeam.getIntakeBreakbeamStatus();
+        breakbeamStates[1] = breakbeam.getTurretBreakbeamStatus();
 
 
-        pose.predict(odo.getVelocityComponents()[0], odo.getVelocityComponents()[1], (odo.getHeading() - lastHeading) / dt, dt);
-        pose.updateFromLimelight(limelight.getPose(), Math.toRadians(turret.getTurretDeg()), limelight.getCurrLatency());
-        pose.updateMotionComponents();
-        lastHeading = odo.getHeading();
-
-
-        telemetry.addData("Obelisk", "[%s] [%s] [%s]",
-                obelisk.spindexSlotOne,
-                obelisk.spindexSlotTwo,
-                obelisk.spindexSlotThree);
-
-        pose.displayPoseTelemetry(telemetry, pose, odo.getVelocityComponents()[0], odo.getVelocityComponents()[1], (odo.getHeading() - lastHeading) / dt);
-        odo.showOdoTelemetry(telemetry);
+//
         turret.showAimTelemetry(telemetry);
-
+        breakbeam.displayBreakbeamTelemetry(telemetry);
 
 
         telemetry.addData("Superstructure State", currentState);
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
-        addDebugData();
+        //addDebugData();
 
         telemetry.update();
         Log.i("Loop Time", String.valueOf(SystemClock.uptimeMillis() - startLoopTime));

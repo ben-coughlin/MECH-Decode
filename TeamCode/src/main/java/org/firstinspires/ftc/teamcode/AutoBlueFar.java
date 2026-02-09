@@ -1,26 +1,172 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.BezierCurve;
+import com.pedropathing.geometry.BezierLine;
+import com.pedropathing.geometry.Pose;
+import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
-@Autonomous
-public class AutoBlueFar extends AutoMasterFar {
+import java.util.Collections;
+import java.util.Set;
+@Disabled
+@Autonomous(name = "Blue Auto Far")
+public class AutoBlueFar extends AutoMaster {
+
+
+
+    //other general stuff
+    @Override
+    protected Set<Integer> getSkippedStages() {
+        //return Set.of(AutoStage.hitGate.ordinal()); //this would skip hitting the gate
+        return Collections.emptySet();
+    }
+
     @Override
     protected boolean isCorrectGoalTag(int tagId) {
         return VisionUtils.isTagBlueGoal(tagId);
     }
-
     @Override
-    protected CurvePoint getDriveOutsideShootZoneEndPoint() {
-        return new CurvePoint(10, 0, 0.8, 0.8, 10, 10, Math.toRadians(60), 0.3);
+    protected int getStateAfterHitGate() {
+        return AutoStage.scoreSecondBalls.ordinal(); // Hit gate after second score
+
+    }
+
+    //pathing
+    @Override
+    protected Pose getStartPose() {
+        return new Pose(56, 8, Math.toRadians(90));
     }
 
     @Override
-    protected double getDriveOutsideShootZoneHeading() {
-        return Math.toRadians(180);
+    protected PathChain getScorePreload(Follower follower) {
+        return follower.pathBuilder().addPath(
+                        new BezierLine(
+                                new Pose(56.000, 8.000),
+
+                                new Pose(56.000, 8.000)
+                        )
+                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(90))
+
+                .build();
     }
 
     @Override
-    protected int getDriveOutsideShootZoneFollowCurveTolerance() {
-        return 1;
+    protected PathChain getGrabPickup1(Follower follower) {
+        return follower.pathBuilder().addPath(
+                        new BezierCurve(
+                                new Pose(56.000, 8.000),
+                                new Pose(48.278, 39.009),
+                                new Pose(15.000, 36.000)
+                        )
+                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(180))
+
+                .build();
+
     }
+
+    @Override
+    protected PathChain getHitGate(Follower follower) {
+        return null;
+    }
+
+
+    @Override
+    protected PathChain getScorePickup1(Follower follower) {
+        return follower.pathBuilder().addPath(
+                        new BezierCurve(
+                                new Pose(15.000, 36.000),
+                                new Pose(49.925, 30.471),
+                                new Pose(56.000, 8.000)
+                        )
+                ).setTangentHeadingInterpolation()
+                .setReversed()
+                .build();
+
+    }
+
+    @Override
+    protected PathChain getGrabPickup2(Follower follower) {
+        return follower.pathBuilder().addPath(
+                        new BezierCurve(
+                                new Pose(56.000, 8.000),
+                                new Pose(58.514, 64.321),
+                                new Pose(15.000, 60.000)
+                        )
+                ).setTangentHeadingInterpolation()
+
+                .build();
+
+    }
+
+//    @Override
+//    protected PathChain getHitGate(Follower follower) {
+//        return follower.pathBuilder().addPath(
+//                        new BezierCurve(
+//                                new Pose(15.000, 60.000),
+//                                new Pose(32.919, 65.489),
+//                                new Pose(16.000, 70.000)
+//                        )
+//                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(90))
+//
+//                .build();
+//
+//    }
+
+    @Override
+    protected PathChain getScorePickup2(Follower follower) {
+        return follower.pathBuilder().addPath(
+                        new BezierCurve(
+                                new Pose(16.000, 70.000),
+                                new Pose(62.912, 51.828),
+                                new Pose(56.000, 8.000)
+                        )
+                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(110))
+                .setReversed()
+                .build();
+
+    }
+
+    @Override
+    protected PathChain getGrabPickup3(Follower follower) {
+        return follower.pathBuilder().addPath(
+                        new BezierCurve(
+                                new Pose(56.000, 8.000),
+                                new Pose(69.672, 92.321),
+                                new Pose(15.000, 84.000)
+                        )
+                ).setTangentHeadingInterpolation()
+
+                .build();
+    }
+
+    @Override
+    protected PathChain getScorePickup3(Follower follower) {
+        return follower.pathBuilder().addPath(
+                        new BezierCurve(
+                                new Pose(15.000, 84.000),
+                                new Pose(69.781, 87.235),
+                                new Pose(56.000, 8.000)
+                        )
+                ).setTangentHeadingInterpolation()
+                .setReversed()
+                .build();
+    }
+
+    @Override
+    protected PathChain getPark(Follower follower) {
+        return follower.pathBuilder().addPath(
+                        new BezierLine(
+                                new Pose(56.000, 8.000),
+
+                                new Pose(40.000, 15.000)
+                        )
+                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(180))
+
+                .build();
+    }
+
+
 }
+

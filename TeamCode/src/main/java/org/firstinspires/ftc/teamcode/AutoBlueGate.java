@@ -7,11 +7,11 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-import java.util.Collections;
 import java.util.Set;
-@Autonomous(name = "Blue Auto")
 
-public class AutoBlue extends AutoMaster {
+@Autonomous(name = "Blue Auto Gate")
+
+public class AutoBlueGate extends AutoMaster {
 
 
     //other general differences
@@ -19,7 +19,7 @@ public class AutoBlue extends AutoMaster {
     @Override
     protected Set<Integer> getSkippedStages() {
         //return Set.of(AutoStage.hitGate.ordinal()); //this would skip hitting the gate
-        return Set.of(AutoStage.hitGate.ordinal(),AutoStage.grabThirdBalls.ordinal(), AutoStage.scoreThirdBalls.ordinal());
+        return Set.of(AutoStage.grabThirdBalls.ordinal(), AutoStage.scoreThirdBalls.ordinal());
     }
     @Override
     protected boolean isCorrectGoalTag(int tagId) {
@@ -122,29 +122,25 @@ public class AutoBlue extends AutoMaster {
                         new BezierCurve(
                                 new Pose(40.000, 105.000),
                                 new Pose(68.678, 27.502),
-                                new Pose(15.000, 36.000)
+                                new Pose(12.000, 36.000)
                         )
                 ).setTangentHeadingInterpolation()
 
                 .build();
+
     }
 
     @Override
     protected PathChain getScorePickup3(Follower follower) {
         return follower.pathBuilder().addPath(
-                        new BezierCurve(
+                        new BezierLine(
                                 new Pose(15.000, 36.000),
-                                new Pose(17.284, 48.690),
-                                new Pose(31.430, 55.779),
-                                new Pose(13.456, 77.070),
-                                new Pose(44.305, 79.392),
-                                new Pose(34.111, 93.135),
-                                new Pose(40.000, 105.000)
+
+                                new Pose(37.537, 104.483)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(135))
+                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
 
                 .build();
-
     }
 
     @Override
