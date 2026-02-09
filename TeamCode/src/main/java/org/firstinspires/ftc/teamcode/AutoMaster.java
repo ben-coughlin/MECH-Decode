@@ -4,6 +4,7 @@ package org.firstinspires.ftc.teamcode;
 
 import android.os.SystemClock;
 
+import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
@@ -27,8 +28,10 @@ import java.util.Set;
 public abstract class AutoMaster extends RobotMasterPinpoint {
 
     private Follower follower;
+    private TelemetryManager telemetryM;
     private Timer pathTimer, stageStartTimer, opmodeTimer;
-    protected boolean stageInit;
+    protected boolean stageInit = true;
+
     protected enum AutoStage
     {
         scorePreload,
@@ -47,7 +50,7 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
     }
 
     public static int pathState = AutoStage.scorePreload.ordinal();
-    private int pathAfterStateShotOrdinal = -1;
+    private int pathAfterStateShotOrdinal = AutoStage.grabFirstBalls.ordinal();
     protected abstract int getStateAfterHitGate();
     protected abstract boolean isCorrectGoalTag(int tagId);
 
@@ -66,37 +69,10 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
     protected abstract PathChain getScorePickup3(Follower follower);
     protected abstract PathChain getPark(Follower follower);
 
-
-    private PathChain scorePreload, grabPickup1, hitGate, scorePickup1, grabPickup2, scorePickup2, grabPickup3, scorePickup3, park;
-
-
-    @Override
-    public void loop() {
-        super.mainLoop();
-        // These loop the movements of the robot, these must be called continuously in order to work
-        follower.update();
-        updatePaths();
-
-        Pose2D pos = odo.pos; // try not to flood odo with reads
-        LLResult currVision = Limelight.getCurrResult();
-        boolean hasValidVision = currVision != null
-                && currVision.isValid()
-                && isCorrectGoalTag(VisionUtils.getTagId(currVision));
-
-
-        // ALWAYS call aimTurret - it will use odometry if vision is lost
-        turret.aimTurret(
-                hasValidVision,
-                hasValidVision ? Limelight.getCurrResult().getTx() : 0,
-                gamepad2.right_stick_x,
-                Limelight.getDistance(),
-                pos.getHeading(AngleUnit.DEGREES),
-                odo.getVelocityComponents()[2]
-        );
+    private PathChain scorePreload, grabPickup1,  hitGate, scorePickup1, grabPickup2, scorePickup2, grabPickup3, scorePickup3, park;
 
 
 
-    }
 
     /**
      * This method is called once at the init of the OpMode.
@@ -104,8 +80,10 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
     @Override
     public void init() {
         super.init();
+        isAuto = true;
         pathTimer = new Timer();
         opmodeTimer = new Timer();
+        stageStartTimer = new Timer();
         opmodeTimer.resetTimer();
 
 
@@ -134,6 +112,42 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
         opmodeTimer.resetTimer();
 
     }
+    @Override
+    public void loop() {
+        //super.mainLoop();
+        // These loop the movements of the robot, these must be called continuously in order to work
+        follower.update();
+        turret.showAimTelemetry(telemetry);
+
+
+        // read everything once and only once per loop
+        limelight.updateLimelight();
+        turret.updateTurret();
+        clock.clockUpdate();
+        breakbeamStates[0] = breakbeam.getIntakeBreakbeamStatus();
+        breakbeamStates[1] = breakbeam.getTurretBreakbeamStatus();
+
+        LLResult currVision = Limelight.getCurrResult();
+        boolean hasValidVision = currVision != null
+                && currVision.isValid()
+                && isCorrectGoalTag(VisionUtils.getTagId(currVision));
+
+
+        // ALWAYS call aimTurret - it will use odometry if vision is lost
+        turret.aimTurret(
+                hasValidVision,
+                hasValidVision ? Limelight.getCurrResult().getTx() : 0,
+                gamepad2.right_stick_x,
+                Limelight.getDistance(),
+                follower.getHeading(),
+                follower.getAngularVelocity(),
+                follower.getVelocity().getMagnitude()
+        );
+
+        updatePaths();
+        telemetry.addData("superstructure state", pathState);
+
+    }
 
     /**
      * We do not use this because everything should automatically disable
@@ -148,7 +162,6 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
         scorePreload = getScorePreload(follower);
 
         grabPickup1 = getGrabPickup1(follower);
-
         hitGate = getHitGate(follower);
 
         scorePickup1 = getScorePickup1(follower);
@@ -165,18 +178,24 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
     }
 
     public void updatePaths() {
+        telemetry.addData("Current Stage", AutoStage.values()[pathState].name());
+        telemetry.addData("stageInit", stageInit);
+
         if(pathState == AutoStage.scorePreload.ordinal()){
             if(stageInit)
             {
+                intakeSubsystem.turnIntakeOn();
                 shooterSubsystem.spinUp();
+                clock.moveClockToPreShootPosition();
                 initState();
+                if(scorePreload != null) { follower.followPath(scorePreload); }
+                else { nextStage(); }
             }
             shooterSubsystem.updateSpin();
-            if(scorePreload != null) { follower.followPath(scorePreload); }
-            else { nextStage(); }
 
             if(!follower.isBusy())
             {
+
                 nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabFirstBalls.ordinal());
             }
         }
@@ -187,13 +206,14 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
             {
                 initState();
                 intakeSubsystem.turnIntakeOn();
+                if(grabPickup1 != null) { follower.followPath(grabPickup1, 0.75, false); }
+                else { nextStage(); }
+
             }
-            if(grabPickup1 != null) { follower.followPath(grabPickup1); }
-            else { nextStage(); }
 
             if(!follower.isBusy())
             {
-                intakeSubsystem.turnIntakeOff();
+
                 nextStage(AutoStage.hitGate.ordinal());
             }
         }
@@ -203,139 +223,139 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
             if(stageInit)
             {
                 initState();
+                if(grabPickup2 != null) { follower.followPath(hitGate); }
+                else { nextStage(); }
             }
-            if(grabPickup2 != null) { follower.followPath(hitGate); }
-            else { nextStage(); }
 
-            if(!follower.isBusy())
+
+            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 2200)
             {
                 nextStage(AutoStage.scoreFirstBalls.ordinal());
+
             }
         }
 
-         if(pathState == AutoStage.scoreFirstBalls.ordinal())
-         {
-             if(stageInit)
-             {
-                 shooterSubsystem.spinUp();
-                 initState();
-             }
-             shooterSubsystem.updateSpin();
-             if(scorePickup1 != null) { follower.followPath(scorePickup1); }
-             else { nextStage(); }
+        if(pathState == AutoStage.scoreFirstBalls.ordinal())
+        {
+            if(stageInit)
+            {
+                shooterSubsystem.spinUp();
 
-             if(!follower.isBusy()) {
-                 // Check if we should hit gate after first score
-                 if(getStateAfterHitGate() == AutoStage.scoreFirstBalls.ordinal()) {
-                     nextStage(AutoStage.hitGate.ordinal());
-                 } else {
-                     nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabSecondBalls.ordinal());
-                 }
-             }
-         }
+                if(scorePickup1 != null) { follower.followPath(scorePickup1, 0.9, false); }
+                else { nextStage(); }
+                initState();
+            }
+            intakeSubsystem.turnIntakeOn();
+            shooterSubsystem.updateSpin();
 
-         if(pathState == AutoStage.grabSecondBalls.ordinal())
-         {
-             if(stageInit)
-             {
-                 intakeSubsystem.turnIntakeOn();
-                 initState();
-             }
-             shooterSubsystem.updateSpin();
-             if(grabPickup2 != null) { follower.followPath(grabPickup2); }
-             else { nextStage(); }
 
-             if(!follower.isBusy())
-             {
-                 intakeSubsystem.turnIntakeOff();
-                 nextStage(AutoStage.scoreSecondBalls.ordinal());
+            if(!follower.isBusy())
+            {
 
-             }
+                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabSecondBalls.ordinal());
+            }
+        }
 
-             if(pathState == AutoStage.scoreSecondBalls.ordinal())
-             {
-                 if(stageInit)
-                 {
-                     shooterSubsystem.spinUp();
-                     initState();
-                 }
-                 shooterSubsystem.updateSpin();
-                 if(scorePickup2 != null) { follower.followPath(scorePickup2); }
-                 else { nextStage(); }
+        if(pathState == AutoStage.grabSecondBalls.ordinal())
+        {
+            if(stageInit)
+            {
 
-                 if(!follower.isBusy()) {
-                     // Check if we should hit gate after second score
-                     if(getStateAfterHitGate() == AutoStage.scoreSecondBalls.ordinal()) {
-                         nextStage(AutoStage.hitGate.ordinal());
-                     } else {
-                         nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabThirdBalls.ordinal());
-                     }
-                 }
-             }
-             if(pathState == AutoStage.grabThirdBalls.ordinal())
-             {
-                 if(stageInit)
-                 {
-                     intakeSubsystem.turnIntakeOn();
-                     initState();
-                 }
-                 if(grabPickup3 != null) { follower.followPath(grabPickup3); }
-                 else { nextStage(); }
+                intakeSubsystem.turnIntakeOn();
+                if(grabPickup1 != null) { follower.followPath(grabPickup2, 0.74, false); }
+                else { nextStage(); }
+                initState();
 
-                 if(!follower.isBusy())
-                 {
-                     intakeSubsystem.turnIntakeOff();
-                     nextStage(AutoStage.scoreThirdBalls.ordinal());
+            }
 
-                 }
-             }
+            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 400)
+            {
 
-             if(pathState == AutoStage.scoreThirdBalls.ordinal())
-             {
-                 if(stageInit)
-                 {
-                     shooterSubsystem.spinUp();
-                     initState();
-                 }
-                 shooterSubsystem.updateSpin();
-                 if(scorePickup3 != null) { follower.followPath(scorePickup3); }
-                 else { nextStage(); }
+                nextStage(AutoStage.scoreSecondBalls.ordinal());
+            }
+        }
+        if(pathState == AutoStage.scoreSecondBalls.ordinal())
+        {
+            if(stageInit)
+            {
+                initState();
+                shooterSubsystem.spinUp();
+                if(scorePickup1 != null) { follower.followPath(scorePickup2, 0.9, false); }
+                else { nextStage(); }
 
-                 if(!follower.isBusy())
-                 {
-                     nextStage(AutoStage.shootPrep.ordinal(), AutoStage.park.ordinal());
-                 }
+            }
+            intakeSubsystem.turnIntakeOn();
+            shooterSubsystem.updateSpin();
 
-             }
 
-             if(pathState == AutoStage.park.ordinal())
-             {
-                 if(stageInit)
-                 {
-                     initState();
-                 }
-                 if(park != null) { follower.followPath(park); }
-                 else { nextStage(); }
+            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 200)
+            {
 
-                 if(!follower.isBusy())
-                 {
-                     nextStage(AutoStage.endBehavior.ordinal());
-                 }
-             }
+                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabThirdBalls.ordinal());
+            }
+        }
+        if(pathState == AutoStage.grabThirdBalls.ordinal())
+        {
+            if(stageInit)
+            {
+                intakeSubsystem.turnIntakeOn();
+                if(grabPickup3 != null) { follower.followPath(grabPickup3, 0.8, false); }
+                else { nextStage(); }
+                initState();
+            }
 
-         }
+            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 200) //keeps skipping this state idk why so we wanna make sure we don't jump
+            {
+                nextStage(AutoStage.scoreThirdBalls.ordinal());
+            }
+        }
 
+        if(pathState == AutoStage.scoreThirdBalls.ordinal())
+        {
+            if(stageInit)
+            {
+                shooterSubsystem.spinUp();
+                intakeSubsystem.turnIntakeOn();
+                if(scorePickup3 != null) { follower.followPath(scorePickup3); }
+                else { nextStage(); }
+                initState();
+            }
+            shooterSubsystem.updateSpin();
+
+
+            if(!follower.isBusy())
+            {
+
+                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.park.ordinal());
+            }
+
+        }
+
+        if(pathState == AutoStage.park.ordinal())
+        {
+            if(stageInit)
+            {
+                if(park != null) { follower.followPath(park); }
+                else { nextStage(); }
+                initState();
+            }
+
+
+            if(!follower.isBusy())
+            {
+                nextStage(AutoStage.endBehavior.ordinal());
+            }
+        }
         if(pathState == AutoStage.shootPrep.ordinal())
         {
             if(stageInit)
             {
                 shooterSubsystem.spinUp();
-                clock.moveClockToPreShootPosition();
                 initState();
             }
             shooterSubsystem.updateSpin();
 
-            if(shooterSubsystem.isFlywheelReady)
+            if(shooterSubsystem.isFlywheelReady && !follower.isBusy())
             {
                 nextStage(AutoStage.shoot.ordinal());
             }
@@ -343,13 +363,14 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
         if(pathState == AutoStage.shoot.ordinal())
         {
             if (stageInit) {
-                intakeSubsystem.turnIntakeOff();
                 initState();
             }
-            shooterSubsystem.startShotSequence();
+            shooterSubsystem.startShotSequence(isAuto);
 
-            if(!shooterSubsystem.isShotInProgress)
+            if(stageStartTimer.getElapsedTime() > 4500)
             {
+                shooterSubsystem.stopAutoShot();
+                intakeSubsystem.turnIntakeOff();
                 nextStage(pathAfterStateShotOrdinal);
             }
         }
@@ -359,13 +380,11 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
             turret.turnOffFlywheel();
             clock.resetClock();
             intakeSubsystem.turnIntakeOff();
-            IndicatorLight.setLightWhite();
-
-            if(!follower.isBusy()){nextStage(-1);}
+            IndicatorLight.setLightIndigo();
 
         }
-
     }
+
 
     protected void nextStage() {
         pathState++;
@@ -406,13 +425,11 @@ public abstract class AutoMaster extends RobotMasterPinpoint {
 
     protected void initState()
     {
+
         turret.resetPID();
         opmodeTimer.resetTimer();
-
-
+        stageStartTimer.resetTimer();
         stageInit = false;
     }
-
-
-
 }
+

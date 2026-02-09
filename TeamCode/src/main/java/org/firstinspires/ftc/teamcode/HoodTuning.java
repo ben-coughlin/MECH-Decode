@@ -72,6 +72,7 @@ public class HoodTuning extends LinearOpMode {
                     gamepad2.right_stick_x,
                    999, //so we dont get annoying oscillation
                     0,
+                    0,
                     0
             );
 

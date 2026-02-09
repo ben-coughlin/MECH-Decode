@@ -20,15 +20,16 @@ public class Breakbeam {
         turret = hwMap.get(DigitalChannel.class, "turretBreakbeam");
     }
 
+    //statuses are flipped for some reason
     public boolean getIntakeBreakbeamStatus()
     {
-        intakeState = intake.getState();
-        return intake.getState();
+        intakeState = !intake.getState();
+        return !intake.getState();
     }
     public boolean getTurretBreakbeamStatus()
     {
-        turretState = turret.getState();
-        return turret.getState();
+        turretState = !turret.getState();
+        return !turret.getState();
     }
 
 

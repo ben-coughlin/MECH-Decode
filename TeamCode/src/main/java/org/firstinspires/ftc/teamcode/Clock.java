@@ -17,8 +17,8 @@ public class Clock {
     private final Servo clock;
     private final CRServo ramp;
     private final DcMotorEx encoder;
-    private final double CLOCK_INIT = 0.07;
-    private final double CLOCK_SHOOT = .355; // 1:1 = .285 | 2:1 = .515
+    private final double CLOCK_INIT = 0.09;
+    private final double CLOCK_SHOOT = .37; // 1:1 = .285 | 2:1 = .515
     private final double CLOCK_PRE_SHOOT = .17; // 1:1 = .13 | 2:1 = .2
     private final double RAMP_INIT = 0;
     private final double RAMP_SHOOT = 1;
@@ -58,7 +58,7 @@ public class Clock {
         currentEncoderPosition = encoder.getCurrentPosition();
         intakeNewBall();
         recordShotBall();
-        if(SystemClock.uptimeMillis() - clockResetTimer >= 300 && isClockResetting) { isClockResetting = false; }
+        if(SystemClock.uptimeMillis() - clockResetTimer >= 800 && isClockResetting) { isClockResetting = false; }
         updateLEDColor();
     }
 
@@ -144,28 +144,33 @@ public class Clock {
 
     private void updateLEDColor()
     {
-        if(isClockResetting)
-        {
-           IndicatorLight.setLightRed();
-        }
-        else if(numBallsInClock == 0)
-        {
-            IndicatorLight.setLightBlue();
-        }
-        else if(numBallsInClock == 1)
-        {
-            IndicatorLight.setLightOrange();
-        }
-        else if(numBallsInClock == 2)
-        {
-            IndicatorLight.setLightYellow();
-        }
-        else if(numBallsInClock == 3)
-        {
-            IndicatorLight.setLightGreen();
-        }
+//        if(isClockResetting)
+//        {
+//           IndicatorLight.setLightRed();
+//        }
+//        else if(numBallsInClock == 0)
+//        {
+//            IndicatorLight.setLightBlue();
+//        }
+//        else if(numBallsInClock == 1)
+//        {
+//            IndicatorLight.setLightOrange();
+//        }
+//        else if(numBallsInClock == 2)
+//        {
+//            IndicatorLight.setLightViolet();
+//        }
+//        else if(numBallsInClock == 3)
+//        {
+//            IndicatorLight.setLightGreen();
+//        }
 
     }
+    public void setNumBallsInClock(int balls)
+    {
+        numBallsInClock = balls;
+    }
+
 
 
 

@@ -15,7 +15,7 @@ public class ShooterSubsystem {
 
     private long flywheelStartTime = 0;
     private long shotStartTime = 0;
-    public int shotsRemaining = 0;
+
 
 
 
@@ -25,9 +25,6 @@ public class ShooterSubsystem {
         this.intake = intake;
     }
 
-    public void stopShot() {
-        runStopActions();
-    }
 
 
     /**
@@ -38,7 +35,7 @@ public class ShooterSubsystem {
             turret.turnOnFlywheel();
             flywheelStartTime = SystemClock.uptimeMillis();
             Log.i("ShooterSubsystem", "SpinUp called at " + flywheelStartTime);
-            isShotInProgress = true;
+
             intake.turnIntakeOn();
         }
     }
@@ -60,28 +57,45 @@ public class ShooterSubsystem {
     /**
      * Begin shooting sequence
      */
-    public void startShotSequence() {
+    public void startShotSequence(boolean isAuto) {
         if (!isFlywheelReady) return;
-        shotStartTime = SystemClock.uptimeMillis();
-        clock.moveClockToShootPosition();
-        if ((SystemClock.uptimeMillis() - shotStartTime >= 3700)) {
-            clock.resetClock();
-        }
-        if(!clock.isClockResetting)
-        {
-            runStopActions();
+
+        // Only initialize on first call
+        if (!isShotInProgress) {
+            isShotInProgress = true;
+            shotStartTime = SystemClock.uptimeMillis();
+            clock.moveClockToShootPosition();
+            Log.i("ShooterSubsystem", "shot seq started at " + shotStartTime);
         }
 
-        Log.i("ShooterSubsystem", "shot seq started at " + shotStartTime);
+
+
     }
+
+    // In TeleOp, call this when driver presses button:
+    public void stopShot() {
+        clock.resetClock();
+        TeleOpMaster.hasClockReset = true;
+        runStopActions();
+    }
+
 
     public void runStopActions() {
         turret.turnOffFlywheel();
-
         clock.stopRamp();
         isFlywheelReady = false;
         isShotInProgress = false;
+        clock.setNumBallsInClock(0);
     }
+    public void stopAutoShot()
+    {
+        clock.resetClock();
+        clock.stopRamp();
+        isFlywheelReady = false;
+        isShotInProgress = false;
+        clock.setNumBallsInClock(0);
+    }
+
 }
 
 

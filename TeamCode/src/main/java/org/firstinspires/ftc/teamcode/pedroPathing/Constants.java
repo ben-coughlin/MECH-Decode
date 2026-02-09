@@ -18,7 +18,7 @@ public class Constants {
     //
     public static FollowerConstants followerConstants = new FollowerConstants()
             .mass(13.6) //todo: weigh da robot (in kgs)
-            .forwardZeroPowerAcceleration(-36.06187568143412)
+            .forwardZeroPowerAcceleration(-35.06187568143412)
             .lateralZeroPowerAcceleration(-74.64892235313923)
             .translationalPIDFCoefficients(new PIDFCoefficients(0.22, 0, 0.025, 0))
             .headingPIDFCoefficients(new PIDFCoefficients(2, 0, 0.1, 0))
@@ -48,7 +48,7 @@ public class Constants {
             .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED)
             .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD);
 
-    public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 0.6, 1.2);
+    public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1, 1.2);
 
     public static Follower createFollower(HardwareMap hardwareMap) {
         return new FollowerBuilder(followerConstants, hardwareMap)

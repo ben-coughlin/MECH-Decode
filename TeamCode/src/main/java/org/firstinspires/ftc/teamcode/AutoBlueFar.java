@@ -5,10 +5,13 @@ import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
 import java.util.Collections;
 import java.util.Set;
-
+@Disabled
+@Autonomous(name = "Blue Auto Far")
 public class AutoBlueFar extends AutoMaster {
 
 
@@ -63,6 +66,11 @@ public class AutoBlueFar extends AutoMaster {
 
     }
 
+    @Override
+    protected PathChain getHitGate(Follower follower) {
+        return null;
+    }
+
 
     @Override
     protected PathChain getScorePickup1(Follower follower) {
@@ -92,19 +100,19 @@ public class AutoBlueFar extends AutoMaster {
 
     }
 
-    @Override
-    protected PathChain getHitGate(Follower follower) {
-        return follower.pathBuilder().addPath(
-                        new BezierCurve(
-                                new Pose(15.000, 60.000),
-                                new Pose(32.919, 65.489),
-                                new Pose(16.000, 70.000)
-                        )
-                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(90))
-
-                .build();
-
-    }
+//    @Override
+//    protected PathChain getHitGate(Follower follower) {
+//        return follower.pathBuilder().addPath(
+//                        new BezierCurve(
+//                                new Pose(15.000, 60.000),
+//                                new Pose(32.919, 65.489),
+//                                new Pose(16.000, 70.000)
+//                        )
+//                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(90))
+//
+//                .build();
+//
+//    }
 
     @Override
     protected PathChain getScorePickup2(Follower follower) {

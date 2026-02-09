@@ -7,13 +7,16 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
+import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+@Disabled
 
 @Autonomous(name = "Example Auto", group = "Examples")
-public class TestAuto extends OpMode {
+public class TestAuto extends RobotMasterPinpoint {
 
     private Follower follower;
     private Timer pathTimer, actionTimer, opmodeTimer;
@@ -45,6 +48,30 @@ public class TestAuto extends OpMode {
         follower.update();
         autonomousPathUpdate();
 
+        limelight.updateLimelight();
+
+        turret.updateTurret();
+        clock.clockUpdate();
+        breakbeamStates[0] = breakbeam.getIntakeBreakbeamStatus();
+        breakbeamStates[1] = breakbeam.getTurretBreakbeamStatus();
+
+        LLResult currVision = Limelight.getCurrResult();
+        boolean hasValidVision = currVision != null
+                && currVision.isValid()
+                && VisionUtils.isTagBlueGoal(VisionUtils.getTagId(currVision));
+
+
+        // ALWAYS call aimTurret - it will use odometry if vision is lost
+        turret.aimTurret(
+                hasValidVision,
+                hasValidVision ? Limelight.getCurrResult().getTx() : 0,
+                gamepad2.right_stick_x,
+                Limelight.getDistance(),
+                follower.getHeading(),
+                follower.getAngularVelocity(),
+                follower.getVelocity().getMagnitude()
+        );
+
         // Feedback to Driver Hub for debugging
         telemetry.addData("path state", pathState);
         telemetry.addData("x", follower.getPose().getX());
@@ -58,6 +85,7 @@ public class TestAuto extends OpMode {
      **/
     @Override
     public void init() {
+        super.init();
         pathTimer = new Timer();
         opmodeTimer = new Timer();
         opmodeTimer.resetTimer();
