@@ -1,12 +1,9 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.autos;
 
 import com.pedropathing.telemetry.SelectableOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-import org.firstinspires.ftc.teamcode.autos.AutoBlue;
-import org.firstinspires.ftc.teamcode.autos.AutoBlueFar;
-import org.firstinspires.ftc.teamcode.autos.AutoRed;
-import org.firstinspires.ftc.teamcode.autos.AutoRedFar;
+import org.firstinspires.ftc.teamcode.AutoMaster;
 
 /**
  * Selectable Auto Menu
@@ -19,13 +16,24 @@ public class AutoSelector extends SelectableOpMode {
     public AutoSelector() {
         super("Select Autonomous", s -> {
             s.folder("Blue Side Close", blue -> {
-                blue.add("Blue - Full Auto", () -> {
+                blue.add("Blue - Full Auto Gate Park", () -> {
                     // Set all gates ON
                     AutoBlue.GATE_HIT = true;
                     AutoBlue.DO_FIRST_CYCLE = true;
                     AutoBlue.DO_SECOND_CYCLE = true;
                     AutoBlue.DO_THIRD_CYCLE = true;
-                    AutoBlue.DO_PARK = true;
+                    AutoBlue.DO_GATE_PARK = true;
+                    AutoMaster.selectedProgram = "Blue Close Full Auto Gate Park";
+                    return new AutoBlue();
+                });
+                blue.add("Blue - Full Auto Zone Park", () -> {
+                    // Set all gates ON
+                    AutoBlue.GATE_HIT = true;
+                    AutoBlue.DO_FIRST_CYCLE = true;
+                    AutoBlue.DO_SECOND_CYCLE = true;
+                    AutoBlue.DO_THIRD_CYCLE = true;
+                    AutoBlue.DO_GATE_PARK = false;
+                    AutoMaster.selectedProgram = "Blue Close Full Auto Zone Park";
                     return new AutoBlue();
                 });
 
@@ -35,7 +43,8 @@ public class AutoSelector extends SelectableOpMode {
                     AutoBlue.DO_FIRST_CYCLE = true;
                     AutoBlue.DO_SECOND_CYCLE = true;
                     AutoBlue.DO_THIRD_CYCLE = true;
-                    AutoBlue.DO_PARK = true;
+                    AutoBlue.DO_GATE_PARK = true;
+                    AutoMaster.selectedProgram = "Blue Close No Gate";
                     return new AutoBlue();
                 });
 
@@ -45,7 +54,8 @@ public class AutoSelector extends SelectableOpMode {
                     AutoBlue.DO_FIRST_CYCLE = true;
                     AutoBlue.DO_SECOND_CYCLE = true;
                     AutoBlue.DO_THIRD_CYCLE = false;
-                    AutoBlue.DO_PARK = true;
+                    AutoBlue.DO_GATE_PARK = true;
+                    AutoMaster.selectedProgram = "Blue Close 2 Cycle";
                     return new AutoBlue();
                 });
 
@@ -55,17 +65,19 @@ public class AutoSelector extends SelectableOpMode {
                     AutoBlue.DO_FIRST_CYCLE = true;
                     AutoBlue.DO_SECOND_CYCLE = false;
                     AutoBlue.DO_THIRD_CYCLE = false;
-                    AutoBlue.DO_PARK = true;
+                    AutoBlue.DO_GATE_PARK = false;
+                    AutoMaster.selectedProgram = "Blue Close 1 Cycle";
                     return new AutoBlue();
                 });
 
                 blue.add("Blue - Preload Only", () -> {
-                    // Just score preload and park
+                    // Just score preload and stay there
                     AutoBlue.GATE_HIT = false;
                     AutoBlue.DO_FIRST_CYCLE = false;
                     AutoBlue.DO_SECOND_CYCLE = false;
                     AutoBlue.DO_THIRD_CYCLE = false;
-                    AutoBlue.DO_PARK = true;
+                    AutoBlue.DO_GATE_PARK = false;
+                    AutoMaster.selectedProgram = "Blue Close Preload Only";
                     return new AutoBlue();
                 });
             });
@@ -76,7 +88,8 @@ public class AutoSelector extends SelectableOpMode {
                     AutoRed.DO_FIRST_CYCLE = true;
                     AutoRed.DO_SECOND_CYCLE = true;
                     AutoRed.DO_THIRD_CYCLE = true;
-                    AutoRed.DO_PARK = true;
+                    AutoRed.DO_GATE_PARK = true;
+                    AutoMaster.selectedProgram = "Red Close Full Auto";
                     return new AutoRed();
                 });
 
@@ -85,7 +98,8 @@ public class AutoSelector extends SelectableOpMode {
                     AutoRed.DO_FIRST_CYCLE = true;
                     AutoRed.DO_SECOND_CYCLE = true;
                     AutoRed.DO_THIRD_CYCLE = true;
-                    AutoRed.DO_PARK = true;
+                    AutoRed.DO_GATE_PARK = true;
+                    AutoMaster.selectedProgram = "Red Close No Gate";
                     return new AutoRed();
                 });
 
@@ -94,7 +108,8 @@ public class AutoSelector extends SelectableOpMode {
                     AutoRed.DO_FIRST_CYCLE = true;
                     AutoRed.DO_SECOND_CYCLE = true;
                     AutoRed.DO_THIRD_CYCLE = false;
-                    AutoRed.DO_PARK = true;
+                    AutoRed.DO_GATE_PARK = true;
+                    AutoMaster.selectedProgram = "Red Close 2 Cycle";
                     return new AutoRed();
                 });
 
@@ -103,7 +118,8 @@ public class AutoSelector extends SelectableOpMode {
                     AutoRed.DO_FIRST_CYCLE = true;
                     AutoRed.DO_SECOND_CYCLE = false;
                     AutoRed.DO_THIRD_CYCLE = false;
-                    AutoRed.DO_PARK = true;
+                    AutoRed.DO_GATE_PARK = false;
+                    AutoMaster.selectedProgram = "Red Close 1 Cycle";
                     return new AutoRed();
                 });
 
@@ -112,7 +128,8 @@ public class AutoSelector extends SelectableOpMode {
                     AutoRed.DO_FIRST_CYCLE = false;
                     AutoRed.DO_SECOND_CYCLE = false;
                     AutoRed.DO_THIRD_CYCLE = false;
-                    AutoRed.DO_PARK = true;
+                    AutoRed.DO_GATE_PARK = true;
+                    AutoMaster.selectedProgram = "Red Close Preload Only";
                     return new AutoRed();
                 });
             });
@@ -121,6 +138,7 @@ public class AutoSelector extends SelectableOpMode {
                     AutoBlueFar.DO_FIRST_CYCLE = true;
                     AutoBlueFar.DO_SECOND_CYCLE = true;
                     AutoBlueFar.DO_PARK = true;
+                    AutoMaster.selectedProgram = "Blue Far Full Auto";
                     return new AutoBlueFar();
                 });
 
@@ -128,6 +146,7 @@ public class AutoSelector extends SelectableOpMode {
                     AutoBlueFar.DO_FIRST_CYCLE = true;
                     AutoBlueFar.DO_SECOND_CYCLE = false;
                     AutoBlueFar.DO_PARK = true;
+                    AutoMaster.selectedProgram = "Blue Far 1 Cycle";
                     return new AutoBlueFar();
                 });
 
@@ -135,14 +154,16 @@ public class AutoSelector extends SelectableOpMode {
                     AutoBlueFar.DO_FIRST_CYCLE = false;
                     AutoBlueFar.DO_SECOND_CYCLE = false;
                     AutoBlueFar.DO_PARK = true;
+                    AutoMaster.selectedProgram = "Blue Far Preload Only";
                     return new AutoBlueFar();
                 });
             });
             s.folder("Red Side Far", redFar -> {
-                redFar.add("Blue Far - Full Auto", () -> {
+                redFar.add("Red Far - Full Auto", () -> {
                     AutoRedFar.DO_FIRST_CYCLE = true;
                     AutoRedFar.DO_SECOND_CYCLE = true;
                     AutoRedFar.DO_PARK = true;
+                    AutoMaster.selectedProgram = "Red Far Full Auto";
                     return new AutoRedFar();
                 });
 
@@ -150,6 +171,7 @@ public class AutoSelector extends SelectableOpMode {
                     AutoRedFar.DO_FIRST_CYCLE = true;
                     AutoRedFar.DO_SECOND_CYCLE = false;
                     AutoRedFar.DO_PARK = true;
+                    AutoMaster.selectedProgram = "Red Far 1 Cycle";
                     return new AutoRedFar();
                 });
 
@@ -157,9 +179,11 @@ public class AutoSelector extends SelectableOpMode {
                     AutoRedFar.DO_FIRST_CYCLE = false;
                     AutoRedFar.DO_SECOND_CYCLE = false;
                     AutoRedFar.DO_PARK = true;
+                    AutoMaster.selectedProgram = "Red Far Preload Only";
                     return new AutoRedFar();
                 });
             });
         });
     }
 }
+

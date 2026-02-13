@@ -21,14 +21,6 @@ public class IntakeSubsystem
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
-    public double normalizeAngleFromTicks(double position, int ticksPerRevolution)
-    {
-        double revolutions = position / ticksPerRevolution;
-
-        double angle = revolutions * 360;
-
-        return angle / 360;
-    }
 
     public void turnIntakeOn()
     {

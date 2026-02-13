@@ -46,7 +46,7 @@ public class ShooterSubsystem {
      * Call every loop until ready
      */
     public void updateSpin() {
-        if ((!isFlywheelReady && SystemClock.uptimeMillis() - flywheelStartTime > 200) || isFlywheelSpun) {
+        if ((!isFlywheelReady && SystemClock.uptimeMillis() - flywheelStartTime > 800) || isFlywheelSpun) {
             Log.i("ShooterSubsystem", "Spin update elapsed = " +
                     (SystemClock.uptimeMillis() - flywheelStartTime));
             isFlywheelReady = true;

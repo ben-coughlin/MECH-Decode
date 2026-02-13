@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 
+import static org.firstinspires.ftc.teamcode.AutoMaster.pathState;
 import static org.firstinspires.ftc.teamcode.utils.MovementVars.worldAngle_rad;
 import static org.firstinspires.ftc.teamcode.utils.MovementVars.worldXPosition;
 import static org.firstinspires.ftc.teamcode.utils.MovementVars.worldYPosition;
@@ -27,6 +28,7 @@ public abstract class RobotMaster extends OpMode {
 
     //misc
     public static boolean isAuto = false;
+    public static boolean isAutoFar = false;
     public static boolean resetEncoders = false;
     public static int programStage = 0;
     static Pattern obelisk = null;
@@ -46,7 +48,6 @@ public abstract class RobotMaster extends OpMode {
     public double stateStartingAngle_rad = 0;
     //hardware - - - - - -
     protected MecanumDrive drive = null;
-    //  Odo odo = null;
     Limelight limelight = null;
     IntakeSubsystem intakeSubsystem = null;
     Turret turret = null;
@@ -80,7 +81,6 @@ public abstract class RobotMaster extends OpMode {
         drive = new MecanumDrive(hardwareMap);
         limelight = new Limelight(hardwareMap);
         intakeSubsystem = new IntakeSubsystem(hardwareMap);
-        //odo = new Odo(hardwareMap);
         turret = new Turret(hardwareMap);
         clock = new Clock(hardwareMap);
         shooterSubsystem = new ShooterSubsystem(clock, turret, intakeSubsystem);
@@ -167,7 +167,8 @@ public abstract class RobotMaster extends OpMode {
 //
         turret.showAimTelemetry(telemetry);
         breakbeam.displayBreakbeamTelemetry(telemetry);
-
+        telemetry.addData("Current Stage", AutoMaster.AutoStage.values()[pathState].name());
+        telemetry.addData("superstructure state", pathState);
 
         telemetry.addData("Superstructure State", currentState);
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);

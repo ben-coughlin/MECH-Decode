@@ -37,10 +37,19 @@ public class AutoRedFar extends AutoMaster {
         }
 
         if (!DO_PARK) {
-            skipped.add(AutoStage.park.ordinal());
+            skipped.add(AutoStage.parkZone.ordinal());
+        }
+        else
+        {
+            skipped.add(AutoStage.parkGate.ordinal());
         }
 
         return skipped;
+    }
+    @Override
+    protected boolean isAutoFar()
+    {
+        return true;
     }
 
     @Override
@@ -134,16 +143,21 @@ public class AutoRedFar extends AutoMaster {
         return null;
     }
 
+//    @Override
+//    protected PathChain getScorePickup3(Follower follower) {
+//        return null;
+//    }
+
     @Override
-    protected PathChain getScorePickup3(Follower follower) {
+    protected PathChain getParkGate(Follower follower) {
         return null;
     }
 
     @Override
-    protected PathChain getPark(Follower follower) {
+    protected PathChain getParkZone(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(88.000, 8.000),
+                               follower::getPose,
 
                                 new Pose(104.000, 15.000)
                         )

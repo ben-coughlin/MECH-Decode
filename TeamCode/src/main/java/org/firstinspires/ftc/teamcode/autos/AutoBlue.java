@@ -22,8 +22,13 @@ public class AutoBlue extends AutoMaster {
      public static boolean DO_FIRST_CYCLE = true;
     public static boolean DO_SECOND_CYCLE = true;
     public static boolean DO_THIRD_CYCLE = true;
-    public static boolean DO_PARK = true;
+    public static boolean DO_GATE_PARK = true;
 
+    @Override
+    protected boolean isAutoFar()
+    {
+        return false;
+    }
     @Override
     protected Set<Integer> getSkippedStages() {
                 Set<Integer> skipped = new HashSet<Integer>() {};
@@ -45,15 +50,20 @@ public class AutoBlue extends AutoMaster {
 
                 if (!DO_THIRD_CYCLE) {
                         skipped.add(AutoStage.grabThirdBalls.ordinal());
-                        skipped.add(AutoStage.scoreThirdBalls.ordinal());
                     }
 
-                if (!DO_PARK) {
-                        skipped.add(AutoStage.park.ordinal());
-                    }
+        if (DO_GATE_PARK) {
+            skipped.add(AutoStage.parkZone.ordinal());
+        } else {
+            skipped.add(AutoStage.parkGate.ordinal());
+        }
+
 
                 return skipped;
             }
+
+
+
     @Override
     protected boolean isCorrectGoalTag(int tagId) {
         return VisionUtils.isTagBlueGoal(tagId);
@@ -62,20 +72,21 @@ public class AutoBlue extends AutoMaster {
     //pathing
     @Override
     protected Pose getStartPose() {
-        return new Pose(9, 115, Math.toRadians(180));
+        return new Pose(8, 115, Math.toRadians(180));
     }
 
     @Override
     protected PathChain getScorePreload(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(9.000, 115.000),
+                                new Pose(11.088, 115.000),
 
-                                new Pose(50.000, 115.000)
+                                new Pose(35.210, 115.650)
                         )
                 ).setTangentHeadingInterpolation()
-
+                .setReversed()
                 .build();
+
     }
 
     @Override
@@ -83,21 +94,23 @@ public class AutoBlue extends AutoMaster {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(50.000, 115.000),
-                                new Pose(62.354, 78.608),
-                                new Pose(16.421, 85.000)
+                                new Pose(55.860, 78.932),
+                                new Pose(10.901, 84.838)
                         )
                 ).setTangentHeadingInterpolation()
 
                 .build();
+
+
     }
 
     @Override
     protected PathChain getHitGate(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(16.421, 85.000),
+                                new Pose(10.901, 84.838),
                                 new Pose(34.868, 73.737),
-                                new Pose(15.000, 70.000)
+                                new Pose(12.240, 71.786)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(270))
 
@@ -108,7 +121,7 @@ public class AutoBlue extends AutoMaster {
     protected PathChain getScorePickup1(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(15.000, 70.000),
+                                new Pose(12.240, 71.786),
 
                                 new Pose(40.000, 105.000)
                         )
@@ -123,24 +136,26 @@ public class AutoBlue extends AutoMaster {
                         new BezierCurve(
                                 new Pose(40.000, 105.000),
                                 new Pose(64.518, 54.099),
-                                new Pose(15.000, 60.000)
+                                new Pose(13.188, 59.675)
                         )
                 ).setTangentHeadingInterpolation()
 
                 .build();
+
     }
 
     @Override
     protected PathChain getScorePickup2(Follower follower) {
-        return follower.pathBuilder().addPath(
+        return  follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(15.000, 60.000),
+                                new Pose(13.188, 59.675),
                                 new Pose(36.306, 78.223),
                                 new Pose(40.000, 105.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(135))
 
                 .build();
+
     }
 
     @Override
@@ -148,41 +163,49 @@ public class AutoBlue extends AutoMaster {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(40.000, 105.000),
-                                new Pose(68.678, 27.502),
-                                new Pose(15.000, 36.000)
+                                new Pose(62.021, 26.041),
+                                new Pose(10.941, 35.838)
                         )
                 ).setTangentHeadingInterpolation()
 
                 .build();
     }
 
+//    @Override
+//    protected PathChain getScorePickup3(Follower follower) {
+//        return follower.pathBuilder().addPath(
+//                        new BezierCurve(
+//                                new Pose(40.000, 105.000),
+//                                new Pose(68.678, 27.502),
+//                                new Pose(15.000, 36.000)
+//                        )
+//                ).setTangentHeadingInterpolation()
+//
+//                .build();
+//    }
+
     @Override
-    protected PathChain getScorePickup3(Follower follower) {
+    protected PathChain getParkGate(Follower follower) {
         return follower.pathBuilder().addPath(
-                        new BezierCurve(
-                                new Pose(15.000, 36.000),
-                                new Pose(17.284, 48.690),
-                                new Pose(31.430, 55.779),
-                                new Pose(13.456, 77.070),
-                                new Pose(44.305, 79.392),
-                                new Pose(34.111, 93.135),
-                                new Pose(40.000, 105.000)
+                        new BezierLine(
+                                follower::getPose, //this gets the current bot position as the start point
+
+                                new Pose(20.360, 70.155)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(135))
+                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
 
                 .build();
-
     }
 
     @Override
-    protected PathChain getPark(Follower follower) {
+    protected PathChain getParkZone(Follower follower) {
+
         return follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(40.000, 105.000),
-
-                                new Pose(25.000, 93.000)
+                                follower::getPose,
+                                new Pose(38.692, 117.733)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(180))
+                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(180))
 
                 .build();
     }

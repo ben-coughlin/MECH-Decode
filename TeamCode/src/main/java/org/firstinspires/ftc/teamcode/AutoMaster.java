@@ -8,6 +8,7 @@ import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.hardware.limelightvision.LLResult;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.subsystems.IndicatorLight;
 import org.firstinspires.ftc.teamcode.subsystems.Limelight;
 import org.firstinspires.ftc.teamcode.utils.VisionUtils;
@@ -22,6 +23,9 @@ public abstract class AutoMaster extends RobotMaster {
     private Follower follower;
     private Timer pathTimer, stageStartTimer, opmodeTimer;
     protected boolean stageInit = true;
+    public static String selectedProgram;
+
+
 
     protected enum AutoStage
     {
@@ -32,8 +36,9 @@ public abstract class AutoMaster extends RobotMaster {
         grabSecondBalls,
         scoreSecondBalls,
         grabThirdBalls,
-        scoreThirdBalls,
-        park,
+       // scoreThirdBalls,
+        parkGate,
+        parkZone,
         endBehavior,
         shootPrep,
         shoot,
@@ -43,10 +48,12 @@ public abstract class AutoMaster extends RobotMaster {
     public static int pathState = AutoStage.scorePreload.ordinal();
     private int pathAfterStateShotOrdinal = AutoStage.grabFirstBalls.ordinal();
     protected abstract boolean isCorrectGoalTag(int tagId);
+    protected abstract boolean isAutoFar();
 
     protected Set<Integer> getSkippedStages() {
         return Collections.emptySet();  // Default: skip nothing
     }
+
     //points
     protected abstract Pose getStartPose();
     protected abstract PathChain getScorePreload(Follower follower);
@@ -56,10 +63,11 @@ public abstract class AutoMaster extends RobotMaster {
     protected abstract PathChain getGrabPickup2(Follower follower);
     protected abstract PathChain getScorePickup2(Follower follower);
     protected abstract PathChain getGrabPickup3(Follower follower);
-    protected abstract PathChain getScorePickup3(Follower follower);
-    protected abstract PathChain getPark(Follower follower);
+   // protected abstract PathChain getScorePickup3(Follower follower);
+    protected abstract PathChain getParkGate(Follower follower);
+    protected abstract PathChain getParkZone(Follower follower);
 
-    private PathChain scorePreload, grabPickup1,  hitGate, scorePickup1, grabPickup2, scorePickup2, grabPickup3, scorePickup3, park;
+    private PathChain scorePreload, grabPickup1,  hitGate, scorePickup1, grabPickup2, scorePickup2, grabPickup3, scorePickup3, parkGate, parkZone;
 
 
 
@@ -70,6 +78,7 @@ public abstract class AutoMaster extends RobotMaster {
     @Override
     public void init() {
         super.init();
+        isAutoFar = isAutoFar();
         isAuto = true;
         pathTimer = new Timer();
         opmodeTimer = new Timer();
@@ -80,7 +89,7 @@ public abstract class AutoMaster extends RobotMaster {
         follower = Constants.createFollower(hardwareMap);
         buildPaths();
         follower.setStartingPose(getStartPose());
-
+        telemetry.addData("Selected", selectedProgram);
     }
 
     /**
@@ -88,8 +97,8 @@ public abstract class AutoMaster extends RobotMaster {
      **/
     @Override
     public void init_loop() {
+        telemetry.addData("Selected", selectedProgram);
         super.init_loop();
-
     }
 
     /**
@@ -100,35 +109,32 @@ public abstract class AutoMaster extends RobotMaster {
     public void start() {
         super.start();
         opmodeTimer.resetTimer();
-
     }
     @Override
     public void loop() {
-        //super.mainLoop();
-        // These loop the movements of the robot, these must be called continuously in order to work
+        super.mainLoop();
         follower.update();
-        turret.showAimTelemetry(telemetry);
-
-
-        // read everything once and only once per loop
-        limelight.updateLimelight();
-        turret.updateTurret();
-        clock.clockUpdate();
-        breakbeamStates[0] = breakbeam.getIntakeBreakbeamStatus();
-        breakbeamStates[1] = breakbeam.getTurretBreakbeamStatus();
 
         LLResult currVision = Limelight.getCurrResult();
         boolean hasValidVision = currVision != null
                 && currVision.isValid()
                 && isCorrectGoalTag(VisionUtils.getTagId(currVision));
 
+        double tx = 0; // use safe values for both of these if vision fails
+        double distance = 999;
+        if(hasValidVision)
+        {
+             tx = isCorrectGoalTag(VisionUtils.getTagId(currVision)) ? Limelight.getCurrResult().getTx() : 0;
+             distance = isCorrectGoalTag(VisionUtils.getTagId(currVision)) ? Limelight.getDistance() : 0;
+        }
+
 
         // ALWAYS call aimTurret - it will use odometry if vision is lost
         turret.aimTurret(
                 hasValidVision,
-                hasValidVision ? Limelight.getCurrResult().getTx() : 0,
+                tx,
                 gamepad2.right_stick_x,
-                Limelight.getDistance(),
+                distance,
                 follower.getHeading(),
                 follower.getAngularVelocity(),
                 follower.getVelocity().getMagnitude()
@@ -162,9 +168,12 @@ public abstract class AutoMaster extends RobotMaster {
 
         grabPickup3 = getGrabPickup3(follower);
 
-        scorePickup3 = getScorePickup3(follower);
+        //scorepickup isn't used bc we run out of time -leaving it in case we get past state
+        //scorePickup3 = getScorePickup3(follower);
 
-        park = getPark(follower);
+        //we don't build these at init because we use lazy generation to get the robot pose at the time we need to park
+        //parkGate = getParkGate(follower);
+        //parkZone = getParkZone(follower);
     }
 
     public void updatePaths() {
@@ -196,14 +205,13 @@ public abstract class AutoMaster extends RobotMaster {
             {
                 initState();
                 intakeSubsystem.turnIntakeOn();
-                if(grabPickup1 != null) { follower.followPath(grabPickup1, 0.75, false); }
+                if(grabPickup1 != null) { follower.followPath(grabPickup1, 0.9, false); }
                 else { nextStage(); }
 
             }
 
             if(!follower.isBusy())
             {
-
                 nextStage(AutoStage.hitGate.ordinal());
             }
         }
@@ -213,15 +221,13 @@ public abstract class AutoMaster extends RobotMaster {
             if(stageInit)
             {
                 initState();
-                if(grabPickup2 != null) { follower.followPath(hitGate); }
+                if(hitGate != null) { follower.followPath(hitGate); }
                 else { nextStage(); }
             }
 
-
-            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 2200)
+            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 2000)
             {
                 nextStage(AutoStage.scoreFirstBalls.ordinal());
-
             }
         }
 
@@ -231,13 +237,12 @@ public abstract class AutoMaster extends RobotMaster {
             {
                 shooterSubsystem.spinUp();
 
-                if(scorePickup1 != null) { follower.followPath(scorePickup1, 0.9, false); }
+                if(scorePickup1 != null) { follower.followPath(scorePickup1); }
                 else { nextStage(); }
                 initState();
             }
             intakeSubsystem.turnIntakeOn();
             shooterSubsystem.updateSpin();
-
 
             if(!follower.isBusy())
             {
@@ -252,15 +257,14 @@ public abstract class AutoMaster extends RobotMaster {
             {
 
                 intakeSubsystem.turnIntakeOn();
-                if(grabPickup1 != null) { follower.followPath(grabPickup2, 0.74, false); }
+                if(grabPickup2 != null) { follower.followPath(grabPickup2); }
                 else { nextStage(); }
                 initState();
 
             }
 
-            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 400)
+            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 200)
             {
-
                 nextStage(AutoStage.scoreSecondBalls.ordinal());
             }
         }
@@ -270,7 +274,7 @@ public abstract class AutoMaster extends RobotMaster {
             {
                 initState();
                 shooterSubsystem.spinUp();
-                if(scorePickup1 != null) { follower.followPath(scorePickup2, 0.9, false); }
+                if(scorePickup2 != null) { follower.followPath(scorePickup2); }
                 else { nextStage(); }
 
             }
@@ -278,7 +282,7 @@ public abstract class AutoMaster extends RobotMaster {
             shooterSubsystem.updateSpin();
 
 
-            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 200)
+            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 50)
             {
 
                 nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabThirdBalls.ordinal());
@@ -288,44 +292,65 @@ public abstract class AutoMaster extends RobotMaster {
         {
             if(stageInit)
             {
-                intakeSubsystem.turnIntakeOn();
-                if(grabPickup3 != null) { follower.followPath(grabPickup3, 0.8, false); }
-                else { nextStage(); }
-                initState();
+                if(grabPickup3 != null) {
+                    intakeSubsystem.turnIntakeOn();
+                    follower.followPath(grabPickup3);
+                    initState();
+                }
+                else {
+                    nextStage();
+                }
             }
 
-            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 200) //keeps skipping this state idk why so we wanna make sure we don't jump
+            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 50) //keeps skipping this state idk why so we wanna make sure we don't jump
             {
-                nextStage(AutoStage.scoreThirdBalls.ordinal());
+                nextStage();
             }
         }
 
-        if(pathState == AutoStage.scoreThirdBalls.ordinal())
+        //not enough time to shoot the third set of balls so we just grab them and park
+//        if(pathState == AutoStage.scoreThirdBalls.ordinal())
+//        {
+//            if(stageInit)
+//            {
+//                shooterSubsystem.spinUp();
+//                intakeSubsystem.turnIntakeOn();
+//                if(scorePickup3 != null) { follower.followPath(scorePickup3); }
+//                else { nextStage(); }
+//                initState();
+//            }
+//            shooterSubsystem.updateSpin();
+//
+//
+//            if(!follower.isBusy())
+//            {
+//
+//                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.park.ordinal());
+//            }
+//
+//        }
+
+        if(pathState == AutoStage.parkGate.ordinal())
         {
             if(stageInit)
             {
-                shooterSubsystem.spinUp();
-                intakeSubsystem.turnIntakeOn();
-                if(scorePickup3 != null) { follower.followPath(scorePickup3); }
+                parkGate = getParkGate(follower);
+                if(parkGate != null) { follower.followPath(parkGate); }
                 else { nextStage(); }
                 initState();
             }
-            shooterSubsystem.updateSpin();
-
 
             if(!follower.isBusy())
             {
-
-                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.park.ordinal());
+                nextStage(AutoStage.endBehavior.ordinal());
             }
-
         }
-
-        if(pathState == AutoStage.park.ordinal())
+        if(pathState == AutoStage.parkZone.ordinal())
         {
             if(stageInit)
             {
-                if(park != null) { follower.followPath(park); }
+                parkZone = getParkZone(follower);
+                if(parkZone != null) { follower.followPath(parkZone); }
                 else { nextStage(); }
                 initState();
             }
@@ -336,6 +361,7 @@ public abstract class AutoMaster extends RobotMaster {
                 nextStage(AutoStage.endBehavior.ordinal());
             }
         }
+
         if(pathState == AutoStage.shootPrep.ordinal())
         {
             if(stageInit)
@@ -354,15 +380,22 @@ public abstract class AutoMaster extends RobotMaster {
         {
             if (stageInit) {
                 initState();
+                shooterSubsystem.startShotSequence(isAuto);
             }
-            shooterSubsystem.startShotSequence(isAuto);
 
-            if(stageStartTimer.getElapsedTime() > 4500)
+
+            double shootWaitTime = isAutoFar ? 5500 : 3500;
+
+            if(stageStartTimer.getElapsedTime() > 3500)
             {
                 shooterSubsystem.stopAutoShot();
                 intakeSubsystem.turnIntakeOff();
-                nextStage(pathAfterStateShotOrdinal);
+                if(stageStartTimer.getElapsedTime() > shootWaitTime)
+                {
+                    nextStage(pathAfterStateShotOrdinal);
+                }
             }
+
         }
         if(pathState == AutoStage.endBehavior.ordinal())
         {
@@ -371,15 +404,13 @@ public abstract class AutoMaster extends RobotMaster {
             turret.turnOffFlywheel();
             clock.resetClock();
             intakeSubsystem.turnIntakeOff();
-            IndicatorLight.setLightIndigo();
+            IndicatorLight.setLightRed();
 
         }
     }
 
-
     protected void nextStage() {
 
-        // Skip stages if they're in the skip set
         do {
             pathState++;
         } while (getSkippedStages().contains(pathState));
@@ -391,7 +422,6 @@ public abstract class AutoMaster extends RobotMaster {
     protected void nextStage(int stage) {
         pathState = stage;
 
-        // Skip stages if they're in the skip set
         while (getSkippedStages().contains(pathState)) {
             pathState++;
         }
@@ -403,11 +433,10 @@ public abstract class AutoMaster extends RobotMaster {
     protected void nextStage(int stage, int afterShotOrdinal) {
         pathAfterStateShotOrdinal = afterShotOrdinal;
         pathState = stage;
-
-        // Skip stages if they're in the skip set
-        while (getSkippedStages().contains(pathState)) {
-            pathState++;
+        while (getSkippedStages().contains(pathAfterStateShotOrdinal)) {
+            pathAfterStateShotOrdinal++;
         }
+
 
         pathTimer.resetTimer();
         stageInit = true;
@@ -421,5 +450,7 @@ public abstract class AutoMaster extends RobotMaster {
         stageStartTimer.resetTimer();
         stageInit = false;
     }
+
+
 }
 

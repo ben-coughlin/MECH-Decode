@@ -18,7 +18,7 @@ public abstract class TeleOpMaster extends RobotMaster {
 
     private Follower follower;
     public static Pose startingPose;
-
+    public static String selectedProgram;
     private TelemetryManager telemetryM;
 
     //state machines!!
@@ -57,6 +57,7 @@ public abstract class TeleOpMaster extends RobotMaster {
         super.init();
         isAuto = false;
         resetEncoders = false;
+        Constants.createFollower(hardwareMap).pathConstraints.setBrakingStrength(2);
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startingPose == null ? new Pose() : startingPose);
         follower.update();
@@ -65,6 +66,7 @@ public abstract class TeleOpMaster extends RobotMaster {
     }
 
     public void init_loop() {
+        telemetry.addData("Selected", selectedProgram);
         super.init_loop();
     }
 
@@ -102,7 +104,7 @@ public abstract class TeleOpMaster extends RobotMaster {
                 && currVision.isValid()
                 && isCorrectGoalTag(VisionUtils.getTagId(currVision));
 
-        //rumble when we're not using vision
+       // rumble when we're not using vision
         if(turret.getTrackingModeForTelemetry().contains("VELOCITY"))
         {
             gamepad2.rumble(5);
@@ -137,12 +139,36 @@ public abstract class TeleOpMaster extends RobotMaster {
 
         runStateMachines();
 
-        follower.setTeleOpDrive(
-                -gamepad1.left_stick_y,
-                -gamepad1.left_stick_x,
-                -gamepad1.right_stick_x,
-                false // field Centric
-        );
+        //todo: tune directions and power amounts
+        if(gamepad1.dpad_left)
+        {
+            follower.setTeleOpDrive(
+                    0,
+                    0,
+                    0.2,
+                    false // field Centric
+            );
+        }
+        else if(gamepad1.dpad_right)
+        {
+            follower.setTeleOpDrive(
+                    0,
+                    -0,
+                    -0.2,
+                    false // field Centric
+            );
+        }
+        else
+        {
+            follower.setTeleOpDrive(
+                    -gamepad1.left_stick_y,
+                    -gamepad1.left_stick_x,
+                    -gamepad1.right_stick_x,
+                    false // field Centric
+            );
+        }
+
+
 
 
 
@@ -176,6 +202,7 @@ public abstract class TeleOpMaster extends RobotMaster {
                 if (stageFinished) {
                     initializeStateVariables();
                     shooterSubsystem.spinUp();
+                    clock.moveClockToPreShootPosition();
                 }
                 shooterSubsystem.updateSpin();
                 if (shooterSubsystem.isFlywheelReady) {
@@ -188,6 +215,7 @@ public abstract class TeleOpMaster extends RobotMaster {
                     initializeStateVariables();
                     gamepad1.rumble(1, 1, 200);
                     gamepad2.rumble(1, 1, 200);
+                    clock.moveClockToShootPosition();
                 }
 
                 if (gamepad1.right_bumper || gamepad2.dpad_down) {
@@ -203,8 +231,9 @@ public abstract class TeleOpMaster extends RobotMaster {
             case FIRE_BALL:
                 shooterSubsystem.updateSpin();
                 if (stageFinished) {
-                    IndicatorLight.turnLightOff();
+                    IndicatorLight.setLightBlue();
                     initializeStateVariables();
+                    clock.setRampToShootPower();
                 }
                 shooterSubsystem.startShotSequence(isAuto);
                 if (gamepad1.circle || gamepad2.circle) {
@@ -260,15 +289,7 @@ public abstract class TeleOpMaster extends RobotMaster {
             }
         }
 
-        if(clockResetTimer.seconds() <= 2.5 && hasClockReset)
-        {
-          IndicatorLight.setLightViolet();
-        }
-        else if(clockResetTimer.seconds() >= 2.5)
-        {
 
-            hasClockReset = false;
-        }
 
     }
 }

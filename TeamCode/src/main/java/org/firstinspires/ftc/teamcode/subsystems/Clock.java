@@ -12,13 +12,14 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
+
 public class Clock {
     private final Servo clock;
     private final CRServo ramp;
     private final DcMotorEx encoder;
-    private final double CLOCK_INIT = 0.09;
-    private final double CLOCK_SHOOT = .37; // 1:1 = .285 | 2:1 = .515
-    private final double CLOCK_PRE_SHOOT = .17; // 1:1 = .13 | 2:1 = .2
+    private final double CLOCK_INIT = 0.375;
+    private final double CLOCK_SHOOT = .675; // 1:1 = .285 | 2:1 = .515
+    private final double CLOCK_PRE_SHOOT = .475; // 1:1 = .13 | 2:1 = .2
     private final double RAMP_INIT = 0;
     private final double RAMP_SHOOT = 1;
 
@@ -28,7 +29,9 @@ public class Clock {
     private boolean turretBallDetected;
     private boolean lastTurretDetected;
 
-    private int currentEncoderPosition = 0;
+    public int currentEncoderPosition = 0;
+    private int initEncoderPostion = 0;
+    private int shootEncoderPosition = 0;
     private int POSITION_TOLERANCE = 20;
     private int numBallsInClock = 0;
     public boolean isClockResetting;
@@ -57,8 +60,16 @@ public class Clock {
         currentEncoderPosition = encoder.getCurrentPosition();
         intakeNewBall();
         recordShotBall();
-        if(SystemClock.uptimeMillis() - clockResetTimer >= 800 && isClockResetting) { isClockResetting = false; }
-        updateLEDColor();
+        if(currentEncoderPosition > initEncoderPostion && currentEncoderPosition < shootEncoderPosition && isClockResetting)
+        {
+            IndicatorLight.setLightRed();
+        }
+        else if(currentEncoderPosition <= initEncoderPostion + POSITION_TOLERANCE && currentEncoderPosition >= initEncoderPostion - POSITION_TOLERANCE)
+        {
+            isClockResetting = false;
+        }
+
+
     }
 
     private void intakeNewBall() {
@@ -141,30 +152,7 @@ public class Clock {
         ramp.setPower(pwr);
     }
 
-    private void updateLEDColor()
-    {
-//        if(isClockResetting)
-//        {
-//           IndicatorLight.setLightRed();
-//        }
-//        else if(numBallsInClock == 0)
-//        {
-//            IndicatorLight.setLightBlue();
-//        }
-//        else if(numBallsInClock == 1)
-//        {
-//            IndicatorLight.setLightOrange();
-//        }
-//        else if(numBallsInClock == 2)
-//        {
-//            IndicatorLight.setLightViolet();
-//        }
-//        else if(numBallsInClock == 3)
-//        {
-//            IndicatorLight.setLightGreen();
-//        }
 
-    }
     public void setNumBallsInClock(int balls)
     {
         numBallsInClock = balls;

@@ -1,189 +1,240 @@
 package org.firstinspires.ftc.teamcode.tuning;
 
-import com.qualcomm.hardware.limelightvision.LLResult;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.subsystems.Clock;
-import org.firstinspires.ftc.teamcode.subsystems.IntakeSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.Limelight;
 import org.firstinspires.ftc.teamcode.subsystems.Turret;
 
-@TeleOp(name = "Hood Tuning")
-public class HoodTuning extends LinearOpMode {
-    private double currentServoPosition = 0.5; // Start at middle position
-    private double motorRPM = 0.0; // Start with motors off
+import java.util.ArrayList;
+import java.util.Locale;
 
-    private final double SERVO_INCREMENT = 0.005;
-    private final double MOTOR_INCREMENT = 50;
+/**
+ * Hood Tuning OpMode
+ * Used to create/tune the launch angle lookup table
+ *
+ * WORKFLOW:
+ * 1. Position robot at different distances from goal
+ * 2. Adjust hood position and RPM until shots are accurate
+ * 3. Press A to save that data point
+ * 4. Repeat for multiple distances
+ * 5. Copy the lookup table from telemetry into Turret.java
+ */
+@TeleOp(name = "Hood Tuner", group = "Tuning")
+public class HoodTuning extends OpMode {
 
-    private final ElapsedTime timer = new ElapsedTime();
+    private Turret turret;
+    private Limelight limelight;
 
-    // State variables
-    private boolean flywheelActive = false;
+    // Current tuning values
+    private double currentHoodPosition = 0.5;
+    private double currentRPM = 3000;
 
-    // Debounce variables
-    private boolean dpadUpPressed = false;
-    private boolean dpadDownPressed = false;
-    private boolean dpadLeftPressed = false;
-    private boolean dpadRightPressed = false;
-    private boolean circlePressed = false;
-    private boolean crossPressed = false;
-    private boolean trianglePressed = false;
-    private boolean squarePressed = false;
+    // Saved tuning points
+    private ArrayList<TuningPoint> savedPoints = new ArrayList<>();
 
+    // Control variables
+    private final ElapsedTime buttonCooldown = new ElapsedTime();
+    private static final double COOLDOWN_MS = 300;
+
+    // Adjustment speeds
+    private static final double HOOD_COARSE_STEP = 0.02;   // Stick control
+    private static final double HOOD_FINE_STEP = 0.005;    // Dpad control
+    private static final double RPM_COARSE_STEP = 100;      // Stick control
+    private static final double RPM_FINE_STEP = 25;         // Dpad control
 
     @Override
-    public void runOpMode() throws InterruptedException {
-        Limelight limelight = new Limelight(hardwareMap);
-        Servo launchServo = hardwareMap.get(Servo.class, "hood");
-        Turret turret = new Turret(hardwareMap);
-        IntakeSubsystem intake = new IntakeSubsystem(hardwareMap);
-        Clock clock = new Clock(hardwareMap);
+    public void init() {
+        turret = new Turret(hardwareMap);
+        limelight = new Limelight(hardwareMap);
 
-
-        telemetry.addData("Status", "Initialized");
-        telemetry.addLine("=== CONTROLS ===");
-        telemetry.addLine("DPAD UP/DOWN: Adjust hood angle");
-        telemetry.addLine("DPAD LEFT/RIGHT: Adjust motor power");
-        telemetry.addLine("CIRCLE: Toggle flywheel ON");
-        telemetry.addLine("CROSS: Turn flywheel OFF");
-        telemetry.addLine("TRIANGLE: Shoot (move clock to shoot position)");
-        telemetry.addLine("SQUARE: Reset (move clock to pre-shoot position)");
-        telemetry.addLine("================");
+        telemetry.addLine("═══════════════════════════════════");
+        telemetry.addLine("    HOOD TUNER INITIALIZED");
+        telemetry.addLine("═══════════════════════════════════");
+        telemetry.addLine();
+        telemetry.addLine("Position robot at a known distance");
+        telemetry.addLine("Press START when ready");
         telemetry.update();
-        clock.initClock();
-        waitForStart();
+    }
 
-        while (opModeIsActive()) {
-            // Update limelight data
-            limelight.updateLimelight();
-            LLResult result = Limelight.getCurrResult();
-            double distanceToTag = limelight.getDistanceToTag(result);
+    @Override
+    public void start() {
+        buttonCooldown.reset();
+        turret.turnOnFlywheel();
+    }
 
+    @Override
+    public void loop() {
+        // Update subsystems
+        limelight.updateLimelight();
+        turret.updateTurret();
 
-            boolean hasValidVision = result != null
-                    && result.isValid();
+        // Get current distance from Limelight
+        double currentDistance = Limelight.getDistance();
 
-            // ALWAYS call aimTurret - it will use odometry if vision is lost
-            turret.aimTurret(
-                    hasValidVision,
-                    hasValidVision ? Limelight.getCurrResult().getTx() : 0,
-                    gamepad2.right_stick_x,
-                   999, //so we dont get annoying oscillation
-                    0,
-                    0,
-                    0
-            );
+        // ═══════════════════════════════════════════════════════
+        // CONTROLS - Hood Position
+        // ═══════════════════════════════════════════════════════
 
-            // === HOOD SERVO CONTROLS ===
-            if (gamepad1.dpad_up && !dpadUpPressed) {
-                currentServoPosition += SERVO_INCREMENT;
-                dpadUpPressed = true;
-            } else if (!gamepad1.dpad_up) {
-                dpadUpPressed = false;
+        // Left Stick Y: Coarse hood adjustment
+        if (Math.abs(gamepad1.left_stick_y) > 0.1) {
+            currentHoodPosition -= gamepad1.left_stick_y * HOOD_COARSE_STEP;
+        }
+
+        // Dpad Up/Down: Fine hood adjustment
+        if (gamepad1.dpad_up && buttonCooldown.milliseconds() > COOLDOWN_MS) {
+            currentHoodPosition += HOOD_FINE_STEP;
+            buttonCooldown.reset();
+        }
+        if (gamepad1.dpad_down && buttonCooldown.milliseconds() > COOLDOWN_MS) {
+            currentHoodPosition -= HOOD_FINE_STEP;
+            buttonCooldown.reset();
+        }
+
+        // Clamp hood position to valid servo range
+        currentHoodPosition = Math.max(0.0, Math.min(1.0, currentHoodPosition));
+        turret.setHoodPos(currentHoodPosition);
+
+        // ═══════════════════════════════════════════════════════
+        // CONTROLS - RPM
+        // ═══════════════════════════════════════════════════════
+
+        // Right Stick Y: Coarse RPM adjustment
+        if (Math.abs(gamepad1.right_stick_y) > 0.1) {
+            currentRPM -= gamepad1.right_stick_y * RPM_COARSE_STEP;
+        }
+
+        // Dpad Left/Right: Fine RPM adjustment
+        if (gamepad1.dpad_right && buttonCooldown.milliseconds() > COOLDOWN_MS) {
+            currentRPM += RPM_FINE_STEP;
+            buttonCooldown.reset();
+        }
+        if (gamepad1.dpad_left && buttonCooldown.milliseconds() > COOLDOWN_MS) {
+            currentRPM -= RPM_FINE_STEP;
+            buttonCooldown.reset();
+        }
+
+        // Clamp RPM to reasonable range
+        currentRPM = Math.max(1500, Math.min(6000, currentRPM));
+        turret.setFlywheelRPM(currentRPM);
+
+        // ═══════════════════════════════════════════════════════
+        // CONTROLS - Data Management
+        // ═══════════════════════════════════════════════════════
+
+        // A Button: Save current tuning point
+        if (gamepad1.a && buttonCooldown.milliseconds() > COOLDOWN_MS) {
+            if (currentDistance > 0) {  // Only save if we have valid distance
+                savedPoints.add(new TuningPoint(currentDistance, currentHoodPosition, currentRPM));
+                // Sort by distance
+                savedPoints.sort((p1, p2) -> Double.compare(p1.distance, p2.distance));
+                buttonCooldown.reset();
             }
+        }
 
-            if (gamepad1.dpad_down && !dpadDownPressed) {
-                currentServoPosition -= SERVO_INCREMENT;
-                dpadDownPressed = true;
-            } else if (!gamepad1.dpad_down) {
-                dpadDownPressed = false;
+        // X Button: Clear all saved points
+        if (gamepad1.x && buttonCooldown.milliseconds() > COOLDOWN_MS) {
+            savedPoints.clear();
+            buttonCooldown.reset();
+        }
+
+        // B Button: Remove last saved point
+        if (gamepad1.b && buttonCooldown.milliseconds() > COOLDOWN_MS) {
+            if (!savedPoints.isEmpty()) {
+                savedPoints.remove(savedPoints.size() - 1);
             }
+            buttonCooldown.reset();
+        }
 
-            // === MOTOR POWER CONTROLS ===
-            if (gamepad1.dpad_left && !dpadLeftPressed) {
-                motorRPM += MOTOR_INCREMENT;
-                dpadLeftPressed = true;
-            } else if (!gamepad1.dpad_left) {
-                dpadLeftPressed = false;
+        // ═══════════════════════════════════════════════════════
+        // TELEMETRY
+        // ═══════════════════════════════════════════════════════
+
+        telemetry.addLine("═══════════════════════════════════════════════════════");
+        telemetry.addLine("                   HOOD TUNER");
+        telemetry.addLine("═══════════════════════════════════════════════════════");
+        telemetry.addLine();
+
+        // Current readings
+        telemetry.addLine("───────────── CURRENT VALUES ─────────────");
+        telemetry.addData(" Distance", "%.1f inches", currentDistance);
+        telemetry.addData(" Hood Position", "%.3f", currentHoodPosition);
+        telemetry.addData(" Target RPM", "%.0f", currentRPM);
+        telemetry.addData(" Current RPM", "%.0f", turret.getCurrentFlywheelRPM());
+        telemetry.addData(" Flywheel Ready?", turret.isFlywheelReady() ? "YES" : "NO");
+        telemetry.addLine();
+
+        // Controls
+        telemetry.addLine("──────────────── CONTROLS ────────────────");
+        telemetry.addLine("HOOD POSITION:");
+        telemetry.addLine("  • Left Stick Y:  Coarse adjust (±0.02)");
+        telemetry.addLine("  • DPad Up/Down:  Fine adjust (±0.005)");
+        telemetry.addLine();
+        telemetry.addLine("RPM:");
+        telemetry.addLine("  • Right Stick Y:    Coarse adjust (±100)");
+        telemetry.addLine("  • DPad Left/Right:  Fine adjust (±25)");
+        telemetry.addLine();
+        telemetry.addLine("DATA MANAGEMENT:");
+        telemetry.addLine("  • A Button:  Save current point");
+        telemetry.addLine("  • B Button:  Delete last point");
+        telemetry.addLine("  • X Button:  Clear all points");
+        telemetry.addLine();
+
+        // Saved points
+        telemetry.addLine("──────────── SAVED POINTS (" + savedPoints.size() + ") ────────────");
+        if (savedPoints.isEmpty()) {
+            telemetry.addLine("  No points saved yet");
+            telemetry.addLine("  Adjust hood and RPM, then press A to save");
+        } else {
+            for (int i = 0; i < savedPoints.size(); i++) {
+                TuningPoint p = savedPoints.get(i);
+                telemetry.addLine(String.format(Locale.US,
+                        "  %d: %.1f\" → Hood:%.3f RPM:%.0f",
+                        i + 1, p.distance, p.hoodPos, p.rpm));
             }
+        }
+        telemetry.addLine();
 
-            if (gamepad1.dpad_right && !dpadRightPressed) {
-                motorRPM -= MOTOR_INCREMENT;
-                dpadRightPressed = true;
-            } else if (!gamepad1.dpad_right) {
-                dpadRightPressed = false;
+        // Lookup table code output
+        if (!savedPoints.isEmpty()) {
+            telemetry.addLine("─────── COPY THIS TO Turret.java ─────────");
+            telemetry.addLine("private final double[][] launchAngleLookupTable = {");
+            for (int i = 0; i < savedPoints.size(); i++) {
+                TuningPoint p = savedPoints.get(i);
+                String comma = (i < savedPoints.size() - 1) ? "," : "";
+                telemetry.addLine(String.format(Locale.US,
+                        "    { %.0f, %.2f, %.0f }%s  // %.1f inches",
+                        p.distance, p.hoodPos, p.rpm, comma, p.distance));
             }
+            telemetry.addLine("};");
+            telemetry.addLine("──────────────────────────────────────────");
+        }
 
-           if(gamepad1.right_trigger > 0.05)
-           {
-               intake.turnIntakeOn();
-           }
-           else {
-               intake.turnIntakeOff();
-           }
+        telemetry.addLine();
+        telemetry.addLine("═══════════════════════════════════════════════════════");
 
-            // === FLYWHEEL TOGGLE CONTROLS ===
-            if (gamepad1.circle && !circlePressed) {
-                flywheelActive = true;
-                turret.setFlywheelRPM(motorRPM);
-                clock.setRampToShootPower();
-                circlePressed = true;
-            } else if (!gamepad1.circle) {
-                circlePressed = false;
-            }
+        telemetry.update();
+    }
 
-            if (gamepad1.cross && !crossPressed) {
-                flywheelActive = false;
-                turret.setTurretPower(0);
-                clock.stopRamp();
-                clock.initClock();
-                crossPressed = true;
-            } else if (!gamepad1.cross) {
-                crossPressed = false;
-            }
+    @Override
+    public void stop() {
+        turret.turnOffFlywheel();
+    }
 
-            // === CLOCK (BALL HANDLER) CONTROLS ===
-            if (gamepad1.triangle && !trianglePressed) {
-                clock.moveClockToShootPosition();
-                trianglePressed = true;
-            } else if (!gamepad1.triangle) {
-                trianglePressed = false;
-            }
+    /**
+     * Helper class to store a tuning data point
+     */
+    private static class TuningPoint {
+        double distance;
+        double hoodPos;
+        double rpm;
 
-            if (gamepad1.square && !squarePressed) {
-                clock.moveClockToPreShootPosition();
-                squarePressed = true;
-            } else if (!gamepad1.square) {
-                squarePressed = false;
-            }
-
-            // Update flywheel power if active (allows live adjustment)
-            if (flywheelActive) {
-                turret.setFlywheelRPM(motorRPM);
-            }
-
-            // Constrain values to valid ranges
-            currentServoPosition = Math.max(0.0, Math.min(1.0, currentServoPosition));
-            motorRPM = Math.max(0.0, Math.min(1.0, motorRPM));
-
-            // Set the servo position
-            launchServo.setPosition(currentServoPosition);
-            telemetry.addLine("=== CONTROLS ===");
-            telemetry.addLine("DPAD UP/DOWN: Adjust hood angle");
-            telemetry.addLine("DPAD LEFT/RIGHT: Adjust motor power");
-            telemetry.addLine("CIRCLE: Toggle flywheel ON");
-            telemetry.addLine("CROSS: Turn flywheel OFF");
-            telemetry.addLine("TRIANGLE: Shoot (move clock to shoot position)");
-            telemetry.addLine("SQUARE: Reset (move clock to pre-shoot position)");
-            telemetry.addLine("================");
-
-            // === TELEMETRY ===
-            telemetry.addLine("=== LAUNCHER TUNING ===");
-            telemetry.addData("Distance to Tag (in)", "%.2f", distanceToTag);
-            telemetry.addLine();
-            telemetry.addData("Hood Servo Position", "%.3f", currentServoPosition);
-            telemetry.addData("Flywheel Status", flywheelActive ? "ON" : "OFF");
-            telemetry.addData("Flywheel RPM", "%.3f", motorRPM);
-            telemetry.addLine();
-            telemetry.addLine("--- Record These Values ---");
-            telemetry.addData("Distance", "%.2f in", distanceToTag);
-            telemetry.addData("Hood Position", "%.3f", currentServoPosition);
-            telemetry.addData("RPM", "%.3f", motorRPM);
-            telemetry.update();
+        TuningPoint(double distance, double hoodPos, double rpm) {
+            this.distance = distance;
+            this.hoodPos = hoodPos;
+            this.rpm = rpm;
         }
     }
 }

@@ -29,6 +29,7 @@
 
 package org.firstinspires.ftc.teamcode.tuning;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -41,7 +42,7 @@ import org.firstinspires.ftc.teamcode.subsystems.Breakbeam;
  * The light will continuously scroll through: Red, Orange, Yellow, Green, Azure, Blue,
  * Indigo, Violet, White, and Off.
  */
-
+@Disabled
 @TeleOp(name="Color Cycle OpMode", group="Iterative OpMode")
 public class ColorTest extends OpMode
 {
