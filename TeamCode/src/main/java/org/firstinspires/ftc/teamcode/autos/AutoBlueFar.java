@@ -21,7 +21,7 @@ public class AutoBlueFar extends AutoMaster {
 
     public static boolean DO_FIRST_CYCLE = true;
     public static boolean DO_SECOND_CYCLE = true;
-    public static boolean DO_PARK = true;
+    public static boolean DO_ZONE_PARK = true;
 
     @Override
     protected Set<Integer> getSkippedStages() {
@@ -37,9 +37,7 @@ public class AutoBlueFar extends AutoMaster {
             skipped.add(AutoStage.scoreSecondBalls.ordinal());
         }
 
-        if (!DO_PARK) {
-            skipped.add(AutoStage.parkZone.ordinal());
-        }
+        AutoMaster.doZonePark = DO_ZONE_PARK;
 
 
         return skipped;
@@ -154,7 +152,7 @@ public class AutoBlueFar extends AutoMaster {
 
                                 new Pose(40.000, 15.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(180))
+                ).setLinearHeadingInterpolation(follower.getHeading(), Math.toRadians(180))
 
                 .build();
     }

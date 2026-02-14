@@ -23,7 +23,8 @@ public class AutoRed extends AutoMaster {
     public static boolean DO_FIRST_CYCLE = true;
     public static boolean DO_SECOND_CYCLE = true;
     public static boolean DO_THIRD_CYCLE = true;
-    public static boolean DO_GATE_PARK = true;
+    public static boolean DO_ZONE_PARK = true;
+
 
     @Override
     protected boolean isAutoFar()
@@ -53,11 +54,7 @@ public class AutoRed extends AutoMaster {
             skipped.add(AutoStage.grabThirdBalls.ordinal());
 
         }
-        if (DO_GATE_PARK) {
-            skipped.add(AutoStage.parkZone.ordinal());
-        } else {
-            skipped.add(AutoStage.parkGate.ordinal());
-        }
+        AutoMaster.doZonePark = DO_ZONE_PARK;
 
         return skipped;
     }
@@ -75,7 +72,7 @@ public class AutoRed extends AutoMaster {
 
     @Override
     protected PathChain getScorePreload(Follower follower) {
-        return  follower.pathBuilder().addPath(
+        return follower.pathBuilder().addPath(
                         new BezierLine(
                                 new Pose(135.000, 115.000),
 
@@ -84,16 +81,15 @@ public class AutoRed extends AutoMaster {
                 ).setTangentHeadingInterpolation()
                 .setReversed()
                 .build();
-
     }
 
     @Override
     protected PathChain getGrabPickup1(Follower follower) {
-        return  follower.pathBuilder().addPath(
+        return follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(94.000, 115.000),
-                                new Pose(81.646, 78.608),
-                                new Pose(127.579, 85.000)
+                                new Pose(66.058, 86.634),
+                                new Pose(120.634, 91.945)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -104,9 +100,9 @@ public class AutoRed extends AutoMaster {
     protected PathChain getHitGate(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(127.579, 85.000),
-                                new Pose(109.132, 73.737),
-                                new Pose(129.000, 70.000)
+                                new Pose(120.634, 91.945),
+                                new Pose(93.080, 86.701),
+                                new Pose(117.116, 79.569)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(-90))
 
@@ -117,9 +113,9 @@ public class AutoRed extends AutoMaster {
     protected PathChain getScorePickup1(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(129.000, 70.000),
+                                new Pose(117.116, 79.569),
 
-                                new Pose(104.000, 105.000)
+                                new Pose(100.450, 108.859)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(-90), Math.toRadians(45))
 
@@ -130,23 +126,22 @@ public class AutoRed extends AutoMaster {
     protected PathChain getGrabPickup2(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(104.000, 105.000),
-                                new Pose(79.482, 54.099),
-                                new Pose(129.000, 60.000)
+                                new Pose(100.450, 108.859),
+                                new Pose(62.041, 60.427),
+                                new Pose(118.350, 65.093)
                         )
                 ).setTangentHeadingInterpolation()
 
                 .build();
-
     }
 
     @Override
     protected PathChain getScorePickup2(Follower follower) {
-        return  follower.pathBuilder().addPath(
+        return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(129.000, 60.000),
+                                new Pose(118.196, 65.093),
                                 new Pose(107.694, 78.223),
-                                new Pose(104.000, 105.000)
+                                new Pose(100.605, 109.013)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(45))
 
@@ -155,11 +150,11 @@ public class AutoRed extends AutoMaster {
 
     @Override
     protected PathChain getGrabPickup3(Follower follower) {
-        return  follower.pathBuilder().addPath(
+        return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(104.000, 105.000),
-                                new Pose(75.322, 27.502),
-                                new Pose(129.000, 36.000)
+                                new Pose(100.605, 109.013),
+                                new Pose(58.654, 34.293),
+                                new Pose(125.450, 39.395)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -190,9 +185,9 @@ public class AutoRed extends AutoMaster {
                         new BezierLine(
                                 follower::getPose,
 
-                                new Pose(125.101, 69.667)
+                                new Pose(112.445, 71.674)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(0))
+                ).setLinearHeadingInterpolation(follower.getHeading(), Math.toRadians(0))
 
                 .build();
 
@@ -205,9 +200,9 @@ public class AutoRed extends AutoMaster {
                         new BezierLine(
                                follower::getPose,
 
-                                new Pose(105.981, 120.372)
+                                new Pose(95.916, 133.029)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(135))
+                ).setLinearHeadingInterpolation(follower.getHeading(), Math.toRadians(0))
 
                 .build();
     }

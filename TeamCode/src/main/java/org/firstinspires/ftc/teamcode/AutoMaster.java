@@ -25,6 +25,7 @@ public abstract class AutoMaster extends RobotMaster {
     protected boolean stageInit = true;
     public static String selectedProgram;
 
+    protected static boolean doZonePark = true;
 
 
     protected enum AutoStage
@@ -37,16 +38,16 @@ public abstract class AutoMaster extends RobotMaster {
         scoreSecondBalls,
         grabThirdBalls,
        // scoreThirdBalls,
-        parkGate,
-        parkZone,
-        endBehavior,
+        park,
         shootPrep,
         shoot,
+        endBehavior,
+
 
     }
 
     public static int pathState = AutoStage.scorePreload.ordinal();
-    private int pathAfterStateShotOrdinal = AutoStage.grabFirstBalls.ordinal();
+    private int pathAfterStateShotOrdinal = AutoStage.park.ordinal();
     protected abstract boolean isCorrectGoalTag(int tagId);
     protected abstract boolean isAutoFar();
 
@@ -67,7 +68,15 @@ public abstract class AutoMaster extends RobotMaster {
     protected abstract PathChain getParkGate(Follower follower);
     protected abstract PathChain getParkZone(Follower follower);
 
-    private PathChain scorePreload, grabPickup1,  hitGate, scorePickup1, grabPickup2, scorePickup2, grabPickup3, scorePickup3, parkGate, parkZone;
+    private PathChain scorePreload;
+    private PathChain grabPickup1;
+    private PathChain hitGate;
+    private PathChain scorePickup1;
+    private PathChain grabPickup2;
+    private PathChain scorePickup2;
+    private PathChain grabPickup3;
+    private PathChain scorePickup3;
+    private PathChain parkZone;
 
 
 
@@ -84,7 +93,7 @@ public abstract class AutoMaster extends RobotMaster {
         opmodeTimer = new Timer();
         stageStartTimer = new Timer();
         opmodeTimer.resetTimer();
-
+        getSkippedStages(); //running this will set the park booleans and then we call it later to get stages
 
         follower = Constants.createFollower(hardwareMap);
         buildPaths();
@@ -257,7 +266,7 @@ public abstract class AutoMaster extends RobotMaster {
             {
 
                 intakeSubsystem.turnIntakeOn();
-                if(grabPickup2 != null) { follower.followPath(grabPickup2); }
+                if(grabPickup2 != null) { follower.followPath(grabPickup2,  0.9, true); }
                 else { nextStage(); }
                 initState();
 
@@ -294,7 +303,7 @@ public abstract class AutoMaster extends RobotMaster {
             {
                 if(grabPickup3 != null) {
                     intakeSubsystem.turnIntakeOn();
-                    follower.followPath(grabPickup3);
+                    follower.followPath(grabPickup3, 0.9, true);
                     initState();
                 }
                 else {
@@ -304,7 +313,7 @@ public abstract class AutoMaster extends RobotMaster {
 
             if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 50) //keeps skipping this state idk why so we wanna make sure we don't jump
             {
-                nextStage();
+                nextStage(AutoStage.park.ordinal());
             }
         }
 
@@ -330,37 +339,25 @@ public abstract class AutoMaster extends RobotMaster {
 //
 //        }
 
-        if(pathState == AutoStage.parkGate.ordinal())
+        if(pathState == AutoStage.park.ordinal())
         {
             if(stageInit)
             {
-                parkGate = getParkGate(follower);
-                if(parkGate != null) { follower.followPath(parkGate); }
+                PathChain parkGate = getParkGate(follower);
+                PathChain parkZone = getParkZone(follower);
+
+                if(parkGate != null && !doZonePark) { follower.followPath(parkGate); }
+                else if(parkZone != null && doZonePark ) {follower.followPath(parkZone); }
                 else { nextStage(); }
                 initState();
             }
 
-            if(!follower.isBusy())
+            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 75)
             {
                 nextStage(AutoStage.endBehavior.ordinal());
             }
         }
-        if(pathState == AutoStage.parkZone.ordinal())
-        {
-            if(stageInit)
-            {
-                parkZone = getParkZone(follower);
-                if(parkZone != null) { follower.followPath(parkZone); }
-                else { nextStage(); }
-                initState();
-            }
 
-
-            if(!follower.isBusy())
-            {
-                nextStage(AutoStage.endBehavior.ordinal());
-            }
-        }
 
         if(pathState == AutoStage.shootPrep.ordinal())
         {
@@ -384,7 +381,7 @@ public abstract class AutoMaster extends RobotMaster {
             }
 
 
-            double shootWaitTime = isAutoFar ? 5500 : 3500;
+            double shootWaitTime = isAutoFar ? 6500 : 3500;
 
             if(stageStartTimer.getElapsedTime() > 3500)
             {
@@ -399,7 +396,7 @@ public abstract class AutoMaster extends RobotMaster {
         }
         if(pathState == AutoStage.endBehavior.ordinal())
         {
-            follower.breakFollowing();
+           // follower.breakFollowing();
             drive.hardStopMotors();
             turret.turnOffFlywheel();
             clock.resetClock();

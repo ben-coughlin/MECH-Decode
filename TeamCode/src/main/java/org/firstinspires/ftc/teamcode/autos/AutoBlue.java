@@ -22,7 +22,7 @@ public class AutoBlue extends AutoMaster {
      public static boolean DO_FIRST_CYCLE = true;
     public static boolean DO_SECOND_CYCLE = true;
     public static boolean DO_THIRD_CYCLE = true;
-    public static boolean DO_GATE_PARK = true;
+    public static boolean DO_ZONE_PARK = true;
 
     @Override
     protected boolean isAutoFar()
@@ -52,11 +52,7 @@ public class AutoBlue extends AutoMaster {
                         skipped.add(AutoStage.grabThirdBalls.ordinal());
                     }
 
-        if (DO_GATE_PARK) {
-            skipped.add(AutoStage.parkZone.ordinal());
-        } else {
-            skipped.add(AutoStage.parkGate.ordinal());
-        }
+        AutoMaster.doZonePark = DO_ZONE_PARK;
 
 
                 return skipped;
@@ -108,9 +104,9 @@ public class AutoBlue extends AutoMaster {
     protected PathChain getHitGate(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(10.901, 84.838),
+                                new Pose(16.421, 85.000),
                                 new Pose(34.868, 73.737),
-                                new Pose(12.240, 71.786)
+                                new Pose(14.228, 70.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(270))
 
@@ -121,7 +117,7 @@ public class AutoBlue extends AutoMaster {
     protected PathChain getScorePickup1(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(12.240, 71.786),
+                                new Pose(14.228, 70.000),
 
                                 new Pose(40.000, 105.000)
                         )
@@ -163,8 +159,8 @@ public class AutoBlue extends AutoMaster {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(40.000, 105.000),
-                                new Pose(62.021, 26.041),
-                                new Pose(10.941, 35.838)
+                                new Pose(68.678, 27.502),
+                                new Pose(10.987, 36.309)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -192,7 +188,7 @@ public class AutoBlue extends AutoMaster {
 
                                 new Pose(20.360, 70.155)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+                ).setLinearHeadingInterpolation(follower.getHeading(), Math.toRadians(180))
 
                 .build();
     }
@@ -205,7 +201,7 @@ public class AutoBlue extends AutoMaster {
                                 follower::getPose,
                                 new Pose(38.692, 117.733)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(180))
+                ).setLinearHeadingInterpolation(follower.getHeading(), Math.toRadians(180))
 
                 .build();
     }

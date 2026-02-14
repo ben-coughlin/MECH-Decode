@@ -20,7 +20,7 @@ public class AutoRedFar extends AutoMaster {
     public static boolean DO_FIRST_CYCLE = true;
     public static boolean DO_SECOND_CYCLE = true;
 
-    public static boolean DO_PARK = true;
+    public static boolean DO_ZONE_PARK = true;
 
     @Override
     protected Set<Integer> getSkippedStages() {
@@ -36,13 +36,7 @@ public class AutoRedFar extends AutoMaster {
             skipped.add(AutoStage.scoreSecondBalls.ordinal());
         }
 
-        if (!DO_PARK) {
-            skipped.add(AutoStage.parkZone.ordinal());
-        }
-        else
-        {
-            skipped.add(AutoStage.parkGate.ordinal());
-        }
+        AutoMaster.doZonePark = DO_ZONE_PARK;
 
         return skipped;
     }
@@ -70,7 +64,7 @@ public class AutoRedFar extends AutoMaster {
                         new BezierLine(
                                 new Pose(88.000, 8.000),
 
-                                new Pose(88.000, 8.000)
+                                new Pose(87.000, 8.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(90))
 
@@ -81,13 +75,14 @@ public class AutoRedFar extends AutoMaster {
     protected PathChain getGrabPickup1(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(88.000, 8.000),
-                                new Pose(95.722, 39.009),
-                                new Pose(129.000, 36.000)
+                                new Pose(87, 8),
+                                new Pose(65.635, 34.021),
+                                new Pose(125.621, 31.173)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(0))
 
                 .build();
+
     }
 
     @Override
@@ -98,15 +93,16 @@ public class AutoRedFar extends AutoMaster {
 
     @Override
     protected PathChain getScorePickup1(Follower follower) {
-        return  follower.pathBuilder().addPath(
+        return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(129.000, 36.000),
-                                new Pose(94.075, 30.471),
-                                new Pose(88.000, 8.000)
+                                new Pose(125.621, 31.173),
+                                new Pose(94.236, 30.149),
+                                new Pose(88.161, 13.309)
                         )
                 ).setTangentHeadingInterpolation()
                 .setReversed()
                 .build();
+
 
     }
 
@@ -114,9 +110,9 @@ public class AutoRedFar extends AutoMaster {
     protected PathChain getGrabPickup2(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(88.000, 8.000),
-                                new Pose(85.486, 64.321),
-                                new Pose(129.000, 60.000)
+                                new Pose(88.161, 13.309),
+                                new Pose(67.627, 61.103),
+                                new Pose(123.208, 58.552)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -129,9 +125,9 @@ public class AutoRedFar extends AutoMaster {
     protected PathChain getScorePickup2(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(129.000, 60.000),
-                                new Pose(81.088, 51.828),
-                                new Pose(88.000, 8.000)
+                                new Pose(123.208, 58.552),
+                                new Pose(93.477, 51.024),
+                                new Pose(87.678, 13.470)
                         )
                 ).setTangentHeadingInterpolation()
                 .setReversed()
@@ -159,9 +155,9 @@ public class AutoRedFar extends AutoMaster {
                         new BezierLine(
                                follower::getPose,
 
-                                new Pose(104.000, 15.000)
+                                new Pose(108.827, 12.747)
                         )
-                ).setConstantHeadingInterpolation(Math.toRadians(0))
+                ).setLinearHeadingInterpolation(follower.getHeading(), Math.toRadians(0))
 
                 .build();
     }

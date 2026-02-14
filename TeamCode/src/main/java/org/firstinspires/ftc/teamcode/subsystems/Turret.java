@@ -25,8 +25,8 @@ public class Turret {
     private final double TURRET_SLEW_RATE = 0.115;
 
     private final DcMotorEx turret;
-    public final DcMotorEx flywheelRight;  // Master - uses velocity control
-    public final DcMotorEx flywheelLeft;   // Follower - copies master
+    public final DcMotorEx flywheelRight;
+    public final DcMotorEx flywheelLeft;
     private final Servo hood;
     private VoltageSensor voltageSensor;
 
@@ -47,7 +47,7 @@ public class Turret {
 
     // PID Controllers
     private final PIDFController autoAimClose = new PIDFController(0.0063, 0, 0.0014, 0.096);
-    private final PIDFController autoAimFar = new PIDFController(0.0074, 0.0001, 0.0009, 0.085);
+    private final PIDFController autoAimFar = new PIDFController(0.0074, 0.0002, 0.001, 0.08);
     private final PIDFController autoAimSlow = new PIDFController(0.004, 0.00005, 0.0008, 0.0);
     private PIDFController activeAutoAimController;
 
@@ -57,14 +57,13 @@ public class Turret {
     private static final double HEADING_COMPENSATION_DURATION_MS = 1000;
     private static final double AUTO_HEADING_COMPENSATION_DURATION_MS = 200;
     private static final double RETURN_TO_CENTER_DURATION_MS = 1400;
-    private static final double ROTATIONAL_COMPENSATION_GAIN = 0.34;
+    private static final double ROTATIONAL_COMPENSATION_GAIN = 0.3;
 
     private static final double SEEK_START_DELAY_MS = 200;
     private static final double SEEK_SWEEP_SPEED = 0.4;
     private static final double SEEK_SWEEP_RANGE_DEG = 120;
     private static final double SEEK_PAUSE_AT_EDGE_MS = 50;
 
-    // Tracking state
     private enum CompensationMode {
         VISION,
         VELOCITY_COMP,
@@ -80,7 +79,7 @@ public class Turret {
     private boolean hasSeenTargetThisSession = false;
     private boolean wasTargetVisibleLastLoop = false;
     private double headingVelocityAtEndOfVeloCompensation = 0;
-    private final double HEADING_VELOCITY_COMPENSATION_FACTOR = 0.3;
+    private final double HEADING_VELOCITY_COMPENSATION_FACTOR = 0.25;
 
     private double seekCenterAngle = 0;
     private boolean seekingSweepingRight = true;
@@ -88,16 +87,14 @@ public class Turret {
     private boolean seekPaused = false;
 
     private final double[][] launchAngleLookupTable = {
-            { 21, .72, 2360},   // inches, servo, RPM
-            { 31, .72, 2390},
-            { 36, .74, 2450},
-            { 40, .74, 2540},
-            { 50, .820, 2810},
-            { 60, .86, 2900},
-            { 71, .87, 3110},
-            { 80, .94, 3470},
+            { 20, .600, 2600},   // inches, servo, RPM
+            { 30, .660, 2700},
+            { 40, .73, 2800},
+            { 50, .79, 2950},
+            { 60, .83, 3100},
+            { 71, .87, 3300},
             { 96, .97, 3740},
-            { 103, .98, 3770},
+            { 103, .93, 3800},
             { 115, .99, 4000}
     };
 
@@ -158,10 +155,7 @@ public class Turret {
         }
     }
 
-    /**
-     * NEW: Set flywheel speed in RPM
-     * Master (right) uses velocity control, follower (left) copies
-     */
+
     public void setFlywheelRPM(double targetRPM) {
 
         // Slew-limit RPM
@@ -178,17 +172,6 @@ public class Turret {
         flywheelRight.setPower(flywheelLeft.getPower());
     }
 
-
-    /**
-     * NEW: Calculate power needed for a given RPM
-     * Uses feedforward estimation: Power ≈ RPM / MAX_RPM
-     */
-    private double calculatePowerFromRPM(double rpm) {
-        // Adjust MAX_RPM based on your motors (6000 is typical for many FTC motors)
-        final double MAX_RPM = 6000.0;
-        double power = rpm / MAX_RPM;
-        return Range.clip(power, 0.0, 1.0);
-    }
 
     /**
      * NEW: Stop both flywheels
@@ -416,9 +399,6 @@ public class Turret {
         }
     }
 
-    public boolean hasGoodLock() {
-        return currentMode == CompensationMode.VISION && wasTargetVisibleLastLoop;
-    }
 
     public void turnOnFlywheel() { isFlywheelOn = true; }
     public void turnOffFlywheel() { isFlywheelOn = false; }
@@ -490,8 +470,6 @@ public class Turret {
     }
 
     public double getTurretDeg() { return turretDeg; }
-    public double getTurretPower() { return turretPower; }
-    public void setTurretPower(double turretPower) { turret.setPower(turretPower); }
     public double getHoodPos() { return hoodPos; }
     public void setHoodPos(double hoodPos) { hood.setPosition(hoodPos); }
 

@@ -4,7 +4,6 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
 import org.firstinspires.ftc.teamcode.TeleOpMaster;
 import org.firstinspires.ftc.teamcode.utils.VisionUtils;
-@Disabled
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name = "TeleOpBlue")
 public class TeleOpBlue extends TeleOpMaster {
 

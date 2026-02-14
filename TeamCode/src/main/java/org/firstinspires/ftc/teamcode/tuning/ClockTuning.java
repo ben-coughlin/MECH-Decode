@@ -115,6 +115,7 @@ public class ClockTuning extends LinearOpMode {
             telemetry.addLine("--- Clock & Ramp Tuning ---");
             //      telemetry.addData("Distance to Tag (in)", "%.2f", distanceToTag);
             telemetry.addData("Clock Position", currentClockPosition);
+            telemetry.addData("clock encoder pos", clock.currentEncoderPosition);
             telemetry.addData("Ramp On?", rampOn);
             //   telemetry.addData("Flywheel Power", "%.2f", turret.flywheelRight.getPower());
 

@@ -185,7 +185,8 @@ public abstract class TeleOpMaster extends RobotMaster {
                 if (gamepad1.left_bumper || gamepad2.dpad_up) {
                     shooterSubsystem.isFlywheelReady = false;
                     incrementStage(progStates.SHOOT_PREP.ordinal());
-                } else if (gamepad1.left_trigger > 0.1) {
+                }
+                else if (gamepad1.left_trigger > 0.1) {
                     intakeSubsystem.turnIntakeOff();
                     incrementStage(progStates.OUTTAKE.ordinal());
                 } else if (stageFinished) {
@@ -205,7 +206,7 @@ public abstract class TeleOpMaster extends RobotMaster {
                     clock.moveClockToPreShootPosition();
                 }
                 shooterSubsystem.updateSpin();
-                if (shooterSubsystem.isFlywheelReady) {
+                if (shooterSubsystem.isFlywheelReady && !stageFinished) {
                     incrementStage(progStates.READY_TO_SHOOT.ordinal());
                 }
                 break;
@@ -215,10 +216,10 @@ public abstract class TeleOpMaster extends RobotMaster {
                     initializeStateVariables();
                     gamepad1.rumble(1, 1, 200);
                     gamepad2.rumble(1, 1, 200);
-                    clock.moveClockToShootPosition();
+                    clock.moveClockToPreShootPosition();
                 }
 
-                if (gamepad1.right_bumper || gamepad2.dpad_down) {
+                if ((gamepad1.right_bumper || gamepad2.dpad_down)) {
                     incrementStage(progStates.FIRE_BALL.ordinal());
                 }
                 // cancels the shot
@@ -231,7 +232,7 @@ public abstract class TeleOpMaster extends RobotMaster {
             case FIRE_BALL:
                 shooterSubsystem.updateSpin();
                 if (stageFinished) {
-                    IndicatorLight.setLightBlue();
+                    IndicatorLight.setLightOrange();
                     initializeStateVariables();
                     clock.setRampToShootPower();
                 }
@@ -257,7 +258,7 @@ public abstract class TeleOpMaster extends RobotMaster {
             case INTAKE:
                 if (stageFinished) {
                     initializeStateVariables();
-                    intakeSubsystem.turnIntakeOn();
+
 
                 }
                 break;
@@ -272,21 +273,15 @@ public abstract class TeleOpMaster extends RobotMaster {
                 break;
 
             default:
-                // Handle any other states if needed
                 break;
         }
 
         if (intakeToggle.getState()) {
-            if (programStage != progStates.INTAKE.ordinal()) {
                 IndicatorLight.setLightGreen();
-                incrementStage(progStates.INTAKE.ordinal());
-            }
-        } else {
-            // WHEN the trigger is RELEASED
-            if (programStage == progStates.INTAKE.ordinal()) {
-                incrementStage(progStates.IDLE.ordinal());
+                intakeSubsystem.turnIntakeOn();
 
-            }
+        } else {
+            intakeSubsystem.turnIntakeOff();
         }
 
 
