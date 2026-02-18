@@ -67,7 +67,7 @@ public class AutoBlueFar extends AutoMaster {
                         new BezierLine(
                                 new Pose(60.000, 11.000),
 
-                                new Pose(59.000, 11.000)
+                                new Pose(56.000, 11.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(90))
                 .build();
@@ -77,13 +77,14 @@ public class AutoBlueFar extends AutoMaster {
     protected PathChain getGrabPickup1(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(59, 11),
-                                new Pose(48.278, 39.009),
-                                new Pose(14.513, 32.591)
+                                new Pose(60.000, 11.000),
+                                new Pose(68.229, 41.101),
+                                new Pose(13.869, 34.039)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(180))
 
                 .build();
+
     }
 
     @Override
@@ -97,7 +98,7 @@ public class AutoBlueFar extends AutoMaster {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(14.513, 32.591),
-                                new Pose(49.925, 30.471),
+                                new Pose(47.512, 29.505),
                                 new Pose(59.572, 15.630)
                         )
                 ).setTangentHeadingInterpolation()
@@ -109,7 +110,7 @@ public class AutoBlueFar extends AutoMaster {
     protected PathChain getGrabPickup2(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(59.572, 15.630),
+                                new Pose(57.158, 15.791),
                                 new Pose(66.886, 70.945),
                                 new Pose(15.974, 57.565)
                         )
@@ -125,8 +126,8 @@ public class AutoBlueFar extends AutoMaster {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(15.974, 57.565),
-                                new Pose(50.411, 48.419),
-                                new Pose(59.896, 15.468)
+                                new Pose(62.478, 52.763),
+                                new Pose(56.839, 15.307)
                         )
                 ).setTangentHeadingInterpolation()
                 .setReversed()
@@ -150,7 +151,7 @@ public class AutoBlueFar extends AutoMaster {
                         new BezierLine(
                                 follower::getPose,
 
-                                new Pose(40.000, 15.000)
+                                new Pose(37.426, 10.334)
                         )
                 ).setLinearHeadingInterpolation(follower.getHeading(), Math.toRadians(180))
 

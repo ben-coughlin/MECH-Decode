@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.tuning;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -11,7 +12,7 @@ import org.firstinspires.ftc.teamcode.subsystems.IntakeSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.Limelight;
 import org.firstinspires.ftc.teamcode.subsystems.Turret;
 
-
+@Disabled
 @TeleOp(name = "Hood Tuning")
 public class HoodTuning extends LinearOpMode {
     private double currentServoPosition = 0.5; // Start at middle position

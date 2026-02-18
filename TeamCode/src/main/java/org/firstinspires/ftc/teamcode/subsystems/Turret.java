@@ -46,9 +46,9 @@ public class Turret {
 
 
     // PID Controllers
-    private final PIDFController autoAimClose = new PIDFController(0.0063, 0, 0.0014, 0.096);
-    private final PIDFController autoAimFar = new PIDFController(0.0074, 0.0002, 0.001, 0.08);
-    private final PIDFController autoAimSlow = new PIDFController(0.004, 0.00005, 0.0008, 0.0);
+    private final PIDFController autoAimClose = new PIDFController(0.0073, 0.0001, 0.0014, 0.096);
+    private final PIDFController autoAimFar = new PIDFController(0.0076, 0.003, 0.002, 0.07);
+    private final PIDFController autoAimSlow = new PIDFController(0.0076, 0.003, 0.001, 0.0);
     private PIDFController activeAutoAimController;
 
     private static final double GAIN_SCHEDULING_DISTANCE_THRESHOLD = 67.0;
@@ -61,7 +61,7 @@ public class Turret {
 
     private static final double SEEK_START_DELAY_MS = 200;
     private static final double SEEK_SWEEP_SPEED = 0.4;
-    private static final double SEEK_SWEEP_RANGE_DEG = 120;
+    private static final double SEEK_SWEEP_RANGE_DEG = 20;
     private static final double SEEK_PAUSE_AT_EDGE_MS = 50;
 
     private enum CompensationMode {
@@ -87,15 +87,15 @@ public class Turret {
     private boolean seekPaused = false;
 
     private final double[][] launchAngleLookupTable = {
-            { 20, .600, 2600},   // inches, servo, RPM
-            { 30, .660, 2700},
-            { 40, .73, 2800},
-            { 50, .79, 2950},
-            { 60, .83, 3100},
-            { 71, .87, 3300},
-            { 96, .97, 3740},
-            { 103, .93, 3800},
-            { 115, .99, 4000}
+            { 20, .600, 2780},   // inches, servo, RPM
+            { 30, .690, 2630},
+            { 40, .73, 2730},
+            { 50, .79, 2850},
+            { 60, .83, 3050},
+            { 71, .87, 3400},
+            { 96, .93, 3840},
+            { 103, .95, 4000},
+            { 115, .97, 4100}
     };
 
     public Turret(HardwareMap hwMap) {
@@ -159,13 +159,13 @@ public class Turret {
     public void setFlywheelRPM(double targetRPM) {
 
         // Slew-limit RPM
-        commandedRPM += Range.clip(
-                targetRPM - commandedRPM,
-                -RPM_SLEW,
-                RPM_SLEW
-        );
+//        commandedRPM += Range.clip(
+//                targetRPM - commandedRPM,
+//                -RPM_SLEW,
+//                RPM_SLEW
+//        );
 
-        double targetTPS = commandedRPM * (FLYWHEEL_TICKS_PER_REVOLUTION / 60.0);
+        double targetTPS = targetRPM * (FLYWHEEL_TICKS_PER_REVOLUTION / 60.0);
 
         flywheelLeft.setVelocity(targetTPS);
 
@@ -215,7 +215,7 @@ public class Turret {
 
             if (hasValidTarget) {
                 currentMode = CompensationMode.VISION;
-                seekCenterAngle = turretDeg;
+
                 seekingSweepingRight = true;
                 seekPaused = false;
 
@@ -252,7 +252,6 @@ public class Turret {
                 if (wasTargetVisibleLastLoop) {
                     compensationTimer.reset();
                     robotHeadingOnTargetLoss = robotHeading;
-                    seekCenterAngle = turretDeg;
                 }
 
                 double timeSinceLost = compensationTimer.milliseconds();
@@ -288,7 +287,7 @@ public class Turret {
                     applyTurretPower(calculatedPower);
                     wasTargetVisibleLastLoop = hasValidTarget;
                     return;
-
+//
                 }
                   else if (
                         timeSinceLost < VELOCITY_COMPENSATION_DURATION_MS +
@@ -428,6 +427,9 @@ public class Turret {
 
     // CHANGED: Now returns RPM instead of power
     public double getRPMFromDistance(double distance) {
+        if (distance == 0){
+            return 4000;
+        }
         if (distance <= launchAngleLookupTable[0][0]) {
             return launchAngleLookupTable[0][2];
         }

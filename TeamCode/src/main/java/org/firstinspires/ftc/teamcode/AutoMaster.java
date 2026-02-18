@@ -401,7 +401,6 @@ public abstract class AutoMaster extends RobotMaster {
             turret.turnOffFlywheel();
             clock.resetClock();
             intakeSubsystem.turnIntakeOff();
-            IndicatorLight.setLightRed();
 
         }
     }

@@ -77,7 +77,7 @@ public class AutoBlue extends AutoMaster {
                         new BezierLine(
                                 new Pose(11.088, 115.000),
 
-                                new Pose(35.210, 115.650)
+                                new Pose(37.210, 115.650)
                         )
                 ).setTangentHeadingInterpolation()
                 .setReversed()
@@ -89,14 +89,13 @@ public class AutoBlue extends AutoMaster {
     protected PathChain getGrabPickup1(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(50.000, 115.000),
-                                new Pose(55.860, 78.932),
-                                new Pose(10.901, 84.838)
+                                new Pose(37.210, 115.650),
+                                new Pose(56.401, 81.182),
+                                new Pose(13.847, 84.356)
                         )
                 ).setTangentHeadingInterpolation()
 
                 .build();
-
 
     }
 
@@ -105,20 +104,20 @@ public class AutoBlue extends AutoMaster {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(16.421, 85.000),
-                                new Pose(34.868, 73.737),
-                                new Pose(14.228, 70.000)
+                                new Pose(33.420, 80.173),
+                                new Pose(11.976, 72.092)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(270))
 
                 .build();
+
     }
 
     @Override
     protected PathChain getScorePickup1(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(14.228, 70.000),
-
+                                new Pose(11.976, 71.5),
                                 new Pose(40.000, 105.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(270), Math.toRadians(135))
@@ -132,7 +131,7 @@ public class AutoBlue extends AutoMaster {
                         new BezierCurve(
                                 new Pose(40.000, 105.000),
                                 new Pose(64.518, 54.099),
-                                new Pose(13.188, 59.675)
+                                new Pose(12.5, 59.675)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -144,7 +143,7 @@ public class AutoBlue extends AutoMaster {
     protected PathChain getScorePickup2(Follower follower) {
         return  follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(13.188, 59.675),
+                                new Pose(12.5, 59.675),
                                 new Pose(36.306, 78.223),
                                 new Pose(40.000, 105.000)
                         )

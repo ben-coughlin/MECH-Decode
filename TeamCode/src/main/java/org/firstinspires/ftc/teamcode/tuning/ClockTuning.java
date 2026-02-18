@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.teamcode.subsystems.Clock;
 import org.firstinspires.ftc.teamcode.subsystems.IntakeSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.Turret;
-
+@Disabled
 @TeleOp(name = "Clock Tuning")
 public class ClockTuning extends LinearOpMode {
     private double currentClockPosition = 0.5;
