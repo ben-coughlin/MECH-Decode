@@ -40,6 +40,7 @@ public abstract class TeleOpMaster extends RobotMaster {
     Toggle squareToggle = new Toggle(false);
     Toggle autoAimToggle = new Toggle(true);
     Toggle intakeToggle = new Toggle(false);
+    Toggle outttakeToggle = new Toggle(false);
 
     public static boolean hasClockReset = false;
     boolean isAutoAiming = false;
@@ -96,6 +97,7 @@ public abstract class TeleOpMaster extends RobotMaster {
         squareToggle.updateToggle(gamepad1.square);
         autoAimToggle.updateToggle(gamepad2.guide);
         intakeToggle.updateToggle(gamepad1.right_trigger > 0.1);
+        outttakeToggle.updateToggle(gamepad1.left_trigger > 0.1);
 
         // limelight
         isAutoAiming = autoAimToggle.getState();
@@ -122,6 +124,24 @@ public abstract class TeleOpMaster extends RobotMaster {
         else if(!turret.getTrackingModeForTelemetry().contains("VISION") && programStage == progStates.READY_TO_SHOOT.ordinal())
         {
             IndicatorLight.setLightWhite();
+        }
+        else
+        {
+            if (intakeToggle.getState()) {
+
+                IndicatorLight.setLightGreen();
+                intakeSubsystem.turnIntakeOn();
+
+            } else if (!intakeToggle.getState() && gamepad1.left_trigger > 0.1)
+            {
+                intakeSubsystem.outtake();
+                IndicatorLight.setLightOrange();
+            }
+            else
+            {
+                intakeSubsystem.turnIntakeOff();
+                IndicatorLight.turnLightOff();
+            }
         }
 
 
@@ -186,10 +206,7 @@ public abstract class TeleOpMaster extends RobotMaster {
                     shooterSubsystem.isFlywheelReady = false;
                     incrementStage(progStates.SHOOT_PREP.ordinal());
                 }
-                else if (gamepad1.left_trigger > 0.1) {
-                    intakeSubsystem.turnIntakeOff();
-                    incrementStage(progStates.OUTTAKE.ordinal());
-                } else if (stageFinished) {
+                else if (stageFinished) {
                     initializeStateVariables();
                     turret.turnOffFlywheel();
                     intakeSubsystem.turnIntakeOff();
@@ -232,7 +249,6 @@ public abstract class TeleOpMaster extends RobotMaster {
             case FIRE_BALL:
                 shooterSubsystem.updateSpin();
                 if (stageFinished) {
-                    IndicatorLight.setLightOrange();
                     initializeStateVariables();
                     clock.setRampToShootPower();
                 }
@@ -245,15 +261,6 @@ public abstract class TeleOpMaster extends RobotMaster {
                 }
                 break;
 
-            case OUTTAKE:
-                if (stageFinished) {
-                    initializeStateVariables();
-                }
-                if (stateTimer.seconds() >= getOuttakeTime()) {
-                    intakeSubsystem.outtake();
-                    incrementStage(progStates.IDLE.ordinal());
-                }
-                break;
 
             case INTAKE:
                 if (stageFinished) {
@@ -276,13 +283,14 @@ public abstract class TeleOpMaster extends RobotMaster {
                 break;
         }
 
-        if (intakeToggle.getState()) {
-                IndicatorLight.setLightGreen();
-                intakeSubsystem.turnIntakeOn();
 
-        } else {
-            intakeSubsystem.turnIntakeOff();
-        }
+
+
+
+
+
+
+
 
 
 

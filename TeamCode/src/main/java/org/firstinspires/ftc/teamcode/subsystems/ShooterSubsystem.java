@@ -37,7 +37,7 @@ public class ShooterSubsystem {
             turret.turnOnFlywheel();
             flywheelStartTime = SystemClock.uptimeMillis();
             Log.i("ShooterSubsystem", "SpinUp called at " + flywheelStartTime);
-
+            clock.setRampToShootPower();
             intake.turnIntakeOn();
         }
     }
@@ -67,6 +67,7 @@ public class ShooterSubsystem {
             isShotInProgress = true;
             shotStartTime = SystemClock.uptimeMillis();
             clock.moveClockToShootPosition();
+            IndicatorLight.setLightRed();
             Log.i("ShooterSubsystem", "shot seq started at " + shotStartTime);
         }
 

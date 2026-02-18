@@ -60,14 +60,7 @@ public class Clock {
         currentEncoderPosition = encoder.getCurrentPosition();
         intakeNewBall();
         recordShotBall();
-        if(currentEncoderPosition > initEncoderPostion && currentEncoderPosition < shootEncoderPosition && isClockResetting)
-        {
-            IndicatorLight.setLightRed();
-        }
-        else if(currentEncoderPosition <= initEncoderPostion + POSITION_TOLERANCE && currentEncoderPosition >= initEncoderPostion - POSITION_TOLERANCE)
-        {
-            isClockResetting = false;
-        }
+
 
 
     }
