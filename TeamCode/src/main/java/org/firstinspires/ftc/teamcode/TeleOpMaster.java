@@ -74,7 +74,6 @@ public abstract class TeleOpMaster extends RobotMaster {
     @Override
     public void start() {
         super.start();
-        clock.initClock();
         follower.startTeleopDrive(false);
 
     }
@@ -128,18 +127,19 @@ public abstract class TeleOpMaster extends RobotMaster {
         else
         {
             if (intakeToggle.getState()) {
-
-                IndicatorLight.setLightGreen();
-                intakeSubsystem.turnIntakeOn();
+                //purple when intake on
+                IndicatorLight.setLightViolet();
+                intake.turnIntakeOn();
 
             } else if (!intakeToggle.getState() && gamepad1.left_trigger > 0.1)
             {
-                intakeSubsystem.outtake();
+                //orange when outtake on
+                intake.turnOuttakeOn();
                 IndicatorLight.setLightOrange();
             }
             else
             {
-                intakeSubsystem.turnIntakeOff();
+                intake.turnIntakeOff();
                 IndicatorLight.turnLightOff();
             }
         }
@@ -209,10 +209,9 @@ public abstract class TeleOpMaster extends RobotMaster {
                 else if (stageFinished) {
                     initializeStateVariables();
                     turret.turnOffFlywheel();
-                    intakeSubsystem.turnIntakeOff();
+                    intake.turnIntakeOff();
                     IndicatorLight.turnLightOff();
-                    clock.resetClock();
-                    clock.stopRamp();
+
                 }
                 break;
 
@@ -220,7 +219,6 @@ public abstract class TeleOpMaster extends RobotMaster {
                 if (stageFinished) {
                     initializeStateVariables();
                     shooterSubsystem.spinUp();
-                    clock.moveClockToPreShootPosition();
                 }
                 shooterSubsystem.updateSpin();
                 if (shooterSubsystem.isFlywheelReady && !stageFinished) {
@@ -233,7 +231,6 @@ public abstract class TeleOpMaster extends RobotMaster {
                     initializeStateVariables();
                     gamepad1.rumble(1, 1, 200);
                     gamepad2.rumble(1, 1, 200);
-                    clock.moveClockToPreShootPosition();
                 }
 
                 if ((gamepad1.right_bumper || gamepad2.dpad_down)) {
@@ -241,7 +238,7 @@ public abstract class TeleOpMaster extends RobotMaster {
                 }
                 // cancels the shot
                 else if (gamepad1.circle || gamepad2.circle) {
-                    shooterSubsystem.stopShot();
+                    shooterSubsystem.runStopActions();
                     incrementStage(progStates.IDLE.ordinal());
                 }
                 break;
@@ -250,13 +247,11 @@ public abstract class TeleOpMaster extends RobotMaster {
                 shooterSubsystem.updateSpin();
                 if (stageFinished) {
                     initializeStateVariables();
-                    clock.setRampToShootPower();
                 }
                 shooterSubsystem.startShotSequence(isAuto);
                 if (gamepad1.circle || gamepad2.circle) {
-                    shooterSubsystem.stopShot();
-                    hasClockReset = false;
-                    clockResetTimer.reset();
+                    shooterSubsystem.runStopActions();
+
                     incrementStage(progStates.IDLE.ordinal());
                 }
                 break;
@@ -266,7 +261,6 @@ public abstract class TeleOpMaster extends RobotMaster {
                 if (stageFinished) {
                     initializeStateVariables();
 
-
                 }
                 break;
 
@@ -275,8 +269,8 @@ public abstract class TeleOpMaster extends RobotMaster {
                     initializeStateVariables();
                 }
                 follower.setTeleOpDrive(0,0,0);
-                intakeSubsystem.turnIntakeOff();
-                //turret.turnOffFlywheel();
+                intake.turnIntakeOff();
+
                 break;
 
             default:

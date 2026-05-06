@@ -7,12 +7,13 @@ import org.firstinspires.ftc.teamcode.TeleOpMaster;
 
 public class ShooterSubsystem {
 
-    private final Clock clock;
+
     private final Turret turret;
-    private final IntakeSubsystem intake;
+    private final Intake intake;
+    private final Transfer transfer;
 
     public boolean isFlywheelReady = false;
-    public boolean isShotInProgress = false;
+    public static boolean isShotInProgress = false;
     public boolean isFlywheelSpun = false;
 
     private long flywheelStartTime = 0;
@@ -21,10 +22,10 @@ public class ShooterSubsystem {
 
 
 
-    public ShooterSubsystem(Clock clock, Turret turret, IntakeSubsystem intake) {
-        this.clock = clock;
+    public ShooterSubsystem(Turret turret, Intake intake, Transfer transfer) {
         this.turret = turret;
         this.intake = intake;
+        this.transfer = transfer;
     }
 
 
@@ -37,8 +38,8 @@ public class ShooterSubsystem {
             turret.turnOnFlywheel();
             flywheelStartTime = SystemClock.uptimeMillis();
             Log.i("ShooterSubsystem", "SpinUp called at " + flywheelStartTime);
-            clock.setRampToShootPower();
-            intake.turnIntakeOn();
+            transfer.turnTransferOff();
+            intake.turnIntakeOff();
         }
     }
 
@@ -50,9 +51,7 @@ public class ShooterSubsystem {
             Log.i("ShooterSubsystem", "Spin update elapsed = " +
                     (SystemClock.uptimeMillis() - flywheelStartTime));
             isFlywheelReady = true;
-            clock.setRampToShootPower();
-            clock.moveClockToPreShootPosition();
-            intake.turnIntakeOff();
+
         }
     }
 
@@ -64,39 +63,35 @@ public class ShooterSubsystem {
 
         // Only initialize on first call
         if (!isShotInProgress) {
-            isShotInProgress = true;
+            isShotInProgress = true; //this flag starts the transfer
             shotStartTime = SystemClock.uptimeMillis();
-            clock.moveClockToShootPosition();
-            IndicatorLight.setLightRed();
             Log.i("ShooterSubsystem", "shot seq started at " + shotStartTime);
         }
-
-
 
     }
 
     // In TeleOp, call this when driver presses button:
     public void stopShot() {
-        clock.resetClock();
-        TeleOpMaster.hasClockReset = true;
+
         runStopActions();
     }
 
 
     public void runStopActions() {
         turret.turnOffFlywheel();
-        clock.stopRamp();
+        transfer.setTriggerToBlock();
+        transfer.turnTransferOff();
+
         isFlywheelReady = false;
         isShotInProgress = false;
-        clock.setNumBallsInClock(0);
+
     }
     public void stopAutoShot()
     {
-        clock.resetClock();
-        clock.stopRamp();
+
         isFlywheelReady = false;
         isShotInProgress = false;
-        clock.setNumBallsInClock(0);
+
     }
 
 }

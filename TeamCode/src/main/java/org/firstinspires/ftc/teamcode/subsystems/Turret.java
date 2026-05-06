@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import com.pedropathing.geometry.Pose;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -24,7 +26,8 @@ public class Turret {
     private double lastTurretPower = 0.0;
     private final double TURRET_SLEW_RATE = 0.115;
 
-    private final DcMotorEx turret;
+    private final CRServo turretLeft;
+    private final CRServo turretRight;
     public final DcMotorEx flywheelRight;
     public final DcMotorEx flywheelLeft;
     private final Servo hood;
@@ -85,7 +88,7 @@ public class Turret {
     private boolean seekingSweepingRight = true;
     private final ElapsedTime seekPauseTimer = new ElapsedTime();
     private boolean seekPaused = false;
-
+    public Pose goalPose = null;
     private final double[][] launchAngleLookupTable = {
             { 20, .600, 2780},   // inches, servo, RPM
             { 30, .690, 2630},
@@ -99,16 +102,15 @@ public class Turret {
     };
 
     public Turret(HardwareMap hwMap) {
-        turret = hwMap.get(DcMotorEx.class, "turret");
+
+        turretLeft = hwMap.get(CRServo.class, "turretLeft");
+        turretRight = hwMap.get(CRServo.class, "turretRight");
         flywheelLeft = hwMap.get(DcMotorEx.class, "flywheelLeft");
         flywheelRight = hwMap.get(DcMotorEx.class, "flywheelRight");
         hood = hwMap.get(Servo.class, "hood");
         initVoltageSensor(hwMap);
 
-        turret.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
-        turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        turret.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        turret.setDirection(DcMotorSimple.Direction.REVERSE);
+
 
         flywheelLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         flywheelLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -137,8 +139,8 @@ public class Turret {
     }
 
     public void updateTurret() {
-        turretDeg = turret.getCurrentPosition() / TURRET_TICKS_PER_DEGREE;
-        turretPower = turret.getPower();
+        turretDeg = flywheelLeft.getCurrentPosition() / TURRET_TICKS_PER_DEGREE;
+        turretPower = turretLeft.getPower();
         hoodPos = hood.getPosition();
         double currentDistance = Limelight.getDistance();
         currVoltage = voltageSensor.getVoltage();
@@ -173,17 +175,13 @@ public class Turret {
     }
 
 
-    /**
-     * NEW: Stop both flywheels
-     */
+
     private void stopFlywheels() {
         commandedRPM = 0;
         setFlywheelRPM(0);
     }
 
-    /**
-     * NEW: Check if flywheel is at target speed
-     */
+
     public boolean isFlywheelReady() {
         if (!isFlywheelOn) return false;
 
@@ -358,15 +356,18 @@ public class Turret {
         }
         lastTurretPower = calculatedPower;
 
-        int currentPosition = turret.getCurrentPosition();
+        int currentPosition = flywheelLeft.getCurrentPosition();
         if (currentPosition >= TURRET_MAX_LIMIT_TICKS && calculatedPower > 0) {
-            turret.setPower(0);
+            turretLeft.setPower(0);
+            turretRight.setPower(0);
             lastTurretPower = calculatedPower;
         } else if (currentPosition <= TURRET_MIN_LIMIT_TICKS && calculatedPower < 0) {
-            turret.setPower(0);
+            turretLeft.setPower(0);
+            turretRight.setPower(0);
             lastTurretPower = calculatedPower;
         } else {
-            turret.setPower(calculatedPower);
+            turretLeft.setPower(calculatedPower);
+            turretRight.setPower(calculatedPower);
         }
     }
 
@@ -425,7 +426,6 @@ public class Turret {
         return 0.5;
     }
 
-    // CHANGED: Now returns RPM instead of power
     public double getRPMFromDistance(double distance) {
         if (distance == 0){
             return 4000;
@@ -454,12 +454,11 @@ public class Turret {
 
     public void showAimTelemetry(Telemetry telemetry) {
         telemetry.addLine("--- Aim ---");
-        telemetry.addData("Turret PID Power", turret.getPower());
+        telemetry.addData("Turret PID Power", turretLeft.getPower());
         telemetry.addData("Turret Degrees", "%.2f°", turretDeg);
         telemetry.addData("Distance to Goal", "%.2f inches", Limelight.getDistance());
         telemetry.addData("Hood Position", "%.2f", getServoPositionFromDistance(Limelight.getDistance()));
 
-        // IMPROVED: Show RPM info
         telemetry.addData("Target RPM", "%.0f", targetRPM);
         telemetry.addData("Current RPM", getCurrentFlywheelRPM());
         telemetry.addData("RPM Error", "%.0f", targetRPM - getCurrentFlywheelRPM());

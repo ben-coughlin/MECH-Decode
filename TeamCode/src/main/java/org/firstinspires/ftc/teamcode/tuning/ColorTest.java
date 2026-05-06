@@ -35,8 +35,6 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.subsystems.Breakbeam;
-
 /**
  * This OpMode cycles through different indicator light colors on a one-second interval.
  * The light will continuously scroll through: Red, Orange, Yellow, Green, Azure, Blue,
@@ -50,7 +48,7 @@ public class ColorTest extends OpMode
     private ElapsedTime runtime = new ElapsedTime();
     private ElapsedTime colorTimer = new ElapsedTime();
     private Servo indicatorLight = null;
-    Breakbeam breakbeam;
+
 
     private int currentColorIndex = 0;
     private String[] colorNames = {"Red", "Orange", "Yellow", "Green", "Azure", "Blue", "Indigo", "Violet", "White", "Off"};
@@ -61,7 +59,7 @@ public class ColorTest extends OpMode
     @Override
     public void init() {
         telemetry.addData("Status", "Initialized");
-        breakbeam = new Breakbeam(hardwareMap);
+
 
         // Initialize the hardware variable
         indicatorLight = hardwareMap.get(Servo.class, "light");
@@ -142,7 +140,7 @@ public class ColorTest extends OpMode
         telemetry.addData("Status", "Run Time: " + runtime.toString());
         telemetry.addData("Current Color", colorNames[currentColorIndex]);
         telemetry.addData("Next color in", "%.1f seconds", 1.0 - colorTimer.seconds());
-        breakbeam.displayBreakbeamTelemetry(telemetry);
+
 
     }
 

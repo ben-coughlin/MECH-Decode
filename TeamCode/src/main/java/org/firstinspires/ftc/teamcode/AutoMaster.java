@@ -8,8 +8,6 @@ import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.hardware.limelightvision.LLResult;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.subsystems.IndicatorLight;
 import org.firstinspires.ftc.teamcode.subsystems.Limelight;
 import org.firstinspires.ftc.teamcode.utils.VisionUtils;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
@@ -192,9 +190,8 @@ public abstract class AutoMaster extends RobotMaster {
         if(pathState == AutoStage.scorePreload.ordinal()){
             if(stageInit)
             {
-                intakeSubsystem.turnIntakeOn();
+                intake.turnIntakeOn();
                 shooterSubsystem.spinUp();
-                clock.moveClockToPreShootPosition();
                 initState();
                 if(scorePreload != null) { follower.followPath(scorePreload); }
                 else { nextStage(); }
@@ -213,7 +210,7 @@ public abstract class AutoMaster extends RobotMaster {
             if(stageInit)
             {
                 initState();
-                intakeSubsystem.turnIntakeOn();
+                intake.turnIntakeOn();
                 if(grabPickup1 != null) { follower.followPath(grabPickup1, 0.9, false); }
                 else { nextStage(); }
 
@@ -250,7 +247,7 @@ public abstract class AutoMaster extends RobotMaster {
                 else { nextStage(); }
                 initState();
             }
-            intakeSubsystem.turnIntakeOn();
+            intake.turnIntakeOn();
             shooterSubsystem.updateSpin();
 
             if(!follower.isBusy())
@@ -265,7 +262,7 @@ public abstract class AutoMaster extends RobotMaster {
             if(stageInit)
             {
 
-                intakeSubsystem.turnIntakeOn();
+                intake.turnIntakeOn();
                 if(grabPickup2 != null) { follower.followPath(grabPickup2,  0.9, true); }
                 else { nextStage(); }
                 initState();
@@ -287,7 +284,7 @@ public abstract class AutoMaster extends RobotMaster {
                 else { nextStage(); }
 
             }
-            intakeSubsystem.turnIntakeOn();
+            intake.turnIntakeOn();
             shooterSubsystem.updateSpin();
 
 
@@ -302,7 +299,7 @@ public abstract class AutoMaster extends RobotMaster {
             if(stageInit)
             {
                 if(grabPickup3 != null) {
-                    intakeSubsystem.turnIntakeOn();
+                    intake.turnIntakeOn();
                     follower.followPath(grabPickup3, 0.9, true);
                     initState();
                 }
@@ -386,7 +383,7 @@ public abstract class AutoMaster extends RobotMaster {
             if(stageStartTimer.getElapsedTime() > 3500)
             {
                 shooterSubsystem.stopAutoShot();
-                intakeSubsystem.turnIntakeOff();
+                intake.turnIntakeOff();
                 if(stageStartTimer.getElapsedTime() > shootWaitTime)
                 {
                     nextStage(pathAfterStateShotOrdinal);
@@ -399,8 +396,8 @@ public abstract class AutoMaster extends RobotMaster {
            // follower.breakFollowing();
             drive.hardStopMotors();
             turret.turnOffFlywheel();
-            clock.resetClock();
-            intakeSubsystem.turnIntakeOff();
+            shooterSubsystem.runStopActions();
+            intake.turnIntakeOff();
 
         }
     }

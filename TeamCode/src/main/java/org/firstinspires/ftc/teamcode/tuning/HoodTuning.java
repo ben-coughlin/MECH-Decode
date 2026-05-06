@@ -1,18 +1,16 @@
 package org.firstinspires.ftc.teamcode.tuning;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.subsystems.Clock;
-import org.firstinspires.ftc.teamcode.subsystems.IntakeSubsystem;
+import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Limelight;
+import org.firstinspires.ftc.teamcode.subsystems.Transfer;
 import org.firstinspires.ftc.teamcode.subsystems.Turret;
 
-@Disabled
 @TeleOp(name = "Hood Tuning")
 public class HoodTuning extends LinearOpMode {
     private double currentServoPosition = 0.5; // Start at middle position
@@ -22,6 +20,7 @@ public class HoodTuning extends LinearOpMode {
     private final double MOTOR_INCREMENT = 50;
 
     private final ElapsedTime timer = new ElapsedTime();
+
 
     // State variables
     private boolean flywheelActive = false;
@@ -42,8 +41,9 @@ public class HoodTuning extends LinearOpMode {
         Limelight limelight = new Limelight(hardwareMap);
         Servo launchServo = hardwareMap.get(Servo.class, "hood");
         Turret turret = new Turret(hardwareMap);
-        IntakeSubsystem intake = new IntakeSubsystem(hardwareMap);
-        Clock clock = new Clock(hardwareMap);
+        Intake intake = new Intake(hardwareMap);
+        Transfer transfer = new Transfer(hardwareMap);
+
 
 
         telemetry.addData("Status", "Initialized");
@@ -56,7 +56,6 @@ public class HoodTuning extends LinearOpMode {
         telemetry.addLine("SQUARE: Reset (move clock to pre-shoot position)");
         telemetry.addLine("================");
         telemetry.update();
-        clock.initClock();
         waitForStart();
 
         while (opModeIsActive()) {
@@ -122,7 +121,7 @@ public class HoodTuning extends LinearOpMode {
             if (gamepad1.circle && !circlePressed) {
                 flywheelActive = true;
                 turret.setFlywheelRPM(motorPower);
-                clock.setRampToShootPower();
+                transfer.turnTransferOn();
                 circlePressed = true;
             } else if (!gamepad1.circle) {
                 circlePressed = false;
@@ -131,27 +130,12 @@ public class HoodTuning extends LinearOpMode {
             if (gamepad1.cross && !crossPressed) {
                 flywheelActive = false;
                 turret.setFlywheelRPM(0);
-                clock.stopRamp();
-                clock.initClock();
+                transfer.turnTransferOff();
                 crossPressed = true;
             } else if (!gamepad1.cross) {
                 crossPressed = false;
             }
 
-            // === CLOCK (BALL HANDLER) CONTROLS ===
-            if (gamepad1.triangle && !trianglePressed) {
-                clock.moveClockToShootPosition();
-                trianglePressed = true;
-            } else if (!gamepad1.triangle) {
-                trianglePressed = false;
-            }
-
-            if (gamepad1.square && !squarePressed) {
-                clock.moveClockToPreShootPosition();
-                squarePressed = true;
-            } else if (!gamepad1.square) {
-                squarePressed = false;
-            }
 
             // Update flywheel power if active (allows live adjustment)
             if (flywheelActive) {

@@ -12,13 +12,13 @@ import android.util.Log;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.subsystems.Breakbeam;
-import org.firstinspires.ftc.teamcode.subsystems.Clock;
+import org.firstinspires.ftc.teamcode.subsystems.ColorSensor;
 import org.firstinspires.ftc.teamcode.subsystems.IndicatorLight;
-import org.firstinspires.ftc.teamcode.subsystems.IntakeSubsystem;
+import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Limelight;
 import org.firstinspires.ftc.teamcode.subsystems.MecanumDrive;
 import org.firstinspires.ftc.teamcode.subsystems.ShooterSubsystem;
+import org.firstinspires.ftc.teamcode.subsystems.Transfer;
 import org.firstinspires.ftc.teamcode.subsystems.Turret;
 import org.firstinspires.ftc.teamcode.utils.Pattern;
 
@@ -32,7 +32,7 @@ public abstract class RobotMaster extends OpMode {
     public static boolean resetEncoders = false;
     public static int programStage = 0;
     static Pattern obelisk = null;
-    static boolean[] breakbeamStates = {false, false};
+    public static final Pattern inventory = new Pattern(Pattern.Ball.EMPTY, Pattern.Ball.EMPTY, Pattern.Ball.EMPTY);
     //global keyvalue store
     public HashMap<String, String> debugKeyValues = new HashMap<>();
     public boolean isMovementDone = false;
@@ -49,14 +49,13 @@ public abstract class RobotMaster extends OpMode {
     //hardware - - - - - -
     protected MecanumDrive drive = null;
     Limelight limelight = null;
-    IntakeSubsystem intakeSubsystem = null;
+    Intake intake = null;
     Turret turret = null;
-    Clock clock = null;
 
-
-    //clocks
+    Transfer transfer = null;
     ShooterSubsystem shooterSubsystem = null;
-    Breakbeam breakbeam;
+    ColorSensor colorSensors = null;
+
 
 
     protected ElapsedTime runtime = new ElapsedTime();
@@ -77,15 +76,19 @@ public abstract class RobotMaster extends OpMode {
 
     @Override
     public void init() {
+        inventory.updatePattern(Pattern.Ball.EMPTY, Pattern.Ball.EMPTY, Pattern.Ball.EMPTY); //just to make sure
+        inventory.setNumBalls(0);
 
         drive = new MecanumDrive(hardwareMap);
         limelight = new Limelight(hardwareMap);
-        intakeSubsystem = new IntakeSubsystem(hardwareMap);
+        intake = new Intake(hardwareMap);
         turret = new Turret(hardwareMap);
-        clock = new Clock(hardwareMap);
-        shooterSubsystem = new ShooterSubsystem(clock, turret, intakeSubsystem);
-        breakbeam = new Breakbeam(hardwareMap);
+        shooterSubsystem = new ShooterSubsystem(turret, intake, transfer);
+        transfer = new Transfer(hardwareMap);
+        colorSensors = new ColorSensor(hardwareMap);
+
         IndicatorLight.initLight(hardwareMap);
+        transfer.initTransfer();
 
 
         IndicatorLight.setLightWhite();
@@ -101,17 +104,16 @@ public abstract class RobotMaster extends OpMode {
 
         limelight.updateLimelight();
 //
-        breakbeamStates[0] = breakbeam.getIntakeBreakbeamStatus();
-        breakbeamStates[1] = breakbeam.getTurretBreakbeamStatus();
 
 
         obelisk = limelight.updateObelisk(true);
         if (obelisk != null) {
             telemetry.addData("Obelisk", "[%s] [%s] [%s]",
-                    obelisk.spindexSlotOne,
-                    obelisk.spindexSlotTwo,
-                    obelisk.spindexSlotThree);
+                    obelisk.getLower(),
+                    obelisk.getMiddle(),
+                    obelisk.getUpper());
         }
+        colorSensors.showColorSensorTelemetry(telemetry);
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);
         telemetry.update();
         Log.i("Loop Time", String.valueOf(SystemClock.uptimeMillis() - startLoopTime));
@@ -120,7 +122,6 @@ public abstract class RobotMaster extends OpMode {
 
     @Override
     public void start() {
-        clock.resetClock();
         programStage = 0;
         if (obelisk == null) {
             obelisk = new Pattern(Pattern.Ball.EMPTY, Pattern.Ball.EMPTY, Pattern.Ball.EMPTY);
@@ -159,14 +160,12 @@ public abstract class RobotMaster extends OpMode {
 
         limelight.updateLimelight();
         turret.updateTurret();
-        clock.clockUpdate();
-        breakbeamStates[0] = breakbeam.getIntakeBreakbeamStatus();
-        breakbeamStates[1] = breakbeam.getTurretBreakbeamStatus();
-
+        colorSensors.updateDetection();
+        transfer.updateTransfer();
 
 //
         turret.showAimTelemetry(telemetry);
-        breakbeam.displayBreakbeamTelemetry(telemetry);
+        colorSensors.showColorSensorTelemetry(telemetry);
         telemetry.addData("Current Stage", AutoMaster.AutoStage.values()[pathState].name());
         telemetry.addData("superstructure state", pathState);
 

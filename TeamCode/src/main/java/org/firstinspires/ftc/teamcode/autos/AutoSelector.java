@@ -17,7 +17,6 @@ public class AutoSelector extends SelectableOpMode {
         super("Select Autonomous", s -> {
             s.folder("Blue Side Close", blue -> {
                 blue.add("Blue - Full Auto Gate Park", () -> {
-                    // Set all gates ON
                     AutoBlue.GATE_HIT = true;
                     AutoBlue.DO_FIRST_CYCLE = true;
                     AutoBlue.DO_SECOND_CYCLE = true;
@@ -27,7 +26,6 @@ public class AutoSelector extends SelectableOpMode {
                     return new AutoBlue();
                 });
                 blue.add("Blue - Full Auto Zone Park", () -> {
-                    // Set all gates ON
                     AutoBlue.GATE_HIT = true;
                     AutoBlue.DO_FIRST_CYCLE = true;
                     AutoBlue.DO_SECOND_CYCLE = true;
@@ -114,7 +112,6 @@ public class AutoSelector extends SelectableOpMode {
 
             s.folder("Red Side Close", red -> {
                 red.add("Red - Full Auto Gate Park", () -> {
-                    // Set all gates ON
                     AutoRed.GATE_HIT = true;
                     AutoRed.DO_FIRST_CYCLE = true;
                     AutoRed.DO_SECOND_CYCLE = true;
@@ -124,7 +121,6 @@ public class AutoSelector extends SelectableOpMode {
                     return new AutoRed();
                 });
                 red.add("Red - Full Auto Zone Park", () -> {
-                    // Set all gates ON
                     AutoRed.GATE_HIT = true;
                     AutoRed.DO_FIRST_CYCLE = true;
                     AutoRed.DO_SECOND_CYCLE = true;

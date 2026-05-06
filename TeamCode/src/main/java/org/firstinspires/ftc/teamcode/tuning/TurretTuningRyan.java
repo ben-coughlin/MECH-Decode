@@ -4,7 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.subsystems.IntakeSubsystem;
+import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Turret;
 import org.firstinspires.ftc.teamcode.utils.Toggle;
 
@@ -13,7 +13,7 @@ import org.firstinspires.ftc.teamcode.utils.Toggle;
 public class TurretTuningRyan extends OpMode
 {
     private Turret turret;
-    private IntakeSubsystem intakeSubsystem;
+    private Intake intake;
 
     Toggle kickerToggle = new Toggle(false);
     double turretPower = 0;
@@ -29,7 +29,7 @@ public class TurretTuningRyan extends OpMode
     @Override
     public void init() {
         turret = new Turret(hardwareMap);
-        intakeSubsystem = new IntakeSubsystem(hardwareMap);
+        intake = new Intake(hardwareMap);
       //
     }
 

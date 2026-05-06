@@ -5,20 +5,22 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-public class IntakeSubsystem
+import org.firstinspires.ftc.teamcode.utils.Pattern;
+
+public class Intake
 {
     private final DcMotorEx intake;
     public static boolean isIntakeRunning;
 
 
-    public IntakeSubsystem(HardwareMap hwMap)
+
+    public Intake(HardwareMap hwMap)
     {
 
         intake = hwMap.get(DcMotorEx.class, "intake");
-        intake.setDirection(DcMotorSimple.Direction.REVERSE);
-
         intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
     }
 
 
@@ -29,7 +31,7 @@ public class IntakeSubsystem
         isIntakeRunning = true;
 
     }
-    public void outtake()
+    public void turnOuttakeOn()
     {
         intake.setPower(-1);
     }
@@ -40,6 +42,10 @@ public class IntakeSubsystem
         intake.setPower(0);
         isIntakeRunning = false;
     }
+
+
+
+
 
 
 

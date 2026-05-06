@@ -15,7 +15,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class Constants {
-    //
+    //todo: tune max deceleration to ensure the dead wheels stay on the tiles
     public static FollowerConstants followerConstants = new FollowerConstants()
             .mass(13.6) //todo: weigh da robot (in kgs)
             .forwardZeroPowerAcceleration(-35.06187568143412)
@@ -33,18 +33,18 @@ public class Constants {
             .rightFrontMotorName("rightFront")
             .rightRearMotorName("rightBack")
             .leftFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
-            .leftRearMotorDirection(DcMotorSimple.Direction.REVERSE)
-            .rightFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
+            .leftRearMotorDirection(DcMotorSimple.Direction.FORWARD)
+            .rightFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
             .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD)
             .xVelocity(76.31258842888779)
             .yVelocity(49.15454293799213);
 
     public static PinpointConstants pinpointConstants = new PinpointConstants()
-            .strafePodX(-4.924)
-            .forwardPodY(7.028)
+            .strafePodX(0)
+            .forwardPodY(0)
             .distanceUnit(DistanceUnit.INCH)
             .hardwareMapName("odo")
-            .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD)
+            .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
             .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED)
             .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD);
 
