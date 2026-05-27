@@ -20,11 +20,11 @@ public class Limelight extends RobotMaster
     public static final int[] obeliskAprilTagIDs = {21, 22, 23};
     public final HashMap<Integer, Pattern> idToPatternList= new HashMap<>();
     public static int currObeliskAprilTag;
-    public static final int redGoalID = 24;
-    public static final int blueGoalID = 20;
+    public static final int redGoalID = 20;
+    public static final int blueGoalID = 24;
     private final Limelight3A limelight;
     private static double distance;
-    private static final double CAMERA_HEIGHT_INCHES = 13.53; // (h1)
+    private static final double CAMERA_HEIGHT_INCHES = 12.81; // (h1)
     private static final double GOAL_APRILTAG_HEIGHT_INCHES = 29.0; // (h2)
     private static final double CAMERA_MOUNTING_ANGLE_DEGREES = 22.0; // (a1)
 
@@ -173,20 +173,6 @@ public class Limelight extends RobotMaster
         return new double[]{tagX, tagY};
     }
 
-    /**
-     * Convenience overload if you have a Pose2d object (RoadRunner style)
-     */
-    public double[] calculateTagFieldPosition(Pose2D robotPose, double currentTurretAngle,
-                                              double limelightTx, double distance) {
-        return calculateTagFieldPosition(
-                robotPose.getX(DistanceUnit.INCH),
-                robotPose.getY(DistanceUnit.INCH),
-                Math.toDegrees(robotPose.getHeading(AngleUnit.RADIANS)),
-                currentTurretAngle,
-                limelightTx,
-                distance
-        );
-    }
 
 
     public static LLResult getCurrResult()

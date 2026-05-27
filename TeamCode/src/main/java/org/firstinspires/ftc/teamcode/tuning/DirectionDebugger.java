@@ -41,6 +41,10 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.teamcode.subsystems.GoBildaPinpointDriver;
 import org.firstinspires.ftc.teamcode.subsystems.Odo;
 import org.firstinspires.ftc.teamcode.RobotMaster;
 
@@ -92,8 +96,7 @@ public class DirectionDebugger extends RobotMaster
     @Override
     public void init() {
         //drive init is handled in robotmaster
-      //super.init();
-
+        odo = new Odo(hardwareMap);
       //this is to see if any motor is reversed
 //      motorDirections.put("leftFront", String.valueOf(drive.leftFront.getDirection()));
 //      motorDirections.put("rightFront", String.valueOf(drive.rightFront.getDirection()));
@@ -123,11 +126,6 @@ public class DirectionDebugger extends RobotMaster
          lowerColorSensor = hardwareMap.get(RevColorSensorV3.class, "lowerColorSensor");
 
 
-
-
-
-
-
     }
 
     /*
@@ -153,8 +151,6 @@ public class DirectionDebugger extends RobotMaster
             mode = 2;
             telemetry.addLine("Dead Wheel Direction Debug Selected.");
         }
-
-
 
     }
 
@@ -309,6 +305,7 @@ public class DirectionDebugger extends RobotMaster
         }
 
         telemetry.addData("Servo pwr ", leftTurretPos);
+        telemetry.addData("hdng ", leftTurretPos);
     }
 
     public void deadWheelDirectionDebugger()

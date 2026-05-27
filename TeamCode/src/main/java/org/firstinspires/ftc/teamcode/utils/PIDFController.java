@@ -33,21 +33,15 @@ public class PIDFController {
         timer = new ElapsedTime();
     }
 
-    /**
-     * Overloaded constructor for a standard PID controller (kF defaults to 0).
-     */
     public PIDFController(double Kp, double Ki, double Kd) {
         this(Kp, Ki, Kd, 0.0);
     }
 
     public double calculatePIDF(double current_value) {
-        // Calculate P
         pError = setpoint - current_value;
 
-        // Calculate I
         iError += pError * timer.seconds();
 
-        // Calculate D
         dError = (pError - prevError) / timer.seconds();
 
 

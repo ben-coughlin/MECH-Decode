@@ -31,8 +31,7 @@ public final class MecanumDrive {
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // TODO: reverse motor directions if needed
-        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
-        rightFront.setDirection(DcMotorSimple.Direction.REVERSE);
+
 
         // TODO: make sure your config has an IMU with this name (can be BNO or BHI)
         //   see https://ftc-docs.firstinspires.org/en/latest/hardware_and_software_configuration/configuring/index.html
@@ -41,11 +40,47 @@ public final class MecanumDrive {
 
     }
 
+    public void teleopDrive(double rawY, double rawX, double rawRX, double heading)
+    {
+
+
+        if (Math.abs(rawY) < 0.05) rawY = 0;
+        if (Math.abs(rawX) < 0.05) rawX = 0;
+        if (Math.abs(rawRX) < 0.05) rawRX = 0;
+
+        double y = rawX * Math.sin(-heading) + rawY * Math.cos(-heading);
+        double x = rawX * Math.cos(-heading) - rawY * Math.sin(-heading);
+        double rx = -rawRX;
+
+        if(y == 0 && x == 0 && rx == 0) {
+            hardStopMotors();
+        }
+        else {
+            double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
+            double frontLeftPower = (y + x + rx) / denominator;
+            double backLeftPower = (y - x + rx) / denominator;
+            double frontRightPower = (y - x - rx) / denominator;
+            double backRightPower = (y + x - rx) / denominator;
+
+            applyMotorPower(frontLeftPower, backLeftPower, frontRightPower, backRightPower);
+        }
+    }
+
+
     public void hardStopMotors() {
         leftFront.setPower(0);
         leftBack.setPower(0);
         rightBack.setPower(0);
         rightFront.setPower(0);
     }
+    public void applyMotorPower(double lF, double lB, double rF, double rB)
+    {
+        leftFront.setPower(lF);
+        leftBack.setPower(lB);
+        rightFront.setPower(rF);
+        rightBack.setPower(rB);
+
+    }
+
 
 }

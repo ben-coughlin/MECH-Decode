@@ -19,7 +19,6 @@ public class AutoRedFar extends AutoMaster {
 
     public static boolean DO_FIRST_CYCLE = true;
     public static boolean DO_SECOND_CYCLE = true;
-
     public static boolean DO_ZONE_PARK = true;
 
     @Override

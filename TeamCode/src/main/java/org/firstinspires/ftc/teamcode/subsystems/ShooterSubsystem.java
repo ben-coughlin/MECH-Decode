@@ -12,7 +12,7 @@ public class ShooterSubsystem {
     private final Intake intake;
     private final Transfer transfer;
 
-    public boolean isFlywheelReady = false;
+    public static boolean isFlywheelReady = false;
     public static boolean isShotInProgress = false;
     public boolean isFlywheelSpun = false;
 
@@ -63,7 +63,8 @@ public class ShooterSubsystem {
 
         // Only initialize on first call
         if (!isShotInProgress) {
-            isShotInProgress = true; //this flag starts the transfer
+            intake.turnIntakeOn();
+            transfer.transferShoot();
             shotStartTime = SystemClock.uptimeMillis();
             Log.i("ShooterSubsystem", "shot seq started at " + shotStartTime);
         }
@@ -79,8 +80,8 @@ public class ShooterSubsystem {
 
     public void runStopActions() {
         turret.turnOffFlywheel();
-        transfer.setTriggerToBlock();
-        transfer.turnTransferOff();
+        transfer.transferEndShoot();
+        intake.turnIntakeOff();
 
         isFlywheelReady = false;
         isShotInProgress = false;

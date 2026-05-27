@@ -17,7 +17,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 public class Constants {
     //todo: tune max deceleration to ensure the dead wheels stay on the tiles
     public static FollowerConstants followerConstants = new FollowerConstants()
-            .mass(13.6) //todo: weigh da robot (in kgs)
+            .mass(15.88) //todo: weigh da robot (in kgs)
             .forwardZeroPowerAcceleration(-35.06187568143412)
             .lateralZeroPowerAcceleration(-74.64892235313923)
             .translationalPIDFCoefficients(new PIDFCoefficients(0.22, 0, 0.025, 0))
@@ -32,21 +32,22 @@ public class Constants {
             .leftRearMotorName("leftBack")
             .rightFrontMotorName("rightFront")
             .rightRearMotorName("rightBack")
-            .leftFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
+            .leftFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
             .leftRearMotorDirection(DcMotorSimple.Direction.FORWARD)
             .rightFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
-            .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD)
+            .rightRearMotorDirection(DcMotorSimple.Direction.REVERSE)
             .xVelocity(76.31258842888779)
             .yVelocity(49.15454293799213);
 
     public static PinpointConstants pinpointConstants = new PinpointConstants()
-            .strafePodX(0)
-            .forwardPodY(0)
+            .strafePodX(5.8)
+            .forwardPodY(1.57)
             .distanceUnit(DistanceUnit.INCH)
             .hardwareMapName("odo")
             .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
-            .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED)
+            .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD)
             .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD);
+
 
     public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1, 1.2);
 

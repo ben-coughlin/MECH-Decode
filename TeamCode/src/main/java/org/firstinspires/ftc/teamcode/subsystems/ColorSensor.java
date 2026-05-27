@@ -30,7 +30,8 @@ public class ColorSensor
     private boolean isLowerPurple;
 
 
-    final float gain = 19;
+
+    final float gain = 2;
 
     private final float[] hsvUpper = new float[4];
     private final float[] hsvMiddle = new float[4];
@@ -48,6 +49,25 @@ public class ColorSensor
         middleColorSensor.setGain(gain);
         lowerColorSensor.setGain(gain);
 
+    }
+
+    public void updateDetection()
+    {
+        colorsUpper = upperColorSensor.getNormalizedColors();
+        hsvUpper[3] = (float) upperColorSensor.getDistance(DistanceUnit.CM);
+        Color.colorToHSV(colorsUpper.toColor(), hsvUpper);
+
+
+        colorsMiddle = middleColorSensor.getNormalizedColors();
+        hsvMiddle[3] = (float) middleColorSensor.getDistance(DistanceUnit.CM);
+        Color.colorToHSV(colorsMiddle.toColor(), hsvMiddle);
+
+        colorsLower = lowerColorSensor.getNormalizedColors();
+        hsvLower[3] = (float) lowerColorSensor.getDistance(DistanceUnit.CM);
+        Color.colorToHSV(colorsLower.toColor(), hsvLower);
+
+        inventory.updatePattern(detectBallColor(hsvUpper), detectBallColor(hsvMiddle), detectBallColor(hsvLower));
+        updateColorBooleans();
     }
 
 
@@ -111,23 +131,7 @@ public class ColorSensor
         }
     }
 
-    public void updateDetection()
-    {
-        colorsUpper = upperColorSensor.getNormalizedColors();
-        hsvUpper[3] = (float)((DistanceSensor) colorsUpper).getDistance(DistanceUnit.CM);
-        Color.colorToHSV(colorsUpper.toColor(), hsvUpper);
 
-
-        colorsMiddle = middleColorSensor.getNormalizedColors();
-        hsvMiddle[3] = (float)((DistanceSensor) colorsMiddle).getDistance(DistanceUnit.CM);
-        Color.colorToHSV(colorsMiddle.toColor(), hsvMiddle);
-
-        colorsLower = lowerColorSensor.getNormalizedColors();
-        hsvLower[3] = (float)((DistanceSensor) colorsLower).getDistance(DistanceUnit.CM);
-        Color.colorToHSV(colorsLower.toColor(), hsvLower);
-
-        inventory.updatePattern(detectBallColor(hsvUpper), detectBallColor(hsvMiddle), detectBallColor(hsvLower));
-    }
 
     /**
      * @return empty, purple, green or ballnotdetected if the spindexer is detected
@@ -139,14 +143,13 @@ public class ColorSensor
 
        if(hue < 192 && hue > 180)
        {
-
            return Pattern.Ball.BALL_NOT_DETECTED;
        }
        else if(hue > 200 && sat > 0.4)
        {
            return Pattern.Ball.PURPLE;
        }
-       else if(hue > 160 && hue < 175 && sat > 0.4)
+       else if(hue > 115 && hue < 185 && sat > 0.4)
        {
 
            return Pattern.Ball.GREEN;
@@ -157,6 +160,61 @@ public class ColorSensor
        }
 
     }
+
+    private void updateColorBooleans()
+    {
+        //ugly :(
+        if(inventory.getUpper().equals(Pattern.Ball.GREEN))
+        {
+            isUpperGreen = true;
+            isUpperPurple = false;
+        }
+        else if(inventory.getUpper().equals(Pattern.Ball.PURPLE))
+        {
+            isUpperGreen = false;
+            isUpperPurple = true;
+        }
+        else {
+            isUpperGreen = false;
+            isUpperPurple = false;
+        }
+
+        // -
+        if(inventory.getMiddle().equals(Pattern.Ball.GREEN))
+        {
+            isMiddleGreen = true;
+            isMiddlePurple = false;
+        }
+        else if(inventory.getMiddle().equals(Pattern.Ball.PURPLE))
+        {
+            isMiddleGreen = false;
+            isMiddlePurple = true;
+        }
+        else
+        {
+            isMiddleGreen = false;
+            isMiddlePurple = false;
+        }
+
+        // -
+        if(inventory.getLower().equals(Pattern.Ball.GREEN))
+        {
+            isLowerGreen = true;
+            isLowerPurple = false;
+        }
+        else if(inventory.getLower().equals(Pattern.Ball.PURPLE))
+        {
+            isLowerGreen = false;
+            isLowerPurple = true;
+        }
+        else
+        {
+            isLowerGreen = false;
+            isLowerPurple = false;
+        }
+
+    }
+
 
 
     /**

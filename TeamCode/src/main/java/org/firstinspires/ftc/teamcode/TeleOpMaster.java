@@ -9,6 +9,7 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.subsystems.IndicatorLight;
 import org.firstinspires.ftc.teamcode.subsystems.Limelight;
+import org.firstinspires.ftc.teamcode.subsystems.ShooterSubsystem;
 import org.firstinspires.ftc.teamcode.utils.Toggle;
 import org.firstinspires.ftc.teamcode.utils.VisionUtils;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
@@ -16,10 +17,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 public abstract class TeleOpMaster extends RobotMaster {
 
-    private Follower follower;
-    public static Pose startingPose;
-    public static String selectedProgram;
-    private TelemetryManager telemetryM;
+
 
     //state machines!!
     enum progStates {
@@ -58,11 +56,7 @@ public abstract class TeleOpMaster extends RobotMaster {
         super.init();
         isAuto = false;
         resetEncoders = false;
-        Constants.createFollower(hardwareMap).pathConstraints.setBrakingStrength(2);
-        follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(startingPose == null ? new Pose() : startingPose);
-        follower.update();
-        telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
+
 
     }
 
@@ -88,6 +82,11 @@ public abstract class TeleOpMaster extends RobotMaster {
         super.mainLoop();
         follower.update();
 
+
+        drive.teleopDrive(-gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_stick_x, follower.getHeading());
+
+
+
         currentState = progStates.values()[programStage].name();
         debugKeyValues.put("Superstructure State", currentState);
 
@@ -106,43 +105,26 @@ public abstract class TeleOpMaster extends RobotMaster {
                 && isCorrectGoalTag(VisionUtils.getTagId(currVision));
 
        // rumble when we're not using vision
-        if(turret.getTrackingModeForTelemetry().contains("VELOCITY"))
-        {
-            gamepad2.rumble(5);
-        }
-        //blip the gamepad so i know it's about to auto-center
-        else if(turret.getTrackingModeForTelemetry().contains("HEADING"))
-        {
-            gamepad2.rumbleBlips(1);
-        }
 
-        if(turret.getTrackingModeForTelemetry().contains("VISION") && programStage == progStates.READY_TO_SHOOT.ordinal())
-        {
-            IndicatorLight.setLightAzure();
-        }
-        else if(!turret.getTrackingModeForTelemetry().contains("VISION") && programStage == progStates.READY_TO_SHOOT.ordinal())
-        {
-            IndicatorLight.setLightWhite();
-        }
-        else
-        {
             if (intakeToggle.getState()) {
                 //purple when intake on
-                IndicatorLight.setLightViolet();
+
                 intake.turnIntakeOn();
+                transfer.turnTransferOn();
 
             } else if (!intakeToggle.getState() && gamepad1.left_trigger > 0.1)
             {
                 //orange when outtake on
                 intake.turnOuttakeOn();
-                IndicatorLight.setLightOrange();
+
             }
             else
             {
+                transfer.turnTransferOff();
                 intake.turnIntakeOff();
-                IndicatorLight.turnLightOff();
+
             }
-        }
+
 
 
 
@@ -150,43 +132,15 @@ public abstract class TeleOpMaster extends RobotMaster {
         turret.aimTurret(
                 hasValidVision,
                 hasValidVision ? Limelight.getCurrResult().getTx() : 0,
-                gamepad2.right_stick_x,
-                Limelight.getDistance(),
-                follower.getHeading(),
-                follower.getAngularVelocity(),
-                follower.getVelocity().getMagnitude()
+                gamepad2.right_stick_x
         );
 
-        runStateMachines();
+        if(gamepad1.touchpad)
+        {
+            kickstand.lowerKickstand();
+        }
 
-        //todo: tune directions and power amounts
-        if(gamepad1.dpad_left)
-        {
-            follower.setTeleOpDrive(
-                    0,
-                    0,
-                    0.2,
-                    false // field Centric
-            );
-        }
-        else if(gamepad1.dpad_right)
-        {
-            follower.setTeleOpDrive(
-                    0,
-                    -0,
-                    -0.2,
-                    false // field Centric
-            );
-        }
-        else
-        {
-            follower.setTeleOpDrive(
-                    -gamepad1.left_stick_y,
-                    -gamepad1.left_stick_x,
-                    -gamepad1.right_stick_x,
-                    false // field Centric
-            );
-        }
+        runStateMachines();
 
 
 
@@ -203,14 +157,14 @@ public abstract class TeleOpMaster extends RobotMaster {
         switch (progStates.values()[programStage]) {
             case IDLE:
                 if (gamepad1.left_bumper || gamepad2.dpad_up) {
-                    shooterSubsystem.isFlywheelReady = false;
+                    ShooterSubsystem.isFlywheelReady = false;
                     incrementStage(progStates.SHOOT_PREP.ordinal());
                 }
                 else if (stageFinished) {
                     initializeStateVariables();
                     turret.turnOffFlywheel();
                     intake.turnIntakeOff();
-                    IndicatorLight.turnLightOff();
+
 
                 }
                 break;
@@ -221,7 +175,7 @@ public abstract class TeleOpMaster extends RobotMaster {
                     shooterSubsystem.spinUp();
                 }
                 shooterSubsystem.updateSpin();
-                if (shooterSubsystem.isFlywheelReady && !stageFinished) {
+                if (ShooterSubsystem.isFlywheelReady && !stageFinished) {
                     incrementStage(progStates.READY_TO_SHOOT.ordinal());
                 }
                 break;

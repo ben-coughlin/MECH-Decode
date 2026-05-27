@@ -25,7 +25,6 @@ public abstract class AutoMaster extends RobotMaster {
 
     protected static boolean doZonePark = true;
 
-
     protected enum AutoStage
     {
         scorePreload,
@@ -140,11 +139,7 @@ public abstract class AutoMaster extends RobotMaster {
         turret.aimTurret(
                 hasValidVision,
                 tx,
-                gamepad2.right_stick_x,
-                distance,
-                follower.getHeading(),
-                follower.getAngularVelocity(),
-                follower.getVelocity().getMagnitude()
+                gamepad2.right_stick_x
         );
 
         updatePaths();
@@ -377,7 +372,6 @@ public abstract class AutoMaster extends RobotMaster {
                 shooterSubsystem.startShotSequence(isAuto);
             }
 
-
             double shootWaitTime = isAutoFar ? 6500 : 3500;
 
             if(stageStartTimer.getElapsedTime() > 3500)
@@ -438,7 +432,6 @@ public abstract class AutoMaster extends RobotMaster {
     protected void initState()
     {
 
-        turret.resetPID();
         opmodeTimer.resetTimer();
         stageStartTimer.resetTimer();
         stageInit = false;

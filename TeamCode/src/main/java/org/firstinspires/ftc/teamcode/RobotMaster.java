@@ -9,12 +9,18 @@ import static org.firstinspires.ftc.teamcode.utils.MovementVars.worldYPosition;
 import android.os.SystemClock;
 import android.util.Log;
 
+import com.bylazar.telemetry.PanelsTelemetry;
+import com.bylazar.telemetry.TelemetryManager;
+import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.ColorSensor;
 import org.firstinspires.ftc.teamcode.subsystems.IndicatorLight;
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
+import org.firstinspires.ftc.teamcode.subsystems.Kickstand;
 import org.firstinspires.ftc.teamcode.subsystems.Limelight;
 import org.firstinspires.ftc.teamcode.subsystems.MecanumDrive;
 import org.firstinspires.ftc.teamcode.subsystems.ShooterSubsystem;
@@ -55,7 +61,13 @@ public abstract class RobotMaster extends OpMode {
     Transfer transfer = null;
     ShooterSubsystem shooterSubsystem = null;
     ColorSensor colorSensors = null;
+    IndicatorLight indicatorLight = null;
+    Kickstand kickstand = null;
 
+    public Follower follower;
+    public static Pose startingPose;
+    public static String selectedProgram;
+    public TelemetryManager telemetryM;
 
 
     protected ElapsedTime runtime = new ElapsedTime();
@@ -76,6 +88,13 @@ public abstract class RobotMaster extends OpMode {
 
     @Override
     public void init() {
+
+        Constants.createFollower(hardwareMap).pathConstraints.setBrakingStrength(2);
+        follower = Constants.createFollower(hardwareMap);
+        follower.setStartingPose(new Pose(0, 0, -Math.PI / 2));
+        follower.update();
+        telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
+
         inventory.updatePattern(Pattern.Ball.EMPTY, Pattern.Ball.EMPTY, Pattern.Ball.EMPTY); //just to make sure
         inventory.setNumBalls(0);
 
@@ -83,16 +102,12 @@ public abstract class RobotMaster extends OpMode {
         limelight = new Limelight(hardwareMap);
         intake = new Intake(hardwareMap);
         turret = new Turret(hardwareMap);
-        shooterSubsystem = new ShooterSubsystem(turret, intake, transfer);
         transfer = new Transfer(hardwareMap);
+        shooterSubsystem = new ShooterSubsystem(turret, intake, transfer);
         colorSensors = new ColorSensor(hardwareMap);
-
-        IndicatorLight.initLight(hardwareMap);
+        indicatorLight = new IndicatorLight(hardwareMap);
+        kickstand = new Kickstand(hardwareMap);
         transfer.initTransfer();
-
-
-        IndicatorLight.setLightWhite();
-
 
     }
 
@@ -105,7 +120,7 @@ public abstract class RobotMaster extends OpMode {
         limelight.updateLimelight();
 //
 
-
+        colorSensors.updateDetection();
         obelisk = limelight.updateObelisk(true);
         if (obelisk != null) {
             telemetry.addData("Obelisk", "[%s] [%s] [%s]",
@@ -147,7 +162,7 @@ public abstract class RobotMaster extends OpMode {
         stateStartTime = SystemClock.uptimeMillis();
         stageFinished = false;
         isMovementDone = false;
-        turret.resetPID();
+
     }
 
 
@@ -163,7 +178,17 @@ public abstract class RobotMaster extends OpMode {
         colorSensors.updateDetection();
         transfer.updateTransfer();
 
-//
+        indicatorLight.setBallCount(inventory.getNumBalls());
+        indicatorLight.setFlywheelReady(ShooterSubsystem.isFlywheelReady);
+        indicatorLight.setOuttakeRunning(Intake.isOuttakeRunning);
+        indicatorLight.setIntakeRunning(Intake.isIntakeRunning);
+        indicatorLight.update();
+
+
+        telemetry.addData("Inventory", "[%s] [%s] [%s]",
+                inventory.getLower(),
+                inventory.getMiddle(),
+                inventory.getUpper());
         turret.showAimTelemetry(telemetry);
         colorSensors.showColorSensorTelemetry(telemetry);
         telemetry.addData("Current Stage", AutoMaster.AutoStage.values()[pathState].name());

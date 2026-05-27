@@ -1,486 +1,234 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
-import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
-
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.RobotMaster;
 import org.firstinspires.ftc.teamcode.utils.PIDFController;
-
-import java.util.Locale;
 
 public class Turret {
 
-    private final double TURRET_TICKS_PER_DEGREE = 2.34426;
-    private final double TURRET_MIN_LIMIT_TICKS = -400;
-    private final double TURRET_MAX_LIMIT_TICKS = 400;
+    // Hardware Constants
+    private final double TURRET_TICKS_PER_DEGREE = 67.06899;
+    private final double TURRET_MIN_LIMIT_TICKS = -12009;
+    private final double TURRET_MAX_LIMIT_TICKS = 12009;
     private static final double FLYWHEEL_TICKS_PER_REVOLUTION = 28;
-    private double lastTurretPower = 0.0;
-    private final double TURRET_SLEW_RATE = 0.115;
+    private final double TURRET_SLEW_RATE = 0.12;
 
-    private final CRServo turretLeft;
-    private final CRServo turretRight;
-    public final DcMotorEx flywheelRight;
-    public final DcMotorEx flywheelLeft;
+    private double lastValidCalculatedPower = 0.0;
+    private final CRServo turretLeft, turretRight;
+    private final DcMotorEx flywheelLeft, flywheelRight;
+    private final DcMotorEx turretEncoderModule;
     private final Servo hood;
-    private VoltageSensor voltageSensor;
 
     private double turretDeg;
-    private double turretPower;
-    private double hoodPos;
+    private double timeSinceLost = 0;
     private double targetRPM;
-    private double currVoltage;
     private boolean isFlywheelOn;
     public static boolean isFlywheelRunning = false;
+    private String currentMode = "IDLE";
 
-    // FLYWHEEL CONTROL SETTINGS
-    private static final double RPM_TOLERANCE = 50; // RPM within 50 = "ready"
-    private static final double RPM_SLEW = 250; // RPM per loop
-    private double commandedRPM = 0;
-
-
-
-    // PID Controllers
-    private final PIDFController autoAimClose = new PIDFController(0.0073, 0.0001, 0.0014, 0.096);
-    private final PIDFController autoAimFar = new PIDFController(0.0076, 0.003, 0.002, 0.07);
-    private final PIDFController autoAimSlow = new PIDFController(0.0076, 0.003, 0.001, 0.0);
-    private PIDFController activeAutoAimController;
-
-    private static final double GAIN_SCHEDULING_DISTANCE_THRESHOLD = 67.0;
-    private static final double VELOCITY_THRESHOLD = 0.1;
-    private static final double VELOCITY_COMPENSATION_DURATION_MS = 200;
-    private static final double HEADING_COMPENSATION_DURATION_MS = 1000;
-    private static final double AUTO_HEADING_COMPENSATION_DURATION_MS = 200;
-    private static final double RETURN_TO_CENTER_DURATION_MS = 1400;
-    private static final double ROTATIONAL_COMPENSATION_GAIN = 0.3;
-
-    private static final double SEEK_START_DELAY_MS = 200;
-    private static final double SEEK_SWEEP_SPEED = 0.4;
-    private static final double SEEK_SWEEP_RANGE_DEG = 20;
-    private static final double SEEK_PAUSE_AT_EDGE_MS = 50;
-
-    private enum CompensationMode {
-        VISION,
-        VELOCITY_COMP,
-        HEADING_COMP,
-        SEEKING,
-        RETURN_TO_CENTER,
-        IDLE
-    }
-
-    private CompensationMode currentMode = CompensationMode.IDLE;
+    private final PIDFController visionAimClose = new PIDFController(0.015, 0.0, 0.001, 0.0);
+    private final PIDFController visionAimFar = new PIDFController(0.017, 0.0, 0.001, 0.0);
+    private final PIDFController chassisCenterController = new PIDFController(0.015, 0.0, 0.0008, 0.0);
     private final ElapsedTime compensationTimer = new ElapsedTime();
-    private double robotHeadingOnTargetLoss = 0;
-    private boolean hasSeenTargetThisSession = false;
-    private boolean wasTargetVisibleLastLoop = false;
-    private double headingVelocityAtEndOfVeloCompensation = 0;
-    private final double HEADING_VELOCITY_COMPENSATION_FACTOR = 0.25;
 
-    private double seekCenterAngle = 0;
-    private boolean seekingSweepingRight = true;
-    private final ElapsedTime seekPauseTimer = new ElapsedTime();
-    private boolean seekPaused = false;
-    public Pose goalPose = null;
+    // [Distance (Inches), Hood Position, Flywheel RPM]
     private final double[][] launchAngleLookupTable = {
-            { 20, .600, 2780},   // inches, servo, RPM
-            { 30, .690, 2630},
-            { 40, .73, 2730},
-            { 50, .79, 2850},
-            { 60, .83, 3050},
-            { 71, .87, 3400},
-            { 96, .93, 3840},
-            { 103, .95, 4000},
-            { 115, .97, 4100}
+            { 23, .600, 2500},
+            { 29.68, .630, 2550},
+            { 39.58, .7, 2700},
+            { 50.28, .73, 2900},
+            { 60.63, .82, 3000},
+            { 71, .86, 3100},
+            { 80, .92, 3250},
+            { 89.99, .94, 3450},
+            { 103, .99, 3600},
+            { 112, 1,  3700},
+            {122, 1, 3850}
     };
 
     public Turret(HardwareMap hwMap) {
-
         turretLeft = hwMap.get(CRServo.class, "turretLeft");
         turretRight = hwMap.get(CRServo.class, "turretRight");
         flywheelLeft = hwMap.get(DcMotorEx.class, "flywheelLeft");
         flywheelRight = hwMap.get(DcMotorEx.class, "flywheelRight");
         hood = hwMap.get(Servo.class, "hood");
-        initVoltageSensor(hwMap);
-
-
+        turretEncoderModule = hwMap.get(DcMotorEx.class, "transfer");
 
         flywheelLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         flywheelLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
         flywheelRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        flywheelRight.setDirection(DcMotorSimple.Direction.REVERSE);
-        flywheelLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+        flywheelRight.setDirection(DcMotorSimple.Direction.FORWARD);
+        flywheelLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        flywheelLeft.setVelocityPIDFCoefficients(10.0, 0.15, 1.2, 11.0);
 
-        flywheelRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        flywheelLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        flywheelLeft.setVelocityPIDFCoefficients(
-                2.5,   // P
-                0.0,    // I
-                1.2,    // D
-                12.5    // F
-        );
-
-
-
-        activeAutoAimController = autoAimClose;
-        autoAimFar.setReference(0);
-        autoAimClose.setReference(0);
-        autoAimSlow.setReference(0);
-        resetTracking();
+        chassisCenterController.setReference(0);
+        visionAimClose.setReference(0);
+        visionAimFar.setReference(0);
+        compensationTimer.reset();
     }
 
     public void updateTurret() {
-        turretDeg = flywheelLeft.getCurrentPosition() / TURRET_TICKS_PER_DEGREE;
-        turretPower = turretLeft.getPower();
-        hoodPos = hood.getPosition();
+        turretDeg = turretEncoderModule.getCurrentPosition() / TURRET_TICKS_PER_DEGREE;
         double currentDistance = Limelight.getDistance();
-        currVoltage = voltageSensor.getVoltage();
 
         hood.setPosition(getServoPositionFromDistance(currentDistance));
         targetRPM = getRPMFromDistance(currentDistance);
 
         if (isFlywheelOn) {
             isFlywheelRunning = true;
-            setFlywheelRPM(targetRPM);
+            double targetTPS = targetRPM * (FLYWHEEL_TICKS_PER_REVOLUTION / 60.0);
+            flywheelLeft.setVelocity(targetTPS);
+            flywheelRight.setPower(flywheelLeft.getPower());
         } else {
             isFlywheelRunning = false;
-            stopFlywheels();
+            flywheelLeft.setVelocity(0);
+            flywheelRight.setPower(0);
         }
     }
 
-
-    public void setFlywheelRPM(double targetRPM) {
-
-        // Slew-limit RPM
-//        commandedRPM += Range.clip(
-//                targetRPM - commandedRPM,
-//                -RPM_SLEW,
-//                RPM_SLEW
-//        );
-
-        double targetTPS = targetRPM * (FLYWHEEL_TICKS_PER_REVOLUTION / 60.0);
-
-        flywheelLeft.setVelocity(targetTPS);
-
-        flywheelRight.setPower(flywheelLeft.getPower());
-    }
-
-
-
-    private void stopFlywheels() {
-        commandedRPM = 0;
-        setFlywheelRPM(0);
-    }
-
-
-    public boolean isFlywheelReady() {
-        if (!isFlywheelOn) return false;
-
-        double currentRPM = getCurrentFlywheelRPM();
-        double error = Math.abs(targetRPM - currentRPM);
-
-        return error < RPM_TOLERANCE;
-    }
-
-    /**
-     * NEW: Get current flywheel RPM from master wheel
-     */
-    public double getCurrentFlywheelRPM() {
-        double ticksPerSecond = flywheelLeft.getVelocity(); //rpm is negative for some fuh ahh reason
-        return (ticksPerSecond / FLYWHEEL_TICKS_PER_REVOLUTION) * 60.0;
-    }
-
-
-    public void aimTurret(boolean hasValidTarget, double limelightError, double manualTurnInput,
-                          double distance, double robotHeading, double robotHeadingVelocity,
-                          double avgXYVelocity) {
-
+    public void aimTurret(boolean hasValidTarget, double limelightError, double manualTurnInput) {
         double calculatedPower;
-        boolean useAutoAim = !(Math.abs(manualTurnInput) > 0.05) &&
-                (hasValidTarget || hasSeenTargetThisSession);
 
-        if (useAutoAim) {
-            double errorToUse;
-
-            if (hasValidTarget) {
-                currentMode = CompensationMode.VISION;
-
-                seekingSweepingRight = true;
-                seekPaused = false;
-
-                double angularVelocity = Math.abs(robotHeadingVelocity);
-
-                if (angularVelocity < VELOCITY_THRESHOLD && avgXYVelocity < VELOCITY_THRESHOLD) {
-                    if (activeAutoAimController != autoAimSlow) {
-                        autoAimClose.reset();
-                        autoAimFar.reset();
-                    }
-                    activeAutoAimController = autoAimSlow;
-                } else if (distance < GAIN_SCHEDULING_DISTANCE_THRESHOLD && distance > 0) {
-                    if (activeAutoAimController != autoAimClose) {
-                        autoAimFar.reset();
-                        autoAimSlow.reset();
-                    }
-                    activeAutoAimController = autoAimClose;
-                } else {
-                    if (activeAutoAimController != autoAimFar) {
-                        autoAimClose.reset();
-                        autoAimSlow.reset();
-                    }
-                    activeAutoAimController = autoAimFar;
-                }
-
-                if (limelightError > 180) limelightError -= 360;
-                else if (limelightError < -180) limelightError += 360;
-
-                errorToUse = limelightError;
-                compensationTimer.reset();
-                hasSeenTargetThisSession = true;
-
-            } else {
-                if (wasTargetVisibleLastLoop) {
-                    compensationTimer.reset();
-                    robotHeadingOnTargetLoss = robotHeading;
-                }
-
-                double timeSinceLost = compensationTimer.milliseconds();
-
-                if (timeSinceLost < VELOCITY_COMPENSATION_DURATION_MS) {
-                    currentMode = CompensationMode.VELOCITY_COMP;
-                    double compensationPower = robotHeadingVelocity * ROTATIONAL_COMPENSATION_GAIN;
-                    calculatedPower = compensationPower;
-                    applyTurretPower(calculatedPower);
-                    wasTargetVisibleLastLoop = hasValidTarget;
-                    headingVelocityAtEndOfVeloCompensation = robotHeadingVelocity;
-                    return;
-
-                } else if (timeSinceLost < VELOCITY_COMPENSATION_DURATION_MS +
-                        ((RobotMaster.isAuto) ? AUTO_HEADING_COMPENSATION_DURATION_MS :
-                                HEADING_COMPENSATION_DURATION_MS)) {
-                    currentMode = CompensationMode.HEADING_COMP;
-                    double headingDirection = Math.signum(robotHeading - robotHeadingOnTargetLoss);
-                    errorToUse = -headingDirection * headingVelocityAtEndOfVeloCompensation *
-                            HEADING_VELOCITY_COMPENSATION_FACTOR;
-
-                    if (activeAutoAimController != autoAimClose) {
-                        autoAimFar.reset();
-                    }
-                    activeAutoAimController = autoAimClose;
-
-                }
-                else if (RobotMaster.isAuto && !RobotMaster.isAutoFar &&
-                        timeSinceLost < VELOCITY_COMPENSATION_DURATION_MS +
-                                AUTO_HEADING_COMPENSATION_DURATION_MS + SEEK_START_DELAY_MS + 5000) {
-                    currentMode = CompensationMode.SEEKING;
-                    calculatedPower = performSeekingSweep();
-                    applyTurretPower(calculatedPower);
-                    wasTargetVisibleLastLoop = hasValidTarget;
-                    return;
-//
-                }
-                  else if (
-                        timeSinceLost < VELOCITY_COMPENSATION_DURATION_MS +
-                                HEADING_COMPENSATION_DURATION_MS + RETURN_TO_CENTER_DURATION_MS) {
-                    currentMode = CompensationMode.RETURN_TO_CENTER;
-                    errorToUse = -turretDeg;
-
-                    if (activeAutoAimController != autoAimFar) {
-                        autoAimClose.reset();
-                    }
-                    activeAutoAimController = autoAimFar;
-
-                } else {
-                    currentMode = CompensationMode.IDLE;
-                    calculatedPower = 0.0;
-                    applyTurretPower(calculatedPower);
-                    wasTargetVisibleLastLoop = hasValidTarget;
-                    return;
-                }
-            }
-
-            calculatedPower = -activeAutoAimController.calculatePIDF(errorToUse);
-
-        } else {
-            currentMode = CompensationMode.IDLE;
+        if (Math.abs(manualTurnInput) > 0.05) {
+            currentMode = "MANUAL";
             calculatedPower = manualTurnInput;
-            autoAimClose.reset();
-            autoAimFar.reset();
+            compensationTimer.reset();
+            timeSinceLost = 0;
         }
+        else {
+            if (hasValidTarget) {
+                compensationTimer.reset();
+                timeSinceLost = 0;
 
-        applyTurretPower(calculatedPower);
-        wasTargetVisibleLastLoop = hasValidTarget;
-    }
+                double errorToUse = wrapAngle(limelightError);
+                double currentDistance = Limelight.getDistance();
 
-    private double performSeekingSweep() {
-        if (seekPaused) {
-            if (seekPauseTimer.milliseconds() > SEEK_PAUSE_AT_EDGE_MS) {
-                seekPaused = false;
-                seekingSweepingRight = !seekingSweepingRight;
+
+                if (currentDistance > 60.0) {
+                    currentMode = "VISION_TRACKING_FAR";
+                    calculatedPower = visionAimFar.calculatePIDF(errorToUse);
+                } else {
+                    currentMode = "VISION_TRACKING_CLOSE";
+                    calculatedPower = visionAimClose.calculatePIDF(errorToUse);
+                }
+
+                if (Math.abs(errorToUse) > 1.0) {
+                    double kF = 0.04;
+                    calculatedPower += Math.signum(errorToUse) * kF;
+                }
+
+                lastValidCalculatedPower = calculatedPower;
             }
-            return 0;
+            else {
+                timeSinceLost = compensationTimer.milliseconds();
+
+                if (timeSinceLost < 300) {
+                    currentMode = "COAST_DEBOUNCE";
+                    calculatedPower = lastValidCalculatedPower * 0.75;
+                }
+                else {
+                    currentMode = "RETURN_TO_CENTER";
+                    double errorToUse = wrapAngle(0.0 - turretDeg);
+
+                    calculatedPower = -chassisCenterController.calculatePIDF(errorToUse);
+                    lastValidCalculatedPower = 0;
+                }
+            }
         }
 
-        double leftLimit = seekCenterAngle - (SEEK_SWEEP_RANGE_DEG / 2);
-        double rightLimit = seekCenterAngle + (SEEK_SWEEP_RANGE_DEG / 2);
-
-        leftLimit = Math.max(leftLimit, TURRET_MIN_LIMIT_TICKS / TURRET_TICKS_PER_DEGREE);
-        rightLimit = Math.min(rightLimit, TURRET_MAX_LIMIT_TICKS / TURRET_TICKS_PER_DEGREE);
-
-        if (seekingSweepingRight && turretDeg >= rightLimit) {
-            seekPaused = true;
-            seekPauseTimer.reset();
-            return 0;
-        } else if (!seekingSweepingRight && turretDeg <= leftLimit) {
-            seekPaused = true;
-            seekPauseTimer.reset();
-            return 0;
-        }
-
-
-        return seekingSweepingRight ? SEEK_SWEEP_SPEED : -SEEK_SWEEP_SPEED;
+        applyTurretPower(Range.clip(calculatedPower, -0.65, 0.65));
     }
-
-    private void applyTurretPower(double calculatedPower) {
-        double delta = calculatedPower - lastTurretPower;
+    private void applyTurretPower(double targetPower) {
+        // Slew rate implementation prevents instant violent direction changes
+        double delta = targetPower - lastValidCalculatedPower;
         if (Math.abs(delta) > TURRET_SLEW_RATE) {
-            calculatedPower = lastTurretPower + Math.signum(delta) * TURRET_SLEW_RATE;
+            targetPower = lastValidCalculatedPower + Math.signum(delta) * TURRET_SLEW_RATE;
         }
-        lastTurretPower = calculatedPower;
 
-        int currentPosition = flywheelLeft.getCurrentPosition();
-        if (currentPosition >= TURRET_MAX_LIMIT_TICKS && calculatedPower > 0) {
+        int currentTicks = turretEncoderModule.getCurrentPosition();
+        if ((currentTicks >= TURRET_MAX_LIMIT_TICKS && targetPower > 0) || (currentTicks <= TURRET_MIN_LIMIT_TICKS && targetPower < 0)) {
             turretLeft.setPower(0);
             turretRight.setPower(0);
-            lastTurretPower = calculatedPower;
-        } else if (currentPosition <= TURRET_MIN_LIMIT_TICKS && calculatedPower < 0) {
-            turretLeft.setPower(0);
-            turretRight.setPower(0);
-            lastTurretPower = calculatedPower;
+            lastValidCalculatedPower = 0;
         } else {
-            turretLeft.setPower(calculatedPower);
-            turretRight.setPower(calculatedPower);
+            turretLeft.setPower(targetPower);
+            turretRight.setPower(targetPower);
+            lastValidCalculatedPower = targetPower; // Updates frame anchor
         }
     }
 
-    public void resetTracking() {
-        hasSeenTargetThisSession = false;
-        currentMode = CompensationMode.IDLE;
-        compensationTimer.reset();
-        robotHeadingOnTargetLoss = 0;
-        wasTargetVisibleLastLoop = false;
-        seekCenterAngle = 0;
-        seekingSweepingRight = true;
-        seekPaused = false;
+    private double wrapAngle(double angle) {
+        while (angle > 180) angle -= 360;
+        while (angle < -180) angle += 360;
+        return angle;
     }
-
-    public String getTrackingModeForTelemetry() {
-        switch (currentMode) {
-            case VISION: return "VISION";
-            case VELOCITY_COMP:
-                return String.format(Locale.US, "VELOCITY (%.0fms)", compensationTimer.milliseconds());
-            case HEADING_COMP:
-                return String.format(Locale.US, "HEADING (%.0fms)", compensationTimer.milliseconds());
-            case SEEKING:
-                return String.format(Locale.US, "SEEKING %s (center:%.1f°)",
-                        seekingSweepingRight ? "→" : "←", seekCenterAngle);
-            case RETURN_TO_CENTER:
-                return String.format(Locale.US, "CENTERING (%.0fms)", compensationTimer.milliseconds());
-            case IDLE: return "IDLE";
-            default: return "UNKNOWN";
-        }
-    }
-
-
-    public void turnOnFlywheel() { isFlywheelOn = true; }
-    public void turnOffFlywheel() { isFlywheelOn = false; }
 
     public double getServoPositionFromDistance(double distance) {
-        if (distance <= launchAngleLookupTable[0][0]) {
-            return launchAngleLookupTable[0][1];
-        }
-        if (distance >= launchAngleLookupTable[launchAngleLookupTable.length - 1][0]) {
-            return launchAngleLookupTable[launchAngleLookupTable.length - 1][1];
-        }
+        if (distance <= launchAngleLookupTable[0][0]) return launchAngleLookupTable[0][1];
+        if (distance >= launchAngleLookupTable[launchAngleLookupTable.length - 1][0]) return launchAngleLookupTable[launchAngleLookupTable.length - 1][1];
 
         for (int i = 0; i < launchAngleLookupTable.length - 1; i++) {
-            double[] lowerBound = launchAngleLookupTable[i];
-            double[] upperBound = launchAngleLookupTable[i+1];
-
-            if (distance >= lowerBound[0] && distance <= upperBound[0]) {
-                double distanceRange = upperBound[0] - lowerBound[0];
-                double servoRange = upperBound[1] - lowerBound[1];
-                double distanceRatio = (distance - lowerBound[0]) / distanceRange;
-
-                return lowerBound[1] + (distanceRatio * servoRange);
+            double[] lower = launchAngleLookupTable[i];
+            double[] upper = launchAngleLookupTable[i+1];
+            if (distance >= lower[0] && distance <= upper[0]) {
+                return lower[1] + ((distance - lower[0]) / (upper[0] - lower[0])) * (upper[1] - lower[1]);
             }
         }
         return 0.5;
     }
 
     public double getRPMFromDistance(double distance) {
-        if (distance == 0){
-            return 4000;
-        }
-        if (distance <= launchAngleLookupTable[0][0]) {
-            return launchAngleLookupTable[0][2];
-        }
-        if (distance >= launchAngleLookupTable[launchAngleLookupTable.length - 1][0]) {
-            return launchAngleLookupTable[launchAngleLookupTable.length - 1][2];
-        }
+        if (distance == 0) return 4000;
+        if (distance <= launchAngleLookupTable[0][0]) return launchAngleLookupTable[0][2];
+        if (distance >= launchAngleLookupTable[launchAngleLookupTable.length - 1][0]) return launchAngleLookupTable[launchAngleLookupTable.length - 1][2];
 
         for (int i = 0; i < launchAngleLookupTable.length - 1; i++) {
-            double[] lowerBound = launchAngleLookupTable[i];
-            double[] upperBound = launchAngleLookupTable[i+1];
-
-            if (distance >= lowerBound[0] && distance <= upperBound[0]) {
-                double distanceRange = upperBound[0] - lowerBound[0];
-                double rpmRange = upperBound[2] - lowerBound[2];
-                double distanceRatio = (distance - lowerBound[0]) / distanceRange;
-
-                return Range.clip((lowerBound[2] + (distanceRatio * rpmRange)), 3000, 6000);
+            double[] lower = launchAngleLookupTable[i];
+            double[] upper = launchAngleLookupTable[i+1];
+            if (distance >= lower[0] && distance <= upper[0]) {
+                return Range.clip(lower[2] + ((distance - lower[0]) / (upper[0] - lower[0])) * (upper[2] - lower[2]), 3000, 6000);
             }
         }
         return 4500;
     }
 
-    public void showAimTelemetry(Telemetry telemetry) {
-        telemetry.addLine("--- Aim ---");
-        telemetry.addData("Turret PID Power", turretLeft.getPower());
-        telemetry.addData("Turret Degrees", "%.2f°", turretDeg);
-        telemetry.addData("Distance to Goal", "%.2f inches", Limelight.getDistance());
-        telemetry.addData("Hood Position", "%.2f", getServoPositionFromDistance(Limelight.getDistance()));
-
-        telemetry.addData("Target RPM", "%.0f", targetRPM);
-        telemetry.addData("Current RPM", getCurrentFlywheelRPM());
-        telemetry.addData("RPM Error", "%.0f", targetRPM - getCurrentFlywheelRPM());
-        telemetry.addData("Flywheel Ready?", isFlywheelReady() ? "✓ YES" : "✗ NO");
-
-        telemetry.addData("Motor Power (L/R)", String.format(Locale.US,"%.2f / %.2f",
-                flywheelLeft.getPower(), flywheelRight.getPower()));
-        telemetry.addData("Current Voltage", "%.2fV", currVoltage);
-        telemetry.addData("Turret Tracking Mode", getTrackingModeForTelemetry());
-    }
-
+    public void turnOnFlywheel() { isFlywheelOn = true; }
+    public void turnOffFlywheel() { isFlywheelOn = false; }
     public double getTurretDeg() { return turretDeg; }
-    public double getHoodPos() { return hoodPos; }
-    public void setHoodPos(double hoodPos) { hood.setPosition(hoodPos); }
 
-    private void initVoltageSensor(HardwareMap hwMap) {
-        voltageSensor = hwMap.voltageSensor.iterator().next();
+    //use theses when we aren't using the lookuptable for power
+    public void forceOnFlywheel(double rpm) {
+        double targetTPS = rpm * (FLYWHEEL_TICKS_PER_REVOLUTION / 60.0);
+        flywheelLeft.setVelocity(targetTPS);
+        flywheelRight.setPower(flywheelLeft.getPower());
+    }
+    public void forceOffFlywheel()
+    {
+        flywheelLeft.setVelocity(0);
+        flywheelRight.setPower(0);
     }
 
-    public void resetPID() {
-        autoAimClose.reset();
-        autoAimFar.reset();
-        autoAimSlow.reset();
+    public double getRealRPM()
+    {
+        return flywheelLeft.getVelocity() / (FLYWHEEL_TICKS_PER_REVOLUTION * 60);
+    }
+
+
+
+
+    public void showAimTelemetry(Telemetry telemetry) {
+        telemetry.addData("Turret Mode", currentMode);
+        telemetry.addData("Time Since Lost", "%.0f ms", timeSinceLost);
+        telemetry.addData("Turret Angle", "%.2f°", turretDeg);
+        telemetry.addData("Turret Power", turretLeft.getPower());
+        telemetry.addData("Target RPM", targetRPM);
     }
 }

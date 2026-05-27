@@ -1,23 +1,75 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import static org.firstinspires.ftc.teamcode.RobotMaster.inventory;
+
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
 public class IndicatorLight {
-    private static Servo indicatorLight;
+    private final Servo indicatorLight;
 
-    public static void initLight(HardwareMap hwMap){indicatorLight = hwMap.get(Servo.class, "light");}
+    // Subsystem States (Inputs from your OpModes)
+    private int ballCount = 0;
+    private boolean isIntaking = false;
+    private boolean isOuttaking = false;
+    private boolean isFlywheelReady = false;
 
-    // all these positions are from the gobilda website: https://www.gobilda.com/rgb-indicator-light-pwm-controlled
-    public static void setLightRed(){indicatorLight.setPosition(0.277);}
-    public static void setLightOrange(){indicatorLight.setPosition(0.333);}
-    public static void setLightYellow(){indicatorLight.setPosition(0.388);}
-    public static void setLightGreen(){indicatorLight.setPosition(0.500);}
-    public static void setLightAzure(){indicatorLight.setPosition(0.555);}
-    public static void setLightBlue(){indicatorLight.setPosition(0.611);}
-    public static void setLightIndigo(){indicatorLight.setPosition(0.666);}
-    public static void setLightViolet(){indicatorLight.setPosition(0.722);}
-    public static void setLightWhite(){indicatorLight.setPosition(1);}
-    public static void turnLightOff(){indicatorLight.setPosition(0);}
+    public IndicatorLight(HardwareMap hwMap) {
+        indicatorLight = hwMap.get(Servo.class, "light");
+    }
 
+    // Input Setters
+    public void setBallCount(int count) { this.ballCount = count; }
+    public void setIntakeRunning(boolean running) { this.isIntaking = running; }
+    public void setFlywheelReady(boolean ready) { this.isFlywheelReady = ready; }
+    public void setOuttakeRunning(boolean running) {this.isOuttaking = running;}
+
+    /**
+     * Call this inside your main OpMode loop.
+     * Evaluates conditions from LOWEST priority to HIGHEST priority.
+     */
+    public void update() {
+
+        setBallCount(inventory.getNumBalls());
+        setFlywheelReady(ShooterSubsystem.isFlywheelReady);
+        setOuttakeRunning(Intake.isOuttakeRunning);
+        setIntakeRunning(Intake.isIntakeRunning);
+
+        double colorSelected = getOff();
+
+        if (isIntaking) {
+            colorSelected = getBlue();
+        }
+        if(isOuttaking)
+        {
+            colorSelected = getViolet();
+        }
+
+
+        if (ballCount < 2) {
+            colorSelected = getRed();
+        } else if (ballCount == 2) {
+            colorSelected = getOrange();
+        }
+        else if (ballCount == 3) {
+            colorSelected = getGreen();
+        }
+
+
+        indicatorLight.setPosition(colorSelected);
+    }
+
+
+    // Reference Lookup Positions from https://www.gobilda.com/rgb-indicator-light-pwm-controlled
+
+    public double getRed()    { return 0.277; }
+    public double getOrange() { return 0.333; }
+    public double getYellow() { return 0.388; }
+    public double getGreen()  { return 0.500; }
+    public double getAzure()  { return 0.555; }
+    public double getBlue()   { return 0.611; }
+    public double getIndigo() { return 0.666; }
+    public double getViolet() { return 0.722; }
+    public double getWhite()  { return 1.000; }
+    public double getOff()    { return 0.000; }
 }

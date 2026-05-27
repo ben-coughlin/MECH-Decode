@@ -11,6 +11,7 @@ public class Intake
 {
     private final DcMotorEx intake;
     public static boolean isIntakeRunning;
+    public static boolean isOuttakeRunning;
 
 
 
@@ -29,10 +30,13 @@ public class Intake
         double intakePower = 1;
         intake.setPower(intakePower);
         isIntakeRunning = true;
+        isOuttakeRunning = false;
 
     }
     public void turnOuttakeOn()
     {
+        isIntakeRunning = false;
+        isOuttakeRunning = true;
         intake.setPower(-1);
     }
 
@@ -41,6 +45,7 @@ public class Intake
     {
         intake.setPower(0);
         isIntakeRunning = false;
+        isOuttakeRunning = false;
     }
 
 

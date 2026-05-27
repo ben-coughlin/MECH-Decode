@@ -15,10 +15,11 @@ public class Transfer {
     private final DcMotorEx transfer;
     private final Servo triggerServo;
     private final ElapsedTime timer =  new ElapsedTime();
-    private final double triggerShoot = 0;
-    private final double triggerBlock = 0.5;
-    public static boolean isTransferRunning;
+    private final double triggerShoot = 0.415;
+    private final double triggerBlock = 0.275;
+    private boolean isTransferRunning;
     private boolean isShotCommanded = false;
+
 
 
 
@@ -33,18 +34,19 @@ public class Transfer {
     }
     public void updateTransfer()
     {
-       handleIndicatorLightForBalls();
 
-        if(ShooterSubsystem.isShotInProgress)
+       if(isTransferRunning && (inventory.getUpper().equals(Pattern.Ball.GREEN) || inventory.getUpper().equals(Pattern.Ball.PURPLE)) && !isShotCommanded)
         {
-            triggerServo.setPosition(triggerShoot);
-            turnTransferOn();
-            timer.reset();
+            transfer.setPower(0);
         }
-        else if(timer.seconds() > 0.5 || !ShooterSubsystem.isShotInProgress)
+        else if(isTransferRunning)
         {
-            ShooterSubsystem.isShotInProgress = false;
+            transfer.setPower(1);
         }
+        else
+       {
+           transfer.setPower(0);
+       }
     }
 
 
@@ -55,12 +57,10 @@ public class Transfer {
 
     public void turnTransferOn()
     {
-        transfer.setPower(1);
         isTransferRunning = true;
     }
     public void turnTransferOff()
     {
-        transfer.setPower(0);
         isTransferRunning = false;
     }
     public void transferOuttake()
@@ -75,28 +75,19 @@ public class Transfer {
     {
         triggerServo.setPosition(triggerBlock);
     }
-
-
-
-
-    private void handleIndicatorLightForBalls()
+    public void transferShoot()
     {
-        if(inventory.getNumBalls() == 3)
-        {
-            IndicatorLight.setLightGreen();
-        }
-        else if(inventory.getNumBalls() == 2)
-        {
-            IndicatorLight.setLightYellow();
-        }
-        else if(inventory.getNumBalls() == 1)
-        {
-            IndicatorLight.setLightRed();
-        }
-        else
-        {
-            IndicatorLight.turnLightOff();
-        }
+        isShotCommanded = true;
+        triggerServo.setPosition(triggerShoot);
+        turnTransferOn();
+        timer.reset();
     }
+    public void transferEndShoot()
+    {
+        isShotCommanded = false;
+        triggerServo.setPosition(triggerBlock);
+        turnTransferOff();
+    }
+
 
 }

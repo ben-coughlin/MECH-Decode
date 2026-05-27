@@ -76,14 +76,14 @@ public class TurretTuningRyan extends OpMode
         else if(!gamepad1.triangle && !gamepad1.cross) {
             flyRightActivated = false;
         }
-        if(gamepad1.dpad_right && !hoodActivated) {
-            turret.setHoodPos(turret.getHoodPos() + 0.05);
-            hoodActivated = true;
-        }
-        else if(gamepad1.dpad_left && !hoodActivated) {
-            turret.setHoodPos(turret.getHoodPos() - 0.05);
-            hoodActivated = true;
-        }
+//        if(gamepad1.dpad_right && !hoodActivated) {
+//            turret.setHoodPos(turret.getHoodPos() + 0.05);
+//            hoodActivated = true;
+//        }
+//        else if(gamepad1.dpad_left && !hoodActivated) {
+//            turret.setHoodPos(turret.getHoodPos() - 0.05);
+//            hoodActivated = true;
+//        }
         else if(!gamepad1.dpad_right && !gamepad1.dpad_left) {
             hoodActivated = false;
         }
@@ -106,7 +106,7 @@ public class TurretTuningRyan extends OpMode
        // intakeSubsystem.setKickerPos(kickerPos);
 
         telemetry.addData("Current Turret Position", turret.getTurretDeg());
-        telemetry.addData("Current Hood Position", turret.getHoodPos());
+
         telemetry.addData("Current Kicker Position", kickerPos);
         telemetry.addData("Press right bumper on Gamepad 1 to increase Turret Power", "Press Left Bumper on Gamepad 1 to decrease Turret Power");
         telemetry.addData("Press Dpad Up on Gamepad 1 to increase Flywheel Left Power", "Press Dpad Down on Gamepad 1 to decrease Flywheel Left Power");

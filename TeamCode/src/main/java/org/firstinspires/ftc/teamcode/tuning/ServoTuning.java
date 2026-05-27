@@ -34,6 +34,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
@@ -53,23 +54,17 @@ import org.firstinspires.ftc.teamcode.subsystems.Transfer;
  * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list
  */
 
-@TeleOp(name="shot tuner", group="Iterative OpMode")
-public class ShotTuning extends OpMode
+@TeleOp(name="servo tuner", group="Iterative OpMode")
+public class ServoTuning extends OpMode
 {
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
-    private DcMotorEx leftFront;
-    private DcMotorEx rightFront;
-    private DcMotorEx leftBack;
-    private DcMotorEx rightBack;
-    private Intake intake;
-    private Transfer transfer;
+    private Servo servo;
 
-
-    private CRServo turretRight;
-    private CRServo turretLeft;
-    private DcMotorEx flywheelLeft;
-    private DcMotorEx flywheelRight;
+    private boolean dpadUpPressed = false;
+    private boolean dpadDownPressed = false;
+    private double currentServoPosition;
+    private final double SERVO_INCREMENT = 0.1;
 
 
     /*
@@ -78,22 +73,10 @@ public class ShotTuning extends OpMode
     @Override
     public void init() {
 
-         leftFront = hardwareMap.get(DcMotorEx.class, "leftFront");
-         leftFront.setDirection(DcMotorEx.Direction.REVERSE);
-         leftBack = hardwareMap.get(DcMotorEx.class, "leftBack");
-         rightFront = hardwareMap.get(DcMotorEx.class, "rightFront");
-         rightFront.setDirection(DcMotorEx.Direction.REVERSE);
-         rightBack = hardwareMap.get(DcMotorEx.class, "rightBack");
-        intake = new Intake(hardwareMap);
-        transfer = new Transfer(hardwareMap);
-        turretLeft = hardwareMap.get(CRServo.class, "turretLeft");
-        turretRight = hardwareMap.get(CRServo.class, "turretRight");
-        flywheelRight = hardwareMap.get(DcMotorEx.class, "rightFlywheel");
-        flywheelLeft = hardwareMap.get(DcMotorEx.class, "leftFlywheel");
-        flywheelLeft.setDirection(DcMotorSimple.Direction.REVERSE);
 
 
-
+        servo = hardwareMap.get(Servo.class, "kickstand");
+        servo.setDirection(Servo.Direction.REVERSE);
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
     }
@@ -120,74 +103,29 @@ public class ShotTuning extends OpMode
     public void loop() {
 
 
-        double y = -gamepad1.left_stick_y; // Remember, Y stick value is reversed
-        double x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
-        double rx = gamepad1.right_stick_x;
-
-
-        double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
-        double frontLeftPower = (y + x + rx) / denominator;
-        double backLeftPower = (y - x - rx) / denominator;
-        double frontRightPower = (y - x + rx) / denominator;
-        double backRightPower = (y + x - rx) / denominator;
-
-        leftFront.setPower(frontLeftPower);
-        leftBack.setPower(backLeftPower);
-        rightFront.setPower(frontRightPower);
-        rightBack.setPower(backRightPower);
-
-
-
-        if(gamepad1.cross)
-        {
-            intake.turnIntakeOn();
-            transfer.turnTransferOn();
-
-        }
-        else if(gamepad1.square)
-        {
-            intake.turnOuttakeOn();
-        }
-        else {
-            intake.turnIntakeOff();
-            transfer.turnTransferOff();
-
-        }
-        if(gamepad1.circle)
-        {
-            flywheelRight.setPower(1);
-            flywheelLeft.setPower(1);
-        }
-        else {
-            flywheelRight.setPower(0);
-            flywheelLeft.setPower(0);
+        if (gamepad1.dpad_up && !dpadUpPressed) {
+            currentServoPosition += SERVO_INCREMENT;
+            dpadUpPressed = true;
+        } else if (!gamepad1.dpad_up) {
+            dpadUpPressed = false;
         }
 
-
-
-
-
-        double turretPower;
-        if(gamepad1.right_trigger > 0.1)
-        {
-            turretPower = gamepad1.right_trigger;
-        }
-        else if(gamepad1.left_trigger > 0.1)
-        {
-            turretPower = -gamepad1.left_trigger;
-        }
-        else
-        {
-            turretPower = 0;
+        if (gamepad1.dpad_down && !dpadDownPressed) {
+            currentServoPosition -= SERVO_INCREMENT;
+            dpadDownPressed = true;
+        } else if (!gamepad1.dpad_down) {
+            dpadDownPressed = false;
         }
 
-
-        turretLeft.setPower(turretPower);
-        turretRight.setPower(turretPower);
+        currentServoPosition = Math.max(0.0, Math.min(1.0, currentServoPosition));
 
 
-        // Show the elapsed game time and wheel power.
-        telemetry.addData("Status", "Run Time: " + runtime.toString());
+        // Set the servo position
+        servo.setPosition(currentServoPosition);
+        telemetry.addLine("=== CONTROLS ===");
+        telemetry.addLine("DPAD UP/DOWN: Adjust servo position");
+        telemetry.addData("Servo Position", "%.3f", currentServoPosition);
+
 
     }
 
