@@ -19,6 +19,7 @@ public class Transfer {
     private final double triggerBlock = 0.275;
     private boolean isTransferRunning;
     private boolean isShotCommanded = false;
+    private ElapsedTime shotTimer = new ElapsedTime();
 
 
 
@@ -34,16 +35,24 @@ public class Transfer {
     }
     public void updateTransfer()
     {
+        if(isShotCommanded)
+        {
+            shotTimer.reset();
+        }
 
        if(isTransferRunning && (inventory.getUpper().equals(Pattern.Ball.GREEN) || inventory.getUpper().equals(Pattern.Ball.PURPLE)) && !isShotCommanded)
         {
             transfer.setPower(0);
         }
-        else if(isTransferRunning)
+       else if(isTransferRunning && (isShotCommanded && shotTimer.milliseconds() > 100))
+       {
+           transfer.setPower(0.1);
+       }
+       else if(isTransferRunning)
         {
             transfer.setPower(1);
         }
-        else
+       else
        {
            transfer.setPower(0);
        }

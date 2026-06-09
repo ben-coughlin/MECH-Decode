@@ -12,7 +12,7 @@ public class IndicatorLight {
     private int ballCount = 0;
     private boolean isIntaking = false;
     private boolean isOuttaking = false;
-    private boolean isFlywheelReady = false;
+    private boolean isShotReady = false;
 
     public IndicatorLight(HardwareMap hwMap) {
         indicatorLight = hwMap.get(Servo.class, "light");
@@ -21,7 +21,7 @@ public class IndicatorLight {
     // Input Setters
     public void setBallCount(int count) { this.ballCount = count; }
     public void setIntakeRunning(boolean running) { this.isIntaking = running; }
-    public void setFlywheelReady(boolean ready) { this.isFlywheelReady = ready; }
+    public void setShotReady(boolean ready) { this.isShotReady = ready; }
     public void setOuttakeRunning(boolean running) {this.isOuttaking = running;}
 
     /**
@@ -31,7 +31,7 @@ public class IndicatorLight {
     public void update() {
 
         setBallCount(inventory.getNumBalls());
-        setFlywheelReady(ShooterSubsystem.isFlywheelReady);
+        setShotReady(ShooterSubsystem.isShotReady);
         setOuttakeRunning(Intake.isOuttakeRunning);
         setIntakeRunning(Intake.isIntakeRunning);
 
@@ -53,6 +53,11 @@ public class IndicatorLight {
         }
         else if (ballCount == 3) {
             colorSelected = getGreen();
+        }
+
+        if(isShotReady)
+        {
+            colorSelected = getWhite();
         }
 
 

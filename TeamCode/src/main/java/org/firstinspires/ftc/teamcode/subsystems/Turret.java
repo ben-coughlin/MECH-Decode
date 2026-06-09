@@ -28,29 +28,45 @@ public class Turret {
 
     private double turretDeg;
     private double timeSinceLost = 0;
-    private double targetRPM;
     private boolean isFlywheelOn;
     public static boolean isFlywheelRunning = false;
     private String currentMode = "IDLE";
 
     private final PIDFController visionAimClose = new PIDFController(0.015, 0.0, 0.001, 0.0);
-    private final PIDFController visionAimFar = new PIDFController(0.017, 0.0, 0.001, 0.0);
-    private final PIDFController chassisCenterController = new PIDFController(0.015, 0.0, 0.0008, 0.0);
+    private final PIDFController visionAimFar = new PIDFController(0.0125, 0.00001, 0.001, 0.0);
+    private final PIDFController chassisCenterController = new PIDFController(0.045, 0.001, 0.008, 0.0);
     private final ElapsedTime compensationTimer = new ElapsedTime();
+    private final double MAX_FLYWHEEL_TPS = 5200 * (FLYWHEEL_TICKS_PER_REVOLUTION / 60.0);
+    private double lastTPS = 0;
+    private double rpmCompensation = 0;
+    private static final double SHOT_DROP_THRESHOLD_TPS = 80;
+    private static final double RPM_BOOST_CLOSE = 450;  // within close launch zone
+    private static final double RPM_BOOST_FAR   = 1800;  // fuck it we ball
+    private static final double BOOST_DISTANCE_CLOSE = 40.0;
+    private static final double BOOST_DISTANCE_FAR   = 80.0;
+    private double desiredRPM;
+    private double currentTPS;
+    private double lastTargetTPS;
+    private double maxTPSDrop;
+    private int boostCounter = 0;
 
     // [Distance (Inches), Hood Position, Flywheel RPM]
     private final double[][] launchAngleLookupTable = {
-            { 23, .600, 2500},
-            { 29.68, .630, 2550},
-            { 39.58, .7, 2700},
-            { 50.28, .73, 2900},
-            { 60.63, .82, 3000},
-            { 71, .86, 3100},
-            { 80, .92, 3250},
-            { 89.99, .94, 3450},
-            { 103, .99, 3600},
-            { 112, 1,  3700},
-            {122, 1, 3850}
+            {21.1, .580, 2500},
+            {30.2, .620, 2750},
+            {40.1, .67, 2900},
+            {51.2, .72, 3100},
+            {60.6, .77, 3250},
+            {70.5, .83, 3350},
+            {80.3, .87, 3450},
+            {90.1, .935, 3550},
+            {100.1, .985, 3600},
+            {110.7, .995, 3850},
+            {120.3, 1, 3900},
+            {130.1, 1, 3850},
+            {140.2, 1, 3950}
+
+
     };
 
     public Turret(HardwareMap hwMap) {
@@ -67,7 +83,8 @@ public class Turret {
 
         flywheelRight.setDirection(DcMotorSimple.Direction.FORWARD);
         flywheelLeft.setDirection(DcMotorSimple.Direction.REVERSE);
-        flywheelLeft.setVelocityPIDFCoefficients(10.0, 0.15, 1.2, 11.0);
+        flywheelLeft.setVelocityPIDFCoefficients(2.0, 0, 1.5, 13.5);
+
 
         chassisCenterController.setReference(0);
         visionAimClose.setReference(0);
@@ -78,23 +95,20 @@ public class Turret {
     public void updateTurret() {
         turretDeg = turretEncoderModule.getCurrentPosition() / TURRET_TICKS_PER_DEGREE;
         double currentDistance = Limelight.getDistance();
-
+        currentTPS = flywheelLeft.getVelocity();
         hood.setPosition(getServoPositionFromDistance(currentDistance));
-        targetRPM = getRPMFromDistance(currentDistance);
+
 
         if (isFlywheelOn) {
             isFlywheelRunning = true;
-            double targetTPS = targetRPM * (FLYWHEEL_TICKS_PER_REVOLUTION / 60.0);
-            flywheelLeft.setVelocity(targetTPS);
-            flywheelRight.setPower(flywheelLeft.getPower());
+            applyFlywheelPower(getRPMFromDistance(currentDistance));
         } else {
             isFlywheelRunning = false;
-            flywheelLeft.setVelocity(0);
-            flywheelRight.setPower(0);
+            applyFlywheelPower(0);
         }
     }
 
-    public void aimTurret(boolean hasValidTarget, double limelightError, double manualTurnInput) {
+    public void aimTurret(boolean hasValidTarget, double limelightError, double manualTurnInput, boolean shouldAutoAim) {
         double calculatedPower;
 
         if (Math.abs(manualTurnInput) > 0.05) {
@@ -102,6 +116,15 @@ public class Turret {
             calculatedPower = manualTurnInput;
             compensationTimer.reset();
             timeSinceLost = 0;
+        }
+        else if(!shouldAutoAim)
+        {
+            //in auto and stuff just sit at the center
+            currentMode = "RETURN_TO_CENTER";
+            double errorToUse = wrapAngle(0.0 - turretDeg);
+
+            calculatedPower = -chassisCenterController.calculatePIDF(errorToUse);
+            lastValidCalculatedPower = 0;
         }
         else {
             if (hasValidTarget) {
@@ -112,7 +135,7 @@ public class Turret {
                 double currentDistance = Limelight.getDistance();
 
 
-                if (currentDistance > 60.0) {
+                if (currentDistance > 70.0) {
                     currentMode = "VISION_TRACKING_FAR";
                     calculatedPower = visionAimFar.calculatePIDF(errorToUse);
                 } else {
@@ -147,7 +170,6 @@ public class Turret {
         applyTurretPower(Range.clip(calculatedPower, -0.65, 0.65));
     }
     private void applyTurretPower(double targetPower) {
-        // Slew rate implementation prevents instant violent direction changes
         double delta = targetPower - lastValidCalculatedPower;
         if (Math.abs(delta) > TURRET_SLEW_RATE) {
             targetPower = lastValidCalculatedPower + Math.signum(delta) * TURRET_SLEW_RATE;
@@ -161,7 +183,7 @@ public class Turret {
         } else {
             turretLeft.setPower(targetPower);
             turretRight.setPower(targetPower);
-            lastValidCalculatedPower = targetPower; // Updates frame anchor
+            lastValidCalculatedPower = targetPower;
         }
     }
 
@@ -186,7 +208,7 @@ public class Turret {
     }
 
     public double getRPMFromDistance(double distance) {
-        if (distance == 0) return 4000;
+        if (distance == 0) return 2000;
         if (distance <= launchAngleLookupTable[0][0]) return launchAngleLookupTable[0][2];
         if (distance >= launchAngleLookupTable[launchAngleLookupTable.length - 1][0]) return launchAngleLookupTable[launchAngleLookupTable.length - 1][2];
 
@@ -194,10 +216,52 @@ public class Turret {
             double[] lower = launchAngleLookupTable[i];
             double[] upper = launchAngleLookupTable[i+1];
             if (distance >= lower[0] && distance <= upper[0]) {
-                return Range.clip(lower[2] + ((distance - lower[0]) / (upper[0] - lower[0])) * (upper[2] - lower[2]), 3000, 6000);
+                return lower[2] + ((distance - lower[0]) / (upper[0] - lower[0])) * (upper[2] - lower[2]);
             }
         }
-        return 4500;
+        return 2500;
+    }
+    private double getRPMCompensationFromDistance(double distance) {
+        if (distance <= BOOST_DISTANCE_CLOSE) return RPM_BOOST_CLOSE;
+        if (distance >= BOOST_DISTANCE_FAR)   return RPM_BOOST_FAR;
+        double t = (distance - BOOST_DISTANCE_CLOSE) / (BOOST_DISTANCE_FAR - BOOST_DISTANCE_CLOSE);
+        return RPM_BOOST_CLOSE + t * (RPM_BOOST_FAR - RPM_BOOST_CLOSE);
+    }
+
+    public void applyFlywheelPower(double targetRPM) {
+        currentTPS = flywheelLeft.getVelocity();
+        double targetTPS = targetRPM * (FLYWHEEL_TICKS_PER_REVOLUTION / 60.0);
+
+        double tpsDrop = lastTPS - currentTPS;
+
+        double expectedDrop = lastTargetTPS - targetTPS;
+        double unexplainedDrop = tpsDrop - Math.max(0, expectedDrop);
+
+        if (unexplainedDrop > maxTPSDrop) maxTPSDrop = unexplainedDrop;
+
+        if (isFlywheelOn && unexplainedDrop > SHOT_DROP_THRESHOLD_TPS && boostCounter < 3) {
+            rpmCompensation += getRPMCompensationFromDistance(Limelight.getDistance());
+            boostCounter++;
+        }
+
+        if (Math.abs(currentTPS - targetTPS) < 100) {
+            rpmCompensation *= 0.5;
+            boostCounter = 0;
+        }
+
+        lastTPS = currentTPS;
+        lastTargetTPS = targetTPS;
+
+        double compensatedRPM = targetRPM + rpmCompensation;
+        desiredRPM = compensatedRPM;
+        double compensatedTPS = compensatedRPM * (FLYWHEEL_TICKS_PER_REVOLUTION / 60.0);
+
+        flywheelLeft.setVelocity(compensatedTPS);
+        if (currentTPS < compensatedTPS - SHOT_DROP_THRESHOLD_TPS) {
+            flywheelRight.setPower(1.0);
+        } else {
+            flywheelRight.setPower(compensatedTPS / MAX_FLYWHEEL_TPS);
+        }
     }
 
     public void turnOnFlywheel() { isFlywheelOn = true; }
@@ -206,29 +270,34 @@ public class Turret {
 
     //use theses when we aren't using the lookuptable for power
     public void forceOnFlywheel(double rpm) {
-        double targetTPS = rpm * (FLYWHEEL_TICKS_PER_REVOLUTION / 60.0);
-        flywheelLeft.setVelocity(targetTPS);
-        flywheelRight.setPower(flywheelLeft.getPower());
+       applyFlywheelPower(rpm);
     }
     public void forceOffFlywheel()
     {
-        flywheelLeft.setVelocity(0);
+        flywheelLeft.setPower(0);
         flywheelRight.setPower(0);
     }
 
     public double getRealRPM()
     {
-        return flywheelLeft.getVelocity() / (FLYWHEEL_TICKS_PER_REVOLUTION * 60);
+        return (flywheelLeft.getVelocity() * 60.0) / FLYWHEEL_TICKS_PER_REVOLUTION;
     }
-
-
-
+    public double getRealPower()
+    {
+        return flywheelLeft.getPower();
+    }
 
     public void showAimTelemetry(Telemetry telemetry) {
         telemetry.addData("Turret Mode", currentMode);
         telemetry.addData("Time Since Lost", "%.0f ms", timeSinceLost);
         telemetry.addData("Turret Angle", "%.2f°", turretDeg);
+        telemetry.addData("Distance", Limelight.getDistance());
         telemetry.addData("Turret Power", turretLeft.getPower());
-        telemetry.addData("Target RPM", targetRPM);
+        telemetry.addData("Target RPM", desiredRPM);
+        telemetry.addData("Real RPM", getRealRPM());
+        telemetry.addData("Real Power Left", getRealPower());
+        telemetry.addData("Real Power Right", flywheelRight.getPower());
+        telemetry.addData("RPM Compensation", "%.0f", rpmCompensation);
+        telemetry.addData("Max TPS Drop", "%.0f", maxTPSDrop);
     }
 }

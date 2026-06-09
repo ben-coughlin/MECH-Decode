@@ -19,6 +19,7 @@ public class ShooterSubsystem {
     private long flywheelStartTime = 0;
     private long shotStartTime = 0;
 
+    public static boolean isShotReady = false;
 
 
 
@@ -47,11 +48,14 @@ public class ShooterSubsystem {
      * Call every loop until ready
      */
     public void updateSpin() {
-        if ((!isFlywheelReady && SystemClock.uptimeMillis() - flywheelStartTime > 800) || isFlywheelSpun) {
+        if ((!isFlywheelReady && SystemClock.uptimeMillis() - flywheelStartTime > 700) || isFlywheelSpun) {
             Log.i("ShooterSubsystem", "Spin update elapsed = " +
                     (SystemClock.uptimeMillis() - flywheelStartTime));
             isFlywheelReady = true;
-
+        }
+        if(isFlywheelReady && Limelight.isTargetLocked())
+        {
+            isShotReady = true;
         }
     }
 
@@ -85,11 +89,14 @@ public class ShooterSubsystem {
 
         isFlywheelReady = false;
         isShotInProgress = false;
+        isShotReady=  false;
 
     }
     public void stopAutoShot()
     {
 
+        transfer.transferEndShoot();
+        intake.turnIntakeOff();
         isFlywheelReady = false;
         isShotInProgress = false;
 

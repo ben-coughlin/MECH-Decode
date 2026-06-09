@@ -111,9 +111,10 @@ public class DirectionDebugger extends RobotMaster
          motor0 = hardwareMap.get(DcMotorEx.class, "leftFront");
          motor0.setDirection(DcMotorSimple.Direction.REVERSE);
          motor1 = hardwareMap.get(DcMotorEx.class, "leftBack");
-         motor2 = hardwareMap.get(DcMotorEx.class, "rightFront");
-         motor2.setDirection(DcMotorSimple.Direction.REVERSE);
+           motor2 = hardwareMap.get(DcMotorEx.class, "rightFront");
          motor3 = hardwareMap.get(DcMotorEx.class, "rightBack");
+         motor1.setDirection(DcMotorSimple.Direction.REVERSE);
+        //
 
 
          kickstand = hardwareMap.get(Servo.class, "kickstand");
@@ -219,7 +220,7 @@ public class DirectionDebugger extends RobotMaster
                 .addData("Value", "%.3f", hsvValues3[2]);
         telemetry.addData("Alpha", "%.3f", colors3.alpha);
 
-        telemetry.addLine("Turret Pos " + motor3.getCurrentPosition());
+       // telemetry.addLine("Turret Pos " + motor3.getCurrentPosition());
         telemetry.addLine("Mode: " + mode);
         telemetry.update();
     }
@@ -280,12 +281,12 @@ public class DirectionDebugger extends RobotMaster
             motor2.setPower(MOTOR_POWER);
             telemetry.addData("Running: ", "2");
         }
-        else if (gamepad1.a)
-        {
-            motor3.setPower(MOTOR_POWER);
-            telemetry.addData("Running: ", "3");
-
-        }
+//        else if (gamepad1.a)
+//        {
+//            motor3.setPower(MOTOR_POWER);
+//            telemetry.addData("Running: ", "3");
+//
+//        }
         else {
             motor0.setPower(0);
             motor1.setPower(0);

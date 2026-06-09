@@ -1,13 +1,12 @@
 package org.firstinspires.ftc.teamcode;
 
 
-import com.bylazar.telemetry.PanelsTelemetry;
-import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import org.firstinspires.ftc.teamcode.subsystems.IndicatorLight;
+
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.subsystems.Limelight;
 import org.firstinspires.ftc.teamcode.subsystems.ShooterSubsystem;
 import org.firstinspires.ftc.teamcode.utils.Toggle;
@@ -56,6 +55,10 @@ public abstract class TeleOpMaster extends RobotMaster {
         super.init();
         isAuto = false;
         resetEncoders = false;
+        follower = Constants.createFollower(hardwareMap);
+       // follower.setStartingPose( new Pose(10, 115, Math.toRadians(180)));
+        follower.update();
+        telemetry.addData("Selected", selectedProgram);
 
 
     }
@@ -68,7 +71,7 @@ public abstract class TeleOpMaster extends RobotMaster {
     @Override
     public void start() {
         super.start();
-        follower.startTeleopDrive(false);
+
 
     }
 
@@ -126,13 +129,12 @@ public abstract class TeleOpMaster extends RobotMaster {
             }
 
 
-
-
         // ALWAYS call aimTurret - it will use odometry if vision is lost
         turret.aimTurret(
                 hasValidVision,
                 hasValidVision ? Limelight.getCurrResult().getTx() : 0,
-                gamepad2.right_stick_x
+                gamepad2.right_stick_x,
+                true
         );
 
         if(gamepad1.touchpad)
@@ -141,16 +143,13 @@ public abstract class TeleOpMaster extends RobotMaster {
         }
 
         runStateMachines();
+        //telemetry.addData("X: ", follower.getPose().getX() + "Y: " + follower.getPose().getY() + "Heading: " + Math.toDegrees(follower.getHeading()));
 
 
-
-
-
-        // Telemetry at the end to show final state
-        telemetryM.debug("position", follower.getPose());
-        telemetryM.debug("velocity", follower.getVelocity());
-        telemetryM.update();
     }
+
+
+
 
     private void runStateMachines()
     {
@@ -230,14 +229,6 @@ public abstract class TeleOpMaster extends RobotMaster {
             default:
                 break;
         }
-
-
-
-
-
-
-
-
 
 
 

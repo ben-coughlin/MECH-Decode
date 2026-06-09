@@ -25,6 +25,9 @@ public final class MecanumDrive {
         rightBack = hwMap.get(DcMotorEx.class, "rightBack");
         rightFront = hwMap.get(DcMotorEx.class, "rightFront");
 
+        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
+
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -43,14 +46,14 @@ public final class MecanumDrive {
     public void teleopDrive(double rawY, double rawX, double rawRX, double heading)
     {
 
-
         if (Math.abs(rawY) < 0.05) rawY = 0;
         if (Math.abs(rawX) < 0.05) rawX = 0;
         if (Math.abs(rawRX) < 0.05) rawRX = 0;
 
-        double y = rawX * Math.sin(-heading) + rawY * Math.cos(-heading);
+
         double x = rawX * Math.cos(-heading) - rawY * Math.sin(-heading);
-        double rx = -rawRX;
+        double y = rawX * Math.sin(-heading) + rawY * Math.cos(-heading);
+        double rx = rawRX;
 
         if(y == 0 && x == 0 && rx == 0) {
             hardStopMotors();

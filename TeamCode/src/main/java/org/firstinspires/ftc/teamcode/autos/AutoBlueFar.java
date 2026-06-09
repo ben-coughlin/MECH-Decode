@@ -87,7 +87,7 @@ public class AutoBlueFar extends AutoMaster {
 
     }
 
-    @Override
+    //@Override
     protected PathChain getHitGate(Follower follower) {
         return null;
     }
@@ -140,10 +140,10 @@ public class AutoBlueFar extends AutoMaster {
         return null;
     }
 
-//    @Override
-//    protected PathChain getScorePickup3(Follower follower) {
-//        return null;
-//    }
+    @Override
+    protected PathChain getScorePickup3(Follower follower) {
+        return null;
+    }
 
     @Override
     protected PathChain getParkZone(Follower follower) {

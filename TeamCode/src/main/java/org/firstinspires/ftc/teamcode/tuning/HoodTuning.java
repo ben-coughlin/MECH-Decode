@@ -16,7 +16,7 @@ import org.firstinspires.ftc.teamcode.subsystems.Turret;
 @TeleOp(name = "Hood Tuning")
 public class HoodTuning extends LinearOpMode {
     private double currentServoPosition = 0.5; // Start at middle position
-    private double rpm = 0.0; // Start with motors off
+    private double rpm = 2000.0;
 
     private final double SERVO_INCREMENT = 0.005;
     private final double MOTOR_INCREMENT = 50;
@@ -169,7 +169,6 @@ public class HoodTuning extends LinearOpMode {
             }
 
             if (gamepad1.cross && !crossPressed) {
-                flywheelActive = false;
                 transfer.transferEndShoot();
                 intake.turnIntakeOff();
                 crossPressed = true;
@@ -188,6 +187,9 @@ public class HoodTuning extends LinearOpMode {
             if(flywheelActive)
             {
                 turret.forceOnFlywheel(rpm);
+            }
+            else {
+                turret.forceOffFlywheel();
             }
 
 
@@ -213,6 +215,8 @@ public class HoodTuning extends LinearOpMode {
             telemetry.addData("Hood Servo Position", "%.3f", currentServoPosition);
             telemetry.addData("Flywheel Status", flywheelActive ? "ON" : "OFF");
             telemetry.addData("Flywheel Commanded RPM", "%.3f", rpm);
+
+            telemetry.addData("Flywheel Real Power", "%.3f", turret.getRealPower());
             telemetry.addData("Flywheel Real RPM", "%.3f", turret.getRealRPM());
 
             telemetry.addLine();

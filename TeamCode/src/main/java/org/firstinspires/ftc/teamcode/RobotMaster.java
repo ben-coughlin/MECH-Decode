@@ -89,14 +89,12 @@ public abstract class RobotMaster extends OpMode {
     @Override
     public void init() {
 
-        Constants.createFollower(hardwareMap).pathConstraints.setBrakingStrength(2);
-        follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(0, 0, -Math.PI / 2));
-        follower.update();
-        telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
 
         inventory.updatePattern(Pattern.Ball.EMPTY, Pattern.Ball.EMPTY, Pattern.Ball.EMPTY); //just to make sure
         inventory.setNumBalls(0);
+        follower = Constants.createFollower(hardwareMap);
+        follower.setStartingPose(new Pose(0, 0 ,0));
+        follower.update();
 
         drive = new MecanumDrive(hardwareMap);
         limelight = new Limelight(hardwareMap);
@@ -109,6 +107,8 @@ public abstract class RobotMaster extends OpMode {
         kickstand = new Kickstand(hardwareMap);
         transfer.initTransfer();
 
+
+
     }
 
     @Override
@@ -119,9 +119,10 @@ public abstract class RobotMaster extends OpMode {
 
         limelight.updateLimelight();
 //
-
         colorSensors.updateDetection();
         obelisk = limelight.updateObelisk(true);
+
+
         if (obelisk != null) {
             telemetry.addData("Obelisk", "[%s] [%s] [%s]",
                     obelisk.getLower(),
@@ -170,7 +171,7 @@ public abstract class RobotMaster extends OpMode {
         long startLoopTime = SystemClock.uptimeMillis();
 
         lastLoopTime = System.nanoTime();
-
+        follower.update();
         //read everything once and only once per loop
 
         limelight.updateLimelight();
@@ -179,7 +180,7 @@ public abstract class RobotMaster extends OpMode {
         transfer.updateTransfer();
 
         indicatorLight.setBallCount(inventory.getNumBalls());
-        indicatorLight.setFlywheelReady(ShooterSubsystem.isFlywheelReady);
+        indicatorLight.setShotReady(ShooterSubsystem.isShotReady);
         indicatorLight.setOuttakeRunning(Intake.isOuttakeRunning);
         indicatorLight.setIntakeRunning(Intake.isIntakeRunning);
         indicatorLight.update();

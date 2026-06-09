@@ -185,5 +185,11 @@ public class Limelight extends RobotMaster
     public Pose3D getPose() {return currResult.getBotpose();}
     public  long getCurrLatency() {return currLatency;}
 
+    public static boolean isTargetLocked()
+    {
+        return tx < 2;
+    }
+
+
 
 }
