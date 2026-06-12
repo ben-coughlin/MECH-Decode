@@ -27,12 +27,12 @@ public class AutoRedFar extends AutoMaster {
 
         //the master will auto-skip any null paths so we only add the things we might want to turn off
         if (!DO_FIRST_CYCLE) {
-            skipped.add(AutoStage.grabFirstBalls.ordinal());
-            skipped.add(AutoStage.scoreFirstBalls.ordinal());
+            skipped.add(AutoStage.grabMiddleSpike.ordinal());
+            skipped.add(AutoStage.scoreMiddleSpike.ordinal());
         }
         if(!DO_SECOND_CYCLE){
-            skipped.add(AutoStage.grabSecondBalls.ordinal());
-            skipped.add(AutoStage.scoreSecondBalls.ordinal());
+            skipped.add(AutoStage.grabGateCycle.ordinal());
+            skipped.add(AutoStage.scoreGateCycle.ordinal());
         }
 
         AutoMaster.doZonePark = DO_ZONE_PARK;
@@ -71,7 +71,7 @@ public class AutoRedFar extends AutoMaster {
     }
 
     @Override
-    protected PathChain getGrabPickup1(Follower follower) {
+    protected PathChain getGrabMiddleSpike(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(87, 8),
@@ -84,14 +84,14 @@ public class AutoRedFar extends AutoMaster {
 
     }
 
-//    @Override
-//    protected PathChain getHitGate(Follower follower) {
-//        return null;
-//    }
+    @Override
+    protected PathChain getHitGate(Follower follower) {
+        return null;
+    }
 
 
     @Override
-    protected PathChain getScorePickup1(Follower follower) {
+    protected PathChain getScoreMiddleSpike(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(125.621, 31.173),
@@ -106,7 +106,7 @@ public class AutoRedFar extends AutoMaster {
     }
 
     @Override
-    protected PathChain getGrabPickup2(Follower follower) {
+    protected PathChain getGrabGateCycle(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(88.161, 13.309),
@@ -121,7 +121,7 @@ public class AutoRedFar extends AutoMaster {
 
 
     @Override
-    protected PathChain getScorePickup2(Follower follower) {
+    protected PathChain getScoreGateCycle(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(123.208, 58.552),
@@ -134,12 +134,25 @@ public class AutoRedFar extends AutoMaster {
     }
 
     @Override
-    protected PathChain getGrabPickup3(Follower follower) {
+    protected PathChain getGrabGateCycleTwo(Follower follower) {
+        return null;
+    }
+
+
+
+    @Override
+    protected PathChain getScoreGateCycleTwo(Follower follower) {
+        return null;
+
+    }
+
+    @Override
+    protected PathChain getGrabCloseSpike(Follower follower) {
         return null;
     }
 
     @Override
-    protected PathChain getScorePickup3(Follower follower) {
+    protected PathChain getScoreCloseSpike(Follower follower) {
         return null;
     }
 

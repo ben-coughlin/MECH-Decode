@@ -23,6 +23,7 @@ public class AutoRed extends AutoMaster {
     public static boolean DO_FIRST_CYCLE = true;
     public static boolean DO_SECOND_CYCLE = true;
     public static boolean DO_THIRD_CYCLE = true;
+    public static boolean DO_FOURTH_CYCLE = true;
     public static boolean DO_ZONE_PARK = true;
 
 
@@ -41,19 +42,23 @@ public class AutoRed extends AutoMaster {
         }
 
         if (!DO_FIRST_CYCLE) {
-            skipped.add(AutoStage.grabFirstBalls.ordinal());
-            skipped.add(AutoStage.scoreFirstBalls.ordinal());
+            skipped.add(AutoStage.grabMiddleSpike.ordinal());
+            skipped.add(AutoStage.scoreMiddleSpike.ordinal());
         }
 
         if (!DO_SECOND_CYCLE) {
-            skipped.add(AutoStage.grabSecondBalls.ordinal());
-            skipped.add(AutoStage.scoreSecondBalls.ordinal());
+            skipped.add(AutoStage.grabGateCycle.ordinal());
+            skipped.add(AutoStage.scoreGateCycle.ordinal());
         }
 
         if (!DO_THIRD_CYCLE) {
-            skipped.add(AutoStage.grabThirdBalls.ordinal());
-
+            skipped.add(AutoStage.grabGateCycleTwo.ordinal());
+            skipped.add(AutoStage.scoreGateCycleTwo.ordinal());
         }
+        if(!DO_FOURTH_CYCLE) {
+            skipped.add(AutoStage.grabCloseSpike.ordinal());
+        }
+
         AutoMaster.doZonePark = DO_ZONE_PARK;
 
         return skipped;
@@ -84,7 +89,7 @@ public class AutoRed extends AutoMaster {
     }
 
     @Override
-    protected PathChain getGrabPickup1(Follower follower) {
+    protected PathChain getGrabMiddleSpike(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(94.000, 115.000),
@@ -96,21 +101,21 @@ public class AutoRed extends AutoMaster {
                 .build();
     }
 
-//    @Override
-//    protected PathChain getHitGate(Follower follower) {
-//        return follower.pathBuilder().addPath(
-//                        new BezierCurve(
-//                                new Pose(120.634, 91.945),
-//                                new Pose(93.080, 86.701),
-//                                new Pose(117.116, 79.569)
-//                        )
-//                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(-90))
-//
-//                .build();
-//    }
+    @Override
+    protected PathChain getHitGate(Follower follower) {
+        return follower.pathBuilder().addPath(
+                        new BezierCurve(
+                                new Pose(120.634, 91.945),
+                                new Pose(93.080, 86.701),
+                                new Pose(117.116, 79.569)
+                        )
+                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(-90))
+
+                .build();
+    }
 
     @Override
-    protected PathChain getScorePickup1(Follower follower) {
+    protected PathChain getScoreMiddleSpike(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierLine(
                                 new Pose(117.116, 79.569),
@@ -123,7 +128,7 @@ public class AutoRed extends AutoMaster {
     }
 
     @Override
-    protected PathChain getGrabPickup2(Follower follower) {
+    protected PathChain getGrabGateCycle(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(100.450, 108.859),
@@ -136,7 +141,7 @@ public class AutoRed extends AutoMaster {
     }
 
     @Override
-    protected PathChain getScorePickup2(Follower follower) {
+    protected PathChain getScoreGateCycle(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(118.196, 65.093),
@@ -149,7 +154,18 @@ public class AutoRed extends AutoMaster {
     }
 
     @Override
-    protected PathChain getGrabPickup3(Follower follower) {
+    protected PathChain getGrabGateCycleTwo(Follower follower) {
+        return getGrabGateCycle(follower);
+    }
+
+    @Override
+    protected PathChain getScoreGateCycleTwo(Follower follower) {
+        return getScoreGateCycle(follower);
+
+    }
+
+    @Override
+    protected PathChain getGrabCloseSpike(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(100.605, 109.013),
@@ -162,7 +178,7 @@ public class AutoRed extends AutoMaster {
     }
 
     @Override
-    protected PathChain getScorePickup3(Follower follower) {
+    protected PathChain getScoreCloseSpike(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(129.000, 36.000),

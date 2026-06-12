@@ -20,7 +20,7 @@ import java.util.Set;
 
 public abstract class AutoMaster extends RobotMaster {
 
-    private static Follower follower;
+    private Follower follower;
     private Timer pathTimer, stageStartTimer, opmodeTimer;
     protected boolean stageInit = true;
     public static String selectedProgram;
@@ -30,13 +30,15 @@ public abstract class AutoMaster extends RobotMaster {
     protected enum AutoStage
     {
         scorePreload,
-        grabFirstBalls,
+        grabMiddleSpike,
         hitGate,
-        scoreFirstBalls,
-        grabSecondBalls,
-        scoreSecondBalls,
-        grabThirdBalls,
-       scoreThirdBalls,
+        scoreMiddleSpike,
+        grabGateCycle,
+        scoreGateCycle,
+        grabGateCycleTwo,
+        scoreGateCycleTwo,
+        grabCloseSpike,
+        scoreCloseSpike,
         park,
         shootPrep,
         shoot,
@@ -57,25 +59,29 @@ public abstract class AutoMaster extends RobotMaster {
     //points
     protected abstract Pose getStartPose();
     protected abstract PathChain getScorePreload(Follower follower);
-    protected abstract PathChain getGrabPickup1(Follower follower);
-   // protected abstract PathChain getHitGate(Follower follower);
-    protected abstract PathChain getScorePickup1(Follower follower);
-    protected abstract PathChain getGrabPickup2(Follower follower);
-    protected abstract PathChain getScorePickup2(Follower follower);
-    protected abstract PathChain getGrabPickup3(Follower follower);
-    protected abstract PathChain getScorePickup3(Follower follower);
+    protected abstract PathChain getGrabMiddleSpike(Follower follower);
+    protected abstract PathChain getHitGate(Follower follower);
+    protected abstract PathChain getScoreMiddleSpike(Follower follower);
+    protected abstract PathChain getGrabGateCycle(Follower follower);
+    protected abstract PathChain getScoreGateCycle(Follower follower);
+    protected abstract PathChain getGrabGateCycleTwo(Follower follower);
+    protected abstract PathChain getScoreGateCycleTwo(Follower follower);
+    protected abstract PathChain getGrabCloseSpike(Follower follower);
+    protected abstract PathChain getScoreCloseSpike(Follower follower);
     protected abstract PathChain getParkGate(Follower follower);
     protected abstract PathChain getParkZone(Follower follower);
 
     private PathChain scorePreload;
-    private PathChain grabPickup1;
+    private PathChain grabMiddleSpike;
     private PathChain hitGate;
-    private PathChain scorePickup1;
-    private PathChain grabPickup2;
-    private PathChain scorePickup2;
-    private PathChain grabPickup3;
-    private PathChain scorePickup3;
-    private PathChain parkZone;
+    private PathChain scoreMiddleSpike;
+    private PathChain grabGateCycle;
+    private PathChain scoreGateCycle;
+    private PathChain grabGateCycleTwo;
+    private PathChain scoreGateCycleTwo;
+    private PathChain grabCloseSpike;
+    private PathChain scoreCloseSpike;
+
 
 
 
@@ -163,18 +169,22 @@ public abstract class AutoMaster extends RobotMaster {
 
         scorePreload = getScorePreload(follower);
 
-        grabPickup1 = getGrabPickup1(follower);
-        //hitGate = getHitGate(follower);
+        grabMiddleSpike = getGrabMiddleSpike(follower);
+       // hitGate = getHitGate(follower);
 
-        scorePickup1 = getScorePickup1(follower);
+        scoreMiddleSpike = getScoreMiddleSpike(follower);
 
-        grabPickup2 = getGrabPickup2(follower);
+        grabGateCycle = getGrabGateCycle(follower);
 
-        scorePickup2 = getScorePickup2(follower);
+        scoreGateCycle = getScoreGateCycle(follower);
 
-        grabPickup3 = getGrabPickup3(follower);
+        grabGateCycleTwo = getGrabGateCycleTwo(follower);
 
-        scorePickup3 = getScorePickup3(follower);
+        scoreGateCycleTwo = getScoreGateCycleTwo(follower);
+
+        grabCloseSpike = getGrabCloseSpike(follower);
+
+        scoreCloseSpike = getScoreCloseSpike(follower);
 
         //we don't build these at init because we use lazy generation to get the robot pose at the time we need to park
         //parkGate = getParkGate(follower);
@@ -198,50 +208,50 @@ public abstract class AutoMaster extends RobotMaster {
             if(!follower.isBusy())
             {
 
-                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabFirstBalls.ordinal());
+                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabMiddleSpike.ordinal());
             }
         }
 
-        if(pathState == AutoStage.grabFirstBalls.ordinal())
+        if(pathState == AutoStage.grabMiddleSpike.ordinal())
         {
             if(stageInit)
             {
                 initState();
                 intake.turnIntakeOn();
                 transfer.turnTransferOn();
-                if(grabPickup1 != null) { follower.followPath(grabPickup1, true); }
+                if(grabMiddleSpike != null) { follower.followPath(grabMiddleSpike, true); }
                 else { nextStage(); }
 
             }
 
             if(!follower.isBusy())
             {
-                nextStage(AutoStage.hitGate.ordinal());
+                nextStage(AutoStage.scoreMiddleSpike.ordinal());
             }
         }
 
-        if(pathState == AutoStage.hitGate.ordinal())
-        {
-            if(stageInit)
-            {
-                initState();
-                if(hitGate != null) { follower.followPath(hitGate); }
-                else { nextStage(); }
-            }
+//        if(pathState == AutoStage.hitGate.ordinal())
+//        {
+//            if(stageInit)
+//            {
+//                initState();
+//                if(hitGate != null) { follower.followPath(hitGate); }
+//                else { nextStage(); }
+//            }
+//
+//            if(!follower.isBusy())
+//            {
+//                nextStage(AutoStage.scoreMiddleSpike.ordinal());
+//            }
+//        }
 
-            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 1000)
-            {
-                nextStage(AutoStage.scoreFirstBalls.ordinal());
-            }
-        }
-
-        if(pathState == AutoStage.scoreFirstBalls.ordinal())
+        if(pathState == AutoStage.scoreMiddleSpike.ordinal())
         {
             if(stageInit)
             {
                 shooterSubsystem.spinUp();
 
-                if(scorePickup1 != null) { follower.followPath(scorePickup1); }
+                if(scoreMiddleSpike != null) { follower.followPath(scoreMiddleSpike); }
                 else { nextStage(); }
                 initState();
             }
@@ -251,35 +261,35 @@ public abstract class AutoMaster extends RobotMaster {
             if(!follower.isBusy())
             {
 
-                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabSecondBalls.ordinal());
+                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabGateCycle.ordinal());
             }
         }
 
-        if(pathState == AutoStage.grabSecondBalls.ordinal())
+        if(pathState == AutoStage.grabGateCycle.ordinal())
         {
             if(stageInit)
             {
 
                 intake.turnIntakeOn();
                 transfer.turnTransferOn();
-                if(grabPickup2 != null) { follower.followPath(grabPickup2,   true); }
+                if(grabGateCycle != null) { follower.followPath(grabGateCycle,  true); }
                 else { nextStage(); }
                 initState();
 
             }
 
-            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 300)
+            if(!follower.isBusy())
             {
-                nextStage(AutoStage.scoreSecondBalls.ordinal());
+                nextStage(AutoStage.scoreGateCycle.ordinal());
             }
         }
-        if(pathState == AutoStage.scoreSecondBalls.ordinal())
+        if(pathState == AutoStage.scoreGateCycle.ordinal())
         {
             if(stageInit)
             {
                 initState();
                 shooterSubsystem.spinUp();
-                if(scorePickup2 != null) { follower.followPath(scorePickup2); }
+                if(scoreGateCycle != null) { follower.followPath(scoreGateCycle); }
                 else { nextStage(); }
 
             }
@@ -290,17 +300,56 @@ public abstract class AutoMaster extends RobotMaster {
             if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 30)
             {
 
-                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabThirdBalls.ordinal());
+                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabGateCycleTwo.ordinal());
             }
         }
-        if(pathState == AutoStage.grabThirdBalls.ordinal())
+
+        if(pathState == AutoStage.grabGateCycleTwo.ordinal())
         {
             if(stageInit)
             {
-                if(grabPickup3 != null) {
+
+                intake.turnIntakeOn();
+                transfer.turnTransferOn();
+                if(grabGateCycleTwo != null) { follower.followPath(grabGateCycleTwo,  true); }
+                else { nextStage(); }
+                initState();
+
+            }
+
+            if(!follower.isBusy())
+            {
+                nextStage(AutoStage.scoreGateCycleTwo.ordinal());
+            }
+        }
+        if(pathState == AutoStage.scoreGateCycleTwo.ordinal())
+        {
+            if(stageInit)
+            {
+                initState();
+                shooterSubsystem.spinUp();
+                if(scoreGateCycleTwo != null) { follower.followPath(scoreGateCycleTwo); }
+                else { nextStage(); }
+
+            }
+            intake.turnIntakeOn();
+            shooterSubsystem.updateSpin();
+
+
+            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 30)
+            {
+
+                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabCloseSpike.ordinal());
+            }
+        }
+        if(pathState == AutoStage.grabCloseSpike.ordinal())
+        {
+            if(stageInit)
+            {
+                if(grabCloseSpike != null) {
                     intake.turnIntakeOn();
                     transfer.turnTransferOn();
-                    follower.followPath(grabPickup3,  true);
+                    follower.followPath(grabCloseSpike,  true);
                     initState();
                 }
                 else {
@@ -310,17 +359,17 @@ public abstract class AutoMaster extends RobotMaster {
 
             if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 30) //keeps skipping this state idk why so we wanna make sure we don't jump
             {
-                nextStage(AutoStage.scoreThirdBalls.ordinal());
+                nextStage(AutoStage.scoreCloseSpike.ordinal());
             }
         }
 
-        if(pathState == AutoStage.scoreThirdBalls.ordinal())
+        if(pathState == AutoStage.scoreCloseSpike.ordinal())
         {
             if(stageInit)
             {
                 shooterSubsystem.spinUp();
                 intake.turnIntakeOn();
-                if(scorePickup3 != null) { follower.followPath(scorePickup3); }
+                if(scoreCloseSpike != null) { follower.followPath(scoreCloseSpike); }
                 else { nextStage(); }
                 initState();
             }
@@ -364,7 +413,7 @@ public abstract class AutoMaster extends RobotMaster {
             }
             shooterSubsystem.updateSpin();
 
-            if(ShooterSubsystem.isFlywheelReady && !follower.isBusy())
+            if(!follower.isBusy())
             {
                 nextStage(AutoStage.shoot.ordinal());
             }
@@ -373,12 +422,12 @@ public abstract class AutoMaster extends RobotMaster {
         {
             if (stageInit) {
                 initState();
+                ShooterSubsystem.isFlywheelSpun = true;
                 shooterSubsystem.startShotSequence(isAuto);
             }
 
 
-
-            if(stageStartTimer.getElapsedTime() > 1000)
+            if(stageStartTimer.getElapsedTime() > 600)
             {
                 shooterSubsystem.stopAutoShot();
                 intake.turnIntakeOff();

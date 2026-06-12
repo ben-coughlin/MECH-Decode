@@ -14,7 +14,7 @@ public class ShooterSubsystem {
 
     public static boolean isFlywheelReady = false;
     public static boolean isShotInProgress = false;
-    public boolean isFlywheelSpun = false;
+    public static boolean isFlywheelSpun = false;
 
     private long flywheelStartTime = 0;
     private long shotStartTime = 0;
