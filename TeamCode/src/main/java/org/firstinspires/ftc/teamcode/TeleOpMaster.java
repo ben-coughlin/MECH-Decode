@@ -134,7 +134,8 @@ public abstract class TeleOpMaster extends RobotMaster {
                 hasValidVision,
                 hasValidVision ? Limelight.getCurrResult().getTx() : 0,
                 gamepad2.right_stick_x,
-                true
+                true,
+                0.0 //doesn't matter since we're using autoaim
         );
 
         if(gamepad1.touchpad)

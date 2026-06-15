@@ -34,7 +34,6 @@ public abstract class RobotMaster extends OpMode {
 
     //misc
     public static boolean isAuto = false;
-    public static boolean isAutoFar = false;
     public static boolean resetEncoders = false;
     public static int programStage = 0;
     static Pattern obelisk = null;
@@ -65,9 +64,8 @@ public abstract class RobotMaster extends OpMode {
     Kickstand kickstand = null;
 
     public Follower follower;
-    public static Pose startingPose;
+
     public static String selectedProgram;
-    public TelemetryManager telemetryM;
 
 
     protected ElapsedTime runtime = new ElapsedTime();
@@ -192,8 +190,9 @@ public abstract class RobotMaster extends OpMode {
                 inventory.getUpper());
         turret.showAimTelemetry(telemetry);
         colorSensors.showColorSensorTelemetry(telemetry);
-        telemetry.addData("Current Stage", AutoMaster.AutoStage.values()[pathState].name());
         telemetry.addData("superstructure state", pathState);
+        telemetry.addData("Current Stage", AutoMaster.AutoStage.values()[pathState].name());
+
 
         telemetry.addData("Superstructure State", currentState);
         telemetry.addData("Loop Time", SystemClock.uptimeMillis() - startLoopTime);

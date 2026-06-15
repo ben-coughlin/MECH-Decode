@@ -39,21 +39,21 @@ public class AutoBlue extends AutoMaster {
                     }
 
                 if (!DO_FIRST_CYCLE) {
-                        skipped.add(AutoStage.grabMiddleSpike.ordinal());
-                        skipped.add(AutoStage.scoreMiddleSpike.ordinal());
+                        skipped.add(AutoStage.grabCycleOne.ordinal());
+                        skipped.add(AutoStage.scoreCycleOne.ordinal());
                     }
 
                 if (!DO_SECOND_CYCLE) {
-                        skipped.add(AutoStage.grabGateCycle.ordinal());
-                        skipped.add(AutoStage.scoreGateCycle.ordinal());
+                        skipped.add(AutoStage.grabCycleTwo.ordinal());
+                        skipped.add(AutoStage.scoreCycleTwo.ordinal());
                     }
 
                 if (!DO_THIRD_CYCLE) {
-                        skipped.add(AutoStage.grabGateCycleTwo.ordinal());
-                        skipped.add(AutoStage.scoreGateCycleTwo.ordinal());
+                        skipped.add(AutoStage.grabCycleThree.ordinal());
+                        skipped.add(AutoStage.scoreCycleThree.ordinal());
                     }
                 if(!DO_FOURTH_CYCLE) {
-                    skipped.add(AutoStage.grabCloseSpike.ordinal());
+                    skipped.add(AutoStage.grabCycleFour.ordinal());
                 }
 
         AutoMaster.doZonePark = DO_ZONE_PARK;
@@ -67,6 +67,11 @@ public class AutoBlue extends AutoMaster {
     @Override
     protected boolean isCorrectGoalTag(int tagId) {
         return VisionUtils.isTagBlueGoal(tagId);
+    }
+
+    @Override
+    protected double getTargetTurretAngle() {
+        return 0;
     }
 
     //pathing
@@ -90,8 +95,8 @@ public class AutoBlue extends AutoMaster {
 
     }
 
-    @Override
-    protected PathChain getGrabMiddleSpike(Follower follower) {
+    @Override //mid spike & gate
+    protected PathChain getGrabCycleOne(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(43.984, 89.438),
@@ -116,7 +121,7 @@ public class AutoBlue extends AutoMaster {
     }
 
     @Override
-    protected PathChain getScoreMiddleSpike(Follower follower) {
+    protected PathChain getScoreCycleOne(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(1.1, 70),
@@ -128,8 +133,8 @@ public class AutoBlue extends AutoMaster {
                 .build();
     }
 
-    @Override
-    protected PathChain getGrabGateCycle(Follower follower) {
+    @Override //gate 1
+    protected PathChain getGrabCycleTwo(Follower follower) {
         return  follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(44.110, 83.161),
@@ -143,7 +148,7 @@ public class AutoBlue extends AutoMaster {
     }
 
     @Override
-    protected PathChain getScoreGateCycle(Follower follower) {
+    protected PathChain getScoreCycleTwo(Follower follower) {
         return  follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(-3, 55.5),
@@ -157,19 +162,19 @@ public class AutoBlue extends AutoMaster {
     }
 
     //we still wanna be able to disable or tweak the second gate cycle
-    @Override
-    protected PathChain getGrabGateCycleTwo(Follower follower) {
-        return getGrabGateCycle(follower);
+    @Override //gate2
+    protected PathChain getGrabCycleThree(Follower follower) {
+        return getGrabCycleTwo(follower);
     }
 
     @Override
-    protected PathChain getScoreGateCycleTwo(Follower follower) {
-        return getScoreGateCycle(follower);
+    protected PathChain getScoreCycleThree(Follower follower) {
+        return getScoreCycleTwo(follower);
 
     }
 
-    @Override
-    protected PathChain getGrabCloseSpike(Follower follower) {
+    @Override //close spike
+    protected PathChain getGrabCycleFour(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierLine(
                                 new Pose(43.794, 78.418),
@@ -183,7 +188,7 @@ public class AutoBlue extends AutoMaster {
     }
 
     @Override
-    protected PathChain getScoreCloseSpike(Follower follower) {
+    protected PathChain getScoreCycleFour(Follower follower) {
         return follower.pathBuilder().addPath(
                                 new BezierLine(
                                         new Pose(7, 79.050),

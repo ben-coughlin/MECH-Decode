@@ -27,12 +27,12 @@ public class AutoBlueFar extends AutoMaster {
 
         //the master will auto-skip any null paths so we only add the things we might want to turn off
         if (!DO_FIRST_CYCLE) {
-            skipped.add(AutoStage.grabMiddleSpike.ordinal());
-            skipped.add(AutoStage.scoreMiddleSpike.ordinal());
+            skipped.add(AutoStage.grabCycleOne.ordinal());
+            skipped.add(AutoStage.scoreCycleOne.ordinal());
         }
         if(!DO_SECOND_CYCLE){
-            skipped.add(AutoStage.grabGateCycle.ordinal());
-            skipped.add(AutoStage.scoreGateCycle.ordinal());
+            skipped.add(AutoStage.grabCycleTwo.ordinal());
+            skipped.add(AutoStage.scoreCycleTwo.ordinal());
         }
 
         AutoMaster.doZonePark = DO_ZONE_PARK;
@@ -52,11 +52,17 @@ public class AutoBlueFar extends AutoMaster {
         return VisionUtils.isTagBlueGoal(tagId);
     }
 
+    @Override
+    protected double getTargetTurretAngle() {
+        return -64;
+    }
+
+
 
     //pathing
     @Override
     protected Pose getStartPose() {
-        return new Pose(60, 11, Math.toRadians(90));
+        return new Pose(60, 11, Math.toRadians(180));
     }
 
     @Override
@@ -65,21 +71,21 @@ public class AutoBlueFar extends AutoMaster {
                         new BezierLine(
                                 new Pose(60.000, 11.000),
 
-                                new Pose(56.000, 11.000)
+                                new Pose(60, 11)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(90))
+                ).setConstantHeadingInterpolation(Math.toRadians(180))
                 .build();
     }
 
-    @Override
-    protected PathChain getGrabMiddleSpike(Follower follower) {
+    @Override //close spike
+    protected PathChain getGrabCycleOne(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(60.000, 11.000),
-                                new Pose(68.229, 41.101),
-                                new Pose(13.869, 34.039)
+                                new Pose(46.323, 30.513),
+                                new Pose(18.149, 29.113)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(180))
+                ).setTangentHeadingInterpolation()
 
                 .build();
 
@@ -92,25 +98,26 @@ public class AutoBlueFar extends AutoMaster {
 
 
     @Override
-    protected PathChain getScoreMiddleSpike(Follower follower) {
+    protected PathChain getScoreCycleOne(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(14.513, 32.591),
-                                new Pose(47.512, 29.505),
-                                new Pose(59.572, 15.630)
+                                new Pose(18.149, 29.113),
+                                new Pose(43.636, 8.379),
+                                new Pose(59.413, 10.887)
                         )
                 ).setTangentHeadingInterpolation()
                 .setReversed()
                 .build();
     }
 
-    @Override
-    protected PathChain getGrabGateCycle(Follower follower) {
+    @Override //human player zone cycle 1
+    protected PathChain getGrabCycleTwo(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(57.158, 15.791),
-                                new Pose(66.886, 70.945),
-                                new Pose(15.974, 57.565)
+                                new Pose(59.572, 11.836),
+                                new Pose(37.163, 10.550),
+                                new Pose(11.611, 4.634),
+                                new Pose(11.389, 11.874)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -120,40 +127,42 @@ public class AutoBlueFar extends AutoMaster {
 
 
     @Override
-    protected PathChain getScoreGateCycle(Follower follower) {
+    protected PathChain getScoreCycleTwo(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(15.974, 57.565),
-                                new Pose(62.478, 52.763),
-                                new Pose(56.839, 15.307)
+                                new Pose(11.389, 11.874),
+                                new Pose(1.581, 28.932),
+                                new Pose(59.896, 13.254)
+
                         )
-                ).setTangentHeadingInterpolation()
-                .setReversed()
+                )
+                .setLinearHeadingInterpolation(Math.toRadians(60), Math.toRadians(180))
                 .build();
 
     }
 
     @Override
-    protected PathChain getGrabGateCycleTwo(Follower follower) {
-        return null;
+    protected PathChain getGrabCycleThree(Follower follower) {
+        return getGrabCycleTwo(follower);
     }
 
 
 
     @Override
-    protected PathChain getScoreGateCycleTwo(Follower follower) {
-        return null;
+    protected PathChain getScoreCycleThree(Follower follower) {
+        return getScoreCycleTwo(follower);
 
     }
 
     @Override
-    protected PathChain getGrabCloseSpike(Follower follower) {
-        return null;
+    protected PathChain getGrabCycleFour(Follower follower) {
+
+        return getGrabCycleTwo(follower);
     }
 
     @Override
-    protected PathChain getScoreCloseSpike(Follower follower) {
-        return null;
+    protected PathChain getScoreCycleFour(Follower follower) {
+        return getScoreCycleTwo(follower);
     }
 
     @Override
@@ -162,7 +171,7 @@ public class AutoBlueFar extends AutoMaster {
                         new BezierLine(
                                 follower::getPose,
 
-                                new Pose(37.426, 10.334)
+                                new Pose(37.426, 14.334)
                         )
                 ).setLinearHeadingInterpolation(follower.getHeading(), Math.toRadians(180))
 

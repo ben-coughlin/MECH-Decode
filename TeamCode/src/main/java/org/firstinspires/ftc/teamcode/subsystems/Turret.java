@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -10,6 +11,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.utils.PIDFController;
+
+import java.util.function.BooleanSupplier;
 
 public class Turret {
 
@@ -23,7 +26,7 @@ public class Turret {
     private double lastValidCalculatedPower = 0.0;
     private final CRServo turretLeft, turretRight;
     private final DcMotorEx flywheelLeft, flywheelRight;
-    private final DcMotorEx turretEncoderModule;
+    private final DcMotorEx turretEncoder;
     private final Servo hood;
 
     private double turretDeg;
@@ -41,7 +44,7 @@ public class Turret {
     private double rpmCompensation = 0;
     private static final double SHOT_DROP_THRESHOLD_TPS = 80;
     private static final double RPM_BOOST_CLOSE = 450;  // within close launch zone
-    private static final double RPM_BOOST_FAR   = 1800;  // fuck it we ball
+    private static final double RPM_BOOST_FAR   = 1000;  // fuck it we ball
     private static final double BOOST_DISTANCE_CLOSE = 40.0;
     private static final double BOOST_DISTANCE_FAR   = 80.0;
     private double desiredRPM;
@@ -59,12 +62,12 @@ public class Turret {
             {60.6, .77, 3250},
             {70.5, .83, 3350},
             {80.3, .87, 3450},
-            {90.1, .935, 3550},
-            {100.1, .985, 3600},
-            {110.7, .995, 3850},
-            {120.3, 1, 3900},
-            {130.1, 1, 3850},
-            {140.2, 1, 3950}
+            {90.1, .935, 3650},
+            {100.1, .985, 3700},
+            {110.7, .995, 3950},
+            {120.3, 1, 4000},
+            {130.1, 1, 4150},
+            {140.2, 1, 4250}
 
 
     };
@@ -75,7 +78,10 @@ public class Turret {
         flywheelLeft = hwMap.get(DcMotorEx.class, "flywheelLeft");
         flywheelRight = hwMap.get(DcMotorEx.class, "flywheelRight");
         hood = hwMap.get(Servo.class, "hood");
-        turretEncoderModule = hwMap.get(DcMotorEx.class, "transfer");
+        turretEncoder = hwMap.get(DcMotorEx.class, "transfer");
+
+        turretEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        turretEncoder.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         flywheelLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         flywheelLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -93,7 +99,7 @@ public class Turret {
     }
 
     public void updateTurret() {
-        turretDeg = turretEncoderModule.getCurrentPosition() / TURRET_TICKS_PER_DEGREE;
+        turretDeg = turretEncoder.getCurrentPosition() / TURRET_TICKS_PER_DEGREE;
         double currentDistance = Limelight.getDistance();
         currentTPS = flywheelLeft.getVelocity();
         hood.setPosition(getServoPositionFromDistance(currentDistance));
@@ -108,7 +114,7 @@ public class Turret {
         }
     }
 
-    public void aimTurret(boolean hasValidTarget, double limelightError, double manualTurnInput, boolean shouldAutoAim) {
+    public void aimTurret(boolean hasValidTarget, double limelightError, double manualTurnInput, boolean shouldAutoAim, double manualTargetAngle) {
         double calculatedPower;
 
         if (Math.abs(manualTurnInput) > 0.05) {
@@ -119,11 +125,10 @@ public class Turret {
         }
         else if(!shouldAutoAim)
         {
-            //in auto and stuff just sit at the center
-            currentMode = "RETURN_TO_CENTER";
-            double errorToUse = wrapAngle(0.0 - turretDeg);
-
-            calculatedPower = -chassisCenterController.calculatePIDF(errorToUse);
+            //sometimes we js wanna chill at one specific spot
+            currentMode = "HOLDING_POSITION";
+            chassisCenterController.setReference(manualTargetAngle);
+            calculatedPower = chassisCenterController.calculatePIDF(turretDeg);
             lastValidCalculatedPower = 0;
         }
         else {
@@ -175,7 +180,7 @@ public class Turret {
             targetPower = lastValidCalculatedPower + Math.signum(delta) * TURRET_SLEW_RATE;
         }
 
-        int currentTicks = turretEncoderModule.getCurrentPosition();
+        int currentTicks = turretEncoder.getCurrentPosition();
         if ((currentTicks >= TURRET_MAX_LIMIT_TICKS && targetPower > 0) || (currentTicks <= TURRET_MIN_LIMIT_TICKS && targetPower < 0)) {
             turretLeft.setPower(0);
             turretRight.setPower(0);
@@ -245,7 +250,7 @@ public class Turret {
         }
 
         if (Math.abs(currentTPS - targetTPS) < 100) {
-            rpmCompensation *= 0.5;
+            rpmCompensation = 0;
             boostCounter = 0;
         }
 
@@ -286,6 +291,13 @@ public class Turret {
     {
         return flywheelLeft.getPower();
     }
+
+    public void resetEncoder() {
+
+        turretEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        turretEncoder.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    }
+
 
     public void showAimTelemetry(Telemetry telemetry) {
         telemetry.addData("Turret Mode", currentMode);

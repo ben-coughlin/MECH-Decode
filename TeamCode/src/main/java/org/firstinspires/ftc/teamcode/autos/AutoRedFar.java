@@ -27,12 +27,12 @@ public class AutoRedFar extends AutoMaster {
 
         //the master will auto-skip any null paths so we only add the things we might want to turn off
         if (!DO_FIRST_CYCLE) {
-            skipped.add(AutoStage.grabMiddleSpike.ordinal());
-            skipped.add(AutoStage.scoreMiddleSpike.ordinal());
+            skipped.add(AutoStage.grabCycleOne.ordinal());
+            skipped.add(AutoStage.scoreCycleOne.ordinal());
         }
         if(!DO_SECOND_CYCLE){
-            skipped.add(AutoStage.grabGateCycle.ordinal());
-            skipped.add(AutoStage.scoreGateCycle.ordinal());
+            skipped.add(AutoStage.grabCycleTwo.ordinal());
+            skipped.add(AutoStage.scoreCycleTwo.ordinal());
         }
 
         AutoMaster.doZonePark = DO_ZONE_PARK;
@@ -50,35 +50,41 @@ public class AutoRedFar extends AutoMaster {
         return VisionUtils.isTagRedGoal(tagId);
     }
 
+    @Override
+    protected double getTargetTurretAngle() {
+        return 63;
+    }
+
 
     //pathing
     @Override
     protected Pose getStartPose() {
-        return new Pose(88, 8, Math.toRadians(90));
+        return new Pose(81.5, 11, Math.toRadians(0));
     }
 
     @Override
     protected PathChain getScorePreload(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(88.000, 8.000),
+                                new Pose(81.5, 11),
 
-                                new Pose(87.000, 8.000)
+                                new Pose(81.5, 11)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(90))
+                ).setTangentHeadingInterpolation()
 
                 .build();
     }
 
     @Override
-    protected PathChain getGrabMiddleSpike(Follower follower) {
+    protected PathChain getGrabCycleOne(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(87, 8),
-                                new Pose(65.635, 34.021),
-                                new Pose(125.621, 31.173)
+                                new Pose(81.500, 11.000),
+                                new Pose(95.177, 30.513),
+                                new Pose(123.351, 29.113)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(0))
+                )
+                .setTangentHeadingInterpolation()
 
                 .build();
 
@@ -91,29 +97,31 @@ public class AutoRedFar extends AutoMaster {
 
 
     @Override
-    protected PathChain getScoreMiddleSpike(Follower follower) {
+    protected PathChain getScoreCycleOne(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(125.621, 31.173),
-                                new Pose(94.236, 30.149),
-                                new Pose(88.161, 13.309)
+                                new Pose(123.351, 29.113),
+                                new Pose(97.864, 8.379),
+                                new Pose(82.087, 10.887)
                         )
-                ).setTangentHeadingInterpolation()
+                )
+                .setTangentHeadingInterpolation()
                 .setReversed()
                 .build();
 
 
     }
 
-    @Override
-    protected PathChain getGrabGateCycle(Follower follower) {
+    @Override //
+    protected PathChain getGrabCycleTwo(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(88.161, 13.309),
-                                new Pose(67.627, 61.103),
-                                new Pose(123.208, 58.552)
+                                new Pose(82.087, 10.887),
+                                new Pose(103.230, 4.384),
+                                new Pose(132.735, 4.792),
+                                new Pose(129.795, 24.206)
                         )
-                ).setTangentHeadingInterpolation()
+                ).setLinearHeadingInterpolation(follower.getHeading(), Math.toRadians(40))
 
                 .build();
     }
@@ -121,39 +129,39 @@ public class AutoRedFar extends AutoMaster {
 
 
     @Override
-    protected PathChain getScoreGateCycle(Follower follower) {
+    protected PathChain getScoreCycleTwo(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(123.208, 58.552),
-                                new Pose(93.477, 51.024),
-                                new Pose(87.678, 13.470)
+                                new Pose(129.795, 24.206),
+                                new Pose(110.512, 3.478),
+                                new Pose(81.604, 13.254)
                         )
-                ).setTangentHeadingInterpolation()
-                .setReversed()
+                )
+                .setLinearHeadingInterpolation(Math.toRadians(120), Math.toRadians(0))
                 .build();
     }
 
     @Override
-    protected PathChain getGrabGateCycleTwo(Follower follower) {
-        return null;
+    protected PathChain getGrabCycleThree(Follower follower) {
+        return getGrabCycleTwo(follower);
     }
 
 
 
     @Override
-    protected PathChain getScoreGateCycleTwo(Follower follower) {
-        return null;
+    protected PathChain getScoreCycleThree(Follower follower) {
+        return getScoreCycleTwo(follower);
 
     }
 
     @Override
-    protected PathChain getGrabCloseSpike(Follower follower) {
-        return null;
+    protected PathChain getGrabCycleFour(Follower follower) {
+        return getGrabCycleTwo(follower);
     }
 
     @Override
-    protected PathChain getScoreCloseSpike(Follower follower) {
-        return null;
+    protected PathChain getScoreCycleFour(Follower follower) {
+        return getScoreCycleTwo(follower);
     }
 
     @Override
@@ -167,7 +175,7 @@ public class AutoRedFar extends AutoMaster {
                         new BezierLine(
                                follower::getPose,
 
-                                new Pose(108.827, 12.747)
+                                new Pose(104.074, 14.334)
                         )
                 ).setLinearHeadingInterpolation(follower.getHeading(), Math.toRadians(0))
 

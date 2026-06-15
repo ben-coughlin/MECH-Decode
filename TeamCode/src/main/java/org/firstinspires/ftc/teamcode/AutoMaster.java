@@ -11,6 +11,7 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.subsystems.Limelight;
 import org.firstinspires.ftc.teamcode.subsystems.ShooterSubsystem;
+import org.firstinspires.ftc.teamcode.utils.Pattern;
 import org.firstinspires.ftc.teamcode.utils.VisionUtils;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
@@ -21,27 +22,29 @@ import java.util.Set;
 public abstract class AutoMaster extends RobotMaster {
 
     private Follower follower;
-    private Timer pathTimer, stageStartTimer, opmodeTimer;
+    private Timer pathTimer, stageStartTimer, opmodeTimer, centerResetTimer;
     protected boolean stageInit = true;
     public static String selectedProgram;
+
 
     protected static boolean doZonePark = true;
 
     protected enum AutoStage
     {
         scorePreload,
-        grabMiddleSpike,
+        grabCycleOne,
         hitGate,
-        scoreMiddleSpike,
-        grabGateCycle,
-        scoreGateCycle,
-        grabGateCycleTwo,
-        scoreGateCycleTwo,
-        grabCloseSpike,
-        scoreCloseSpike,
+        scoreCycleOne,
+        grabCycleTwo,
+        scoreCycleTwo,
+        grabCycleThree,
+        scoreCycleThree,
+        grabCycleFour,
+        scoreCycleFour,
         park,
         shootPrep,
         shoot,
+        centerTurret,
         endBehavior,
 
 
@@ -52,6 +55,8 @@ public abstract class AutoMaster extends RobotMaster {
     protected abstract boolean isCorrectGoalTag(int tagId);
     protected abstract boolean isAutoFar();
 
+    protected abstract double getTargetTurretAngle();
+
     protected Set<Integer> getSkippedStages() {
         return Collections.emptySet();  // Default: skip nothing
     }
@@ -59,28 +64,30 @@ public abstract class AutoMaster extends RobotMaster {
     //points
     protected abstract Pose getStartPose();
     protected abstract PathChain getScorePreload(Follower follower);
-    protected abstract PathChain getGrabMiddleSpike(Follower follower);
+    protected abstract PathChain getGrabCycleOne(Follower follower);
     protected abstract PathChain getHitGate(Follower follower);
-    protected abstract PathChain getScoreMiddleSpike(Follower follower);
-    protected abstract PathChain getGrabGateCycle(Follower follower);
-    protected abstract PathChain getScoreGateCycle(Follower follower);
-    protected abstract PathChain getGrabGateCycleTwo(Follower follower);
-    protected abstract PathChain getScoreGateCycleTwo(Follower follower);
-    protected abstract PathChain getGrabCloseSpike(Follower follower);
-    protected abstract PathChain getScoreCloseSpike(Follower follower);
+    protected abstract PathChain getScoreCycleOne(Follower follower);
+    protected abstract PathChain getGrabCycleTwo(Follower follower);
+    protected abstract PathChain getScoreCycleTwo(Follower follower);
+    protected abstract PathChain getGrabCycleThree(Follower follower);
+    protected abstract PathChain getScoreCycleThree(Follower follower);
+    protected abstract PathChain getGrabCycleFour(Follower follower);
+    protected abstract PathChain getScoreCycleFour(Follower follower);
     protected abstract PathChain getParkGate(Follower follower);
     protected abstract PathChain getParkZone(Follower follower);
 
+
     private PathChain scorePreload;
-    private PathChain grabMiddleSpike;
+    private PathChain grabCycleOne;
     private PathChain hitGate;
-    private PathChain scoreMiddleSpike;
-    private PathChain grabGateCycle;
-    private PathChain scoreGateCycle;
-    private PathChain grabGateCycleTwo;
-    private PathChain scoreGateCycleTwo;
-    private PathChain grabCloseSpike;
-    private PathChain scoreCloseSpike;
+    private PathChain scoreCycleOne;
+    private PathChain grabCycleTwo;
+    private PathChain scoreCycleTwo;
+    private PathChain grabCycleThree;
+    private PathChain scoreCycleThree;
+    private PathChain grabCycleFour;
+    private PathChain scoreCycleFour;
+
 
 
 
@@ -92,7 +99,6 @@ public abstract class AutoMaster extends RobotMaster {
     @Override
     public void init() {
         super.init();
-        isAutoFar = isAutoFar();
         isAuto = true;
         pathTimer = new Timer();
         opmodeTimer = new Timer();
@@ -105,6 +111,7 @@ public abstract class AutoMaster extends RobotMaster {
         follower.setStartingPose(getStartPose());
         follower.update();
         telemetry.addData("Selected", selectedProgram);
+
     }
 
     /**
@@ -136,20 +143,19 @@ public abstract class AutoMaster extends RobotMaster {
                 && isCorrectGoalTag(VisionUtils.getTagId(currVision));
 
         double tx = 0; // use safe values for both of these if vision fails
-        double distance = 999;
         if(hasValidVision)
         {
              tx = isCorrectGoalTag(VisionUtils.getTagId(currVision)) ? Limelight.getCurrResult().getTx() : 0;
-             distance = isCorrectGoalTag(VisionUtils.getTagId(currVision)) ? Limelight.getDistance() : 0;
         }
 
 
-        // ALWAYS call aimTurret - it will use odometry if vision is lost
+
         turret.aimTurret(
                 hasValidVision,
                 tx,
                 gamepad2.right_stick_x,
-                false
+                false,
+                getTargetTurretAngle()
         );
 
         updatePaths();
@@ -169,22 +175,22 @@ public abstract class AutoMaster extends RobotMaster {
 
         scorePreload = getScorePreload(follower);
 
-        grabMiddleSpike = getGrabMiddleSpike(follower);
+        grabCycleOne = getGrabCycleOne(follower);
        // hitGate = getHitGate(follower);
 
-        scoreMiddleSpike = getScoreMiddleSpike(follower);
+        scoreCycleOne = getScoreCycleOne(follower);
 
-        grabGateCycle = getGrabGateCycle(follower);
+        grabCycleTwo = getGrabCycleTwo(follower);
 
-        scoreGateCycle = getScoreGateCycle(follower);
+        scoreCycleTwo = getScoreCycleTwo(follower);
 
-        grabGateCycleTwo = getGrabGateCycleTwo(follower);
+        grabCycleThree = getGrabCycleThree(follower);
 
-        scoreGateCycleTwo = getScoreGateCycleTwo(follower);
+        scoreCycleThree = getScoreCycleThree(follower);
 
-        grabCloseSpike = getGrabCloseSpike(follower);
+        grabCycleFour = getGrabCycleFour(follower);
 
-        scoreCloseSpike = getScoreCloseSpike(follower);
+        scoreCycleFour = getScoreCycleFour(follower);
 
         //we don't build these at init because we use lazy generation to get the robot pose at the time we need to park
         //parkGate = getParkGate(follower);
@@ -194,39 +200,40 @@ public abstract class AutoMaster extends RobotMaster {
     public void updatePaths() {
 
 
-        if(pathState == AutoStage.scorePreload.ordinal()){
-            if(stageInit)
-            {
+        if (pathState == AutoStage.scorePreload.ordinal()) {
+            if (stageInit) {
                 intake.turnIntakeOn();
                 shooterSubsystem.spinUp();
                 initState();
-                if(scorePreload != null) { follower.followPath(scorePreload); }
-                else { nextStage(); }
+                if (scorePreload != null) {
+                    follower.followPath(scorePreload);
+                } else {
+                    nextStage();
+                }
             }
             shooterSubsystem.updateSpin();
 
-            if(!follower.isBusy())
-            {
+            if (!follower.isBusy() || (isAutoFar())) {
 
-                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabMiddleSpike.ordinal());
+                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabCycleOne.ordinal());
             }
         }
 
-        if(pathState == AutoStage.grabMiddleSpike.ordinal())
-        {
-            if(stageInit)
-            {
+        if (pathState == AutoStage.grabCycleOne.ordinal()) {
+            if (stageInit) {
                 initState();
                 intake.turnIntakeOn();
                 transfer.turnTransferOn();
-                if(grabMiddleSpike != null) { follower.followPath(grabMiddleSpike, true); }
-                else { nextStage(); }
+                if (grabCycleOne != null) {
+                    follower.followPath(grabCycleOne, true);
+                } else {
+                    nextStage();
+                }
 
             }
 
-            if(!follower.isBusy())
-            {
-                nextStage(AutoStage.scoreMiddleSpike.ordinal());
+            if (!follower.isBusy()) {
+                nextStage(AutoStage.scoreCycleOne.ordinal());
             }
         }
 
@@ -245,181 +252,175 @@ public abstract class AutoMaster extends RobotMaster {
 //            }
 //        }
 
-        if(pathState == AutoStage.scoreMiddleSpike.ordinal())
-        {
-            if(stageInit)
-            {
+        if (pathState == AutoStage.scoreCycleOne.ordinal()) {
+            if (stageInit) {
                 shooterSubsystem.spinUp();
 
-                if(scoreMiddleSpike != null) { follower.followPath(scoreMiddleSpike); }
-                else { nextStage(); }
+                if (scoreCycleOne != null) {
+                    follower.followPath(scoreCycleOne);
+                } else {
+                    nextStage();
+                }
                 initState();
             }
-            intake.turnIntakeOn();
+
             shooterSubsystem.updateSpin();
 
-            if(!follower.isBusy())
-            {
+            if (!follower.isBusy()) {
 
-                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabGateCycle.ordinal());
+                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabCycleTwo.ordinal());
             }
         }
 
-        if(pathState == AutoStage.grabGateCycle.ordinal())
-        {
-            if(stageInit)
-            {
+        if (pathState == AutoStage.grabCycleTwo.ordinal()) {
+            if (stageInit) {
 
                 intake.turnIntakeOn();
                 transfer.turnTransferOn();
-                if(grabGateCycle != null) { follower.followPath(grabGateCycle,  true); }
-                else { nextStage(); }
+                if (grabCycleTwo != null) {
+                    follower.followPath(grabCycleTwo, 0.9, true);
+                } else {
+                    nextStage();
+                }
                 initState();
 
             }
 
-            if(!follower.isBusy())
-            {
-                nextStage(AutoStage.scoreGateCycle.ordinal());
+            if (!follower.isBusy() || stageStartTimer.getElapsedTimeSeconds() > 4) {
+                nextStage(AutoStage.scoreCycleTwo.ordinal());
             }
         }
-        if(pathState == AutoStage.scoreGateCycle.ordinal())
-        {
-            if(stageInit)
-            {
+        if (pathState == AutoStage.scoreCycleTwo.ordinal()) {
+            if (stageInit) {
                 initState();
                 shooterSubsystem.spinUp();
-                if(scoreGateCycle != null) { follower.followPath(scoreGateCycle); }
-                else { nextStage(); }
+                if (scoreCycleTwo != null) {
+                    follower.followPath(scoreCycleTwo);
+                } else {
+                    nextStage();
+                }
 
             }
-            intake.turnIntakeOn();
+
             shooterSubsystem.updateSpin();
 
 
-            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 30)
-            {
+            if (!follower.isBusy()) {
 
-                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabGateCycleTwo.ordinal());
+                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabCycleThree.ordinal());
             }
         }
 
-        if(pathState == AutoStage.grabGateCycleTwo.ordinal())
-        {
-            if(stageInit)
-            {
+        if (pathState == AutoStage.grabCycleThree.ordinal()) {
+            if (stageInit) {
 
                 intake.turnIntakeOn();
                 transfer.turnTransferOn();
-                if(grabGateCycleTwo != null) { follower.followPath(grabGateCycleTwo,  true); }
-                else { nextStage(); }
+                if (grabCycleThree != null) {
+                    follower.followPath(grabCycleThree, 0.9, true);
+                } else {
+                    nextStage();
+                }
                 initState();
 
             }
 
-            if(!follower.isBusy())
-            {
-                nextStage(AutoStage.scoreGateCycleTwo.ordinal());
+            if (!follower.isBusy() || stageStartTimer.getElapsedTimeSeconds() > 4) {
+                nextStage(AutoStage.scoreCycleThree.ordinal());
             }
         }
-        if(pathState == AutoStage.scoreGateCycleTwo.ordinal())
-        {
-            if(stageInit)
-            {
+        if (pathState == AutoStage.scoreCycleThree.ordinal()) {
+            if (stageInit) {
                 initState();
                 shooterSubsystem.spinUp();
-                if(scoreGateCycleTwo != null) { follower.followPath(scoreGateCycleTwo); }
-                else { nextStage(); }
+                if (scoreCycleThree != null) {
+                    follower.followPath(scoreCycleThree);
+                } else {
+                    nextStage();
+                }
 
             }
-            intake.turnIntakeOn();
+
             shooterSubsystem.updateSpin();
 
 
-            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 30)
-            {
+            if (!follower.isBusy() && stageStartTimer.getElapsedTime() > 30) {
 
-                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabCloseSpike.ordinal());
+                nextStage(AutoStage.shootPrep.ordinal(), AutoStage.grabCycleFour.ordinal());
             }
         }
-        if(pathState == AutoStage.grabCloseSpike.ordinal())
-        {
-            if(stageInit)
-            {
-                if(grabCloseSpike != null) {
+        if (pathState == AutoStage.grabCycleFour.ordinal()) {
+            if (stageInit) {
+                if (grabCycleFour != null) {
                     intake.turnIntakeOn();
                     transfer.turnTransferOn();
-                    follower.followPath(grabCloseSpike,  true);
+                    follower.followPath(grabCycleFour, true);
                     initState();
-                }
-                else {
+                } else {
                     nextStage();
                 }
             }
 
-            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 30) //keeps skipping this state idk why so we wanna make sure we don't jump
+            if (!follower.isBusy() || stageStartTimer.getElapsedTimeSeconds() > 4) //stupid ugly hack bc isBusy isn't working well on far but idgaf anymore
             {
-                nextStage(AutoStage.scoreCloseSpike.ordinal());
+                nextStage(AutoStage.scoreCycleFour.ordinal());
             }
         }
 
-        if(pathState == AutoStage.scoreCloseSpike.ordinal())
-        {
-            if(stageInit)
-            {
+        if (pathState == AutoStage.scoreCycleFour.ordinal()) {
+            if (stageInit) {
                 shooterSubsystem.spinUp();
                 intake.turnIntakeOn();
-                if(scoreCloseSpike != null) { follower.followPath(scoreCloseSpike); }
-                else { nextStage(); }
+                if (scoreCycleFour != null) {
+                    follower.followPath(scoreCycleFour);
+                } else {
+                    nextStage();
+                }
                 initState();
             }
             shooterSubsystem.updateSpin();
 
 
-            if(!follower.isBusy())
-            {
+            if (!follower.isBusy()) {
 
                 nextStage(AutoStage.shootPrep.ordinal(), AutoStage.park.ordinal());
             }
 
         }
 
-        if(pathState == AutoStage.park.ordinal())
-        {
-            if(stageInit)
-            {
+        if (pathState == AutoStage.park.ordinal()) {
+            if (stageInit) {
                 PathChain parkGate = getParkGate(follower);
                 PathChain parkZone = getParkZone(follower);
 
-                if(parkGate != null && !doZonePark) { follower.followPath(parkGate); }
-                else if(parkZone != null && doZonePark ) {follower.followPath(parkZone); }
-                else { nextStage(); }
+                if (parkGate != null && !doZonePark) {
+                    follower.followPath(parkGate);
+                } else if (parkZone != null && doZonePark) {
+                    follower.followPath(parkZone);
+                } else {
+                    nextStage();
+                }
                 initState();
             }
 
-            if(!follower.isBusy() && stageStartTimer.getElapsedTime() > 30)
-            {
+            if (!follower.isBusy() && stageStartTimer.getElapsedTime() > 30) {
                 nextStage(AutoStage.endBehavior.ordinal());
             }
         }
 
 
-        if(pathState == AutoStage.shootPrep.ordinal())
-        {
-            if(stageInit)
-            {
+        if (pathState == AutoStage.shootPrep.ordinal()) {
+            if (stageInit) {
                 shooterSubsystem.spinUp();
                 initState();
             }
             shooterSubsystem.updateSpin();
 
-            if(!follower.isBusy())
-            {
+            if (!follower.isBusy() || stageStartTimer.getElapsedTimeSeconds() > 3) {
                 nextStage(AutoStage.shoot.ordinal());
             }
         }
-        if(pathState == AutoStage.shoot.ordinal())
-        {
+        if (pathState == AutoStage.shoot.ordinal()) {
             if (stageInit) {
                 initState();
                 ShooterSubsystem.isFlywheelSpun = true;
@@ -427,8 +428,7 @@ public abstract class AutoMaster extends RobotMaster {
             }
 
 
-            if(stageStartTimer.getElapsedTime() > 600)
-            {
+            if (stageStartTimer.getElapsedTime() > 600) {
                 shooterSubsystem.stopAutoShot();
                 intake.turnIntakeOff();
                 nextStage(pathAfterStateShotOrdinal);
@@ -436,14 +436,24 @@ public abstract class AutoMaster extends RobotMaster {
             }
 
         }
-        if(pathState == AutoStage.endBehavior.ordinal())
-        {
-           // follower.breakFollowing();
+        if (pathState == AutoStage.centerTurret.ordinal()) {
+            if (isAutoFar()) {
+                if (Math.abs(turret.getTurretDeg()) > 2.0 && centerResetTimer.getElapsedTimeSeconds() < 2.0) {
+                    turret.aimTurret(false, 0, 0, false, 0);
+                } else {
+                    turret.resetEncoder(); // just the encoder reset, no aimTurret call
+                    nextStage(AutoStage.endBehavior.ordinal());
+                }
+            } else {
+                nextStage(AutoStage.endBehavior.ordinal());
+            }
+        }
+
+        if (pathState == AutoStage.endBehavior.ordinal()) {
             drive.hardStopMotors();
             turret.turnOffFlywheel();
             shooterSubsystem.runStopActions();
             intake.turnIntakeOff();
-
         }
     }
 
@@ -482,7 +492,6 @@ public abstract class AutoMaster extends RobotMaster {
 
     protected void initState()
     {
-
         opmodeTimer.resetTimer();
         stageStartTimer.resetTimer();
         stageInit = false;

@@ -44,9 +44,7 @@ public class Pattern {
         this.numBalls = calculateInstantCount();
     }
 
-    /**
-     * Loops through current slots and cleanly maps the total item count
-     */
+
     private int calculateInstantCount() {
         int count = 0;
         if (upper != Ball.EMPTY && upper != Ball.BALL_NOT_DETECTED)  count++;
