@@ -1,12 +1,9 @@
 package org.firstinspires.ftc.teamcode;
 
 
-import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.subsystems.Limelight;
 import org.firstinspires.ftc.teamcode.subsystems.ShooterSubsystem;
 import org.firstinspires.ftc.teamcode.utils.Toggle;
@@ -39,8 +36,10 @@ public abstract class TeleOpMaster extends RobotMaster {
     Toggle intakeToggle = new Toggle(false);
     Toggle outttakeToggle = new Toggle(false);
 
-    public static boolean hasClockReset = false;
-    boolean isAutoAiming = false;
+    private final double defaultCenterAngle = 0.0;
+    private double newCenterAngle = 0.0;
+    private final double MANUAL_TURN_COMPENSATION_FACTOR = -0.7;
+    boolean isUsingModifiedCenter = false;
 
 
     protected abstract boolean isCorrectGoalTag(int tagId);
@@ -96,12 +95,11 @@ public abstract class TeleOpMaster extends RobotMaster {
         // toggles
         circleToggle.updateToggle(gamepad1.circle);
         squareToggle.updateToggle(gamepad1.square);
-        autoAimToggle.updateToggle(gamepad2.guide);
         intakeToggle.updateToggle(gamepad1.right_trigger > 0.1);
         outttakeToggle.updateToggle(gamepad1.left_trigger > 0.1);
 
         // limelight
-        isAutoAiming = autoAimToggle.getState();
+
         LLResult currVision = Limelight.getCurrResult();
         boolean hasValidVision = currVision != null
                 && currVision.isValid()
@@ -128,14 +126,26 @@ public abstract class TeleOpMaster extends RobotMaster {
 
             }
 
+            if(gamepad2.triangle)
+            {
+                isUsingModifiedCenter = true;
+                newCenterAngle = turret.getTurretDeg();
+            }
+            else if(gamepad2.square)
+            {
+                isUsingModifiedCenter = false;
+                newCenterAngle = defaultCenterAngle;
+            }
+
 
         // ALWAYS call aimTurret - it will use odometry if vision is lost
         turret.aimTurret(
                 hasValidVision,
                 hasValidVision ? Limelight.getCurrResult().getTx() : 0,
-                gamepad2.right_stick_x,
-                true,
-                0.0 //doesn't matter since we're using autoaim
+                gamepad2.right_stick_x * MANUAL_TURN_COMPENSATION_FACTOR,
+                isUsingModifiedCenter,
+                newCenterAngle,
+                follower.getVelocity().getMagnitude() < 2
         );
 
         if(gamepad1.touchpad)
@@ -144,8 +154,7 @@ public abstract class TeleOpMaster extends RobotMaster {
         }
 
         runStateMachines();
-        //telemetry.addData("X: ", follower.getPose().getX() + "Y: " + follower.getPose().getY() + "Heading: " + Math.toDegrees(follower.getHeading()));
-
+        telemetry.addData("Velocity: ", follower.getVelocity().getMagnitude());
 
     }
 
@@ -156,7 +165,7 @@ public abstract class TeleOpMaster extends RobotMaster {
     {
         switch (progStates.values()[programStage]) {
             case IDLE:
-                if (gamepad1.left_bumper || gamepad2.dpad_up) {
+                if (gamepad1.left_bumper || gamepad2.left_bumper) {
                     ShooterSubsystem.isFlywheelReady = false;
                     incrementStage(progStates.SHOOT_PREP.ordinal());
                 }
@@ -187,7 +196,7 @@ public abstract class TeleOpMaster extends RobotMaster {
                     gamepad2.rumble(1, 1, 200);
                 }
 
-                if ((gamepad1.right_bumper || gamepad2.dpad_down)) {
+                if ((gamepad1.right_bumper || gamepad2.right_bumper)) {
                     incrementStage(progStates.FIRE_BALL.ordinal());
                 }
                 // cancels the shot
@@ -235,4 +244,6 @@ public abstract class TeleOpMaster extends RobotMaster {
 
 
     }
+
+
 }

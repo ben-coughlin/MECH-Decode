@@ -155,7 +155,8 @@ public abstract class AutoMaster extends RobotMaster {
                 tx,
                 gamepad2.right_stick_x,
                 false,
-                getTargetTurretAngle()
+                getTargetTurretAngle(),
+                follower.getVelocity().getMagnitude() < 2
         );
 
         updatePaths();
@@ -439,7 +440,7 @@ public abstract class AutoMaster extends RobotMaster {
         if (pathState == AutoStage.centerTurret.ordinal()) {
             if (isAutoFar()) {
                 if (Math.abs(turret.getTurretDeg()) > 2.0 && centerResetTimer.getElapsedTimeSeconds() < 2.0) {
-                    turret.aimTurret(false, 0, 0, false, 0);
+                    turret.aimTurret(false, 0, 0, false, 0, true);
                 } else {
                     turret.resetEncoder(); // just the encoder reset, no aimTurret call
                     nextStage(AutoStage.endBehavior.ordinal());

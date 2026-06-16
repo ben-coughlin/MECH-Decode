@@ -35,8 +35,11 @@ public class Turret {
     public static boolean isFlywheelRunning = false;
     private String currentMode = "IDLE";
 
-    private final PIDFController visionAimClose = new PIDFController(0.015, 0.0, 0.001, 0.0);
-    private final PIDFController visionAimFar = new PIDFController(0.0125, 0.00001, 0.001, 0.0);
+    private final PIDFController visionAimClose = new PIDFController(0.0008, 0.0, 0.004, 0.0);
+    private final PIDFController visionAimCloseStationary = new PIDFController(0.0008, 0, 0.0, 0.0);
+
+    private final PIDFController visionAimFar = new PIDFController(0.0095, 0, 0.0007, 0.0002);
+    private final PIDFController visionAimFarStationary = new PIDFController(0.0005, 0, 0.00001, 0.0002);
     private final PIDFController chassisCenterController = new PIDFController(0.045, 0.001, 0.008, 0.0);
     private final ElapsedTime compensationTimer = new ElapsedTime();
     private final double MAX_FLYWHEEL_TPS = 5200 * (FLYWHEEL_TICKS_PER_REVOLUTION / 60.0);
@@ -53,23 +56,33 @@ public class Turret {
     private double maxTPSDrop;
     private int boostCounter = 0;
 
+    private double filteredError          = 0.0;
+    private double lastRawError           = 0.0;
+    private int    consecutiveValidFrames = 0;
+
+    private static final double ERROR_ALPHA_MOVING     = 0.5;  // less smoothing, more responsive
+    private static final double ERROR_ALPHA_STATIONARY = 0.25; // more smoothing, kills jitter
+    private static final double MAX_ERROR_JUMP_DEG     = 20.0; // single-frame outlier threshold
+    private static final int    MIN_VALID_FRAMES       = 3;    // frames before trusting a (re)acquired target
+
+    private final ElapsedTime stationaryTimer = new ElapsedTime();
+    private static final double STATIONARY_DEBOUNCE_MS = 200;
+
     // [Distance (Inches), Hood Position, Flywheel RPM]
     private final double[][] launchAngleLookupTable = {
-            {21.1, .580, 2500},
-            {30.2, .620, 2750},
-            {40.1, .67, 2900},
-            {51.2, .72, 3100},
-            {60.6, .77, 3250},
-            {70.5, .83, 3350},
-            {80.3, .87, 3450},
-            {90.1, .935, 3650},
-            {100.1, .985, 3700},
-            {110.7, .995, 3950},
-            {120.3, 1, 4000},
-            {130.1, 1, 4150},
-            {140.2, 1, 4250}
-
-
+            {21.1, .580, 2700},
+            {30.1, .67, 2800},
+            {40.4, .7, 2950},
+            {51, .75, 3050},
+            {60.3, .82, 3300},
+            {70.1, .85, 3400},
+            {80.5, .9, 3550},
+            {90.7, .96, 3650},
+            {100.6, .98, 3700},
+            {111.8, 1, 3750},
+            {120.3, 1, 3850},
+            {130.1, 1, 3900},
+            {140.2, 1, 4000}
     };
 
     public Turret(HardwareMap hwMap) {
@@ -89,13 +102,15 @@ public class Turret {
 
         flywheelRight.setDirection(DcMotorSimple.Direction.FORWARD);
         flywheelLeft.setDirection(DcMotorSimple.Direction.REVERSE);
-        flywheelLeft.setVelocityPIDFCoefficients(2.0, 0, 1.5, 13.5);
-
+        flywheelLeft.setVelocityPIDFCoefficients(3.5, 0, 2, 13.5);
 
         chassisCenterController.setReference(0);
         visionAimClose.setReference(0);
+        visionAimCloseStationary.setReference(0);
         visionAimFar.setReference(0);
+        visionAimFarStationary.setReference(0);
         compensationTimer.reset();
+        stationaryTimer.reset();
     }
 
     public void updateTurret() {
@@ -114,7 +129,8 @@ public class Turret {
         }
     }
 
-    public void aimTurret(boolean hasValidTarget, double limelightError, double manualTurnInput, boolean shouldAutoAim, double manualTargetAngle) {
+    public void aimTurret(boolean hasValidTarget, double limelightError, double manualTurnInput,
+                          boolean isUsingModifiedCenter, double manualTargetAngle, boolean isChassisStationary) {
         double calculatedPower;
 
         if (Math.abs(manualTurnInput) > 0.05) {
@@ -123,9 +139,7 @@ public class Turret {
             compensationTimer.reset();
             timeSinceLost = 0;
         }
-        else if(!shouldAutoAim)
-        {
-            //sometimes we js wanna chill at one specific spot
+        else if (isUsingModifiedCenter) {
             currentMode = "HOLDING_POSITION";
             chassisCenterController.setReference(manualTargetAngle);
             calculatedPower = chassisCenterController.calculatePIDF(turretDeg);
@@ -133,40 +147,91 @@ public class Turret {
         }
         else {
             if (hasValidTarget) {
+                consecutiveValidFrames++;
                 compensationTimer.reset();
                 timeSinceLost = 0;
 
-                double errorToUse = wrapAngle(limelightError);
-                double currentDistance = Limelight.getDistance();
+                double rawError = wrapAngle(limelightError);
 
+                // Outlier rejection: if error jumps implausibly far in one frame,
+                // it's almost certainly a detection glitch — hold the last value.
+                if (consecutiveValidFrames > 1 && Math.abs(rawError - lastRawError) > MAX_ERROR_JUMP_DEG) {
+                    rawError = lastRawError;
+                }
+                lastRawError = rawError;
 
-                if (currentDistance > 70.0) {
-                    currentMode = "VISION_TRACKING_FAR";
-                    calculatedPower = visionAimFar.calculatePIDF(errorToUse);
+                // EMA smoothing. On the first valid frame after a gap, seed the
+                // filter directly so we don't converge from a stale value.
+                if (consecutiveValidFrames == 1) {
+                    filteredError = rawError;
                 } else {
-                    currentMode = "VISION_TRACKING_CLOSE";
-                    calculatedPower = visionAimClose.calculatePIDF(errorToUse);
+                    double alpha = isChassisStationary ? ERROR_ALPHA_STATIONARY : ERROR_ALPHA_MOVING;
+                    filteredError = alpha * rawError + (1.0 - alpha) * filteredError;
                 }
 
-                if (Math.abs(errorToUse) > 1.0) {
-                    double kF = 0.04;
-                    calculatedPower += Math.signum(errorToUse) * kF;
+                // Don't act until the target has been consistently visible for
+                // MIN_VALID_FRAMES — avoids reacting to a single-frame phantom detection.
+                if (consecutiveValidFrames < MIN_VALID_FRAMES) {
+                    currentMode = "ACQUIRING";
+                    applyTurretPower(lastValidCalculatedPower * 0.2);
+                    return;
+                }
+
+                double errorToUse = filteredError;
+                double currentDistance = Limelight.getDistance();
+
+                if (!isChassisStationary) stationaryTimer.reset();
+                boolean useStationary = isChassisStationary
+                        && stationaryTimer.milliseconds() > STATIONARY_DEBOUNCE_MS;
+
+                if (currentDistance > 70.0) {
+                    double farPowerMoving     = visionAimFar.calculatePIDF(errorToUse);
+                    double farPowerStationary = Math.abs(errorToUse) < 3.0
+                            ? 0.0
+                            : visionAimFarStationary.calculatePIDF(errorToUse);
+
+                    if (useStationary) {
+                        currentMode     = "VISION_TRACKING_FAR_STATIONARY";
+                        calculatedPower = farPowerStationary;
+                    } else {
+                        currentMode     = "VISION_TRACKING_FAR";
+                        calculatedPower = farPowerMoving;
+                    }
+                } else {
+                    double closePowerMoving     = visionAimClose.calculatePIDF(errorToUse);
+                    double closePowerStationary = Math.abs(errorToUse) < 1.5
+                            ? 0.0
+                            : visionAimCloseStationary.calculatePIDF(errorToUse);
+
+                    if (useStationary) {
+                        currentMode     = "VISION_TRACKING_CLOSE_STATIONARY";
+                        calculatedPower = closePowerStationary;
+                    } else {
+                        currentMode     = "VISION_TRACKING_CLOSE";
+                        calculatedPower = closePowerMoving;
+                    }
                 }
 
                 lastValidCalculatedPower = calculatedPower;
             }
             else {
+                consecutiveValidFrames = 0;
+                filteredError          = 0.0;
+                lastRawError           = 0.0;
+
                 timeSinceLost = compensationTimer.milliseconds();
 
                 if (timeSinceLost < 300) {
-                    currentMode = "COAST_DEBOUNCE";
-                    calculatedPower = lastValidCalculatedPower * 0.75;
-                }
-                else {
+                    currentMode     = "DEBOUNCE";
+                    calculatedPower = 0;
+                } else {
                     currentMode = "RETURN_TO_CENTER";
                     double errorToUse = wrapAngle(0.0 - turretDeg);
-
-                    calculatedPower = -chassisCenterController.calculatePIDF(errorToUse);
+                    visionAimFarStationary.reset();
+                    visionAimClose.reset();
+                    visionAimFar.reset();
+                    visionAimCloseStationary.reset();
+                    calculatedPower      = -chassisCenterController.calculatePIDF(errorToUse);
                     lastValidCalculatedPower = 0;
                 }
             }
@@ -297,7 +362,6 @@ public class Turret {
         turretEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         turretEncoder.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
-
 
     public void showAimTelemetry(Telemetry telemetry) {
         telemetry.addData("Turret Mode", currentMode);

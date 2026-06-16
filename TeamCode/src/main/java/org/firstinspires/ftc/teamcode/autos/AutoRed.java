@@ -138,7 +138,7 @@ public class AutoRed extends AutoMaster {
                         new BezierCurve(
                                 new Pose(97.390, 83.161),
                                 new Pose(133.595, 42.687),
-                                new Pose(141.393, 58.5)
+                                new Pose(141.393, 58)
                         )
                 )
                 .setLinearHeadingInterpolation(Math.toRadians(45), Math.toRadians(27))
