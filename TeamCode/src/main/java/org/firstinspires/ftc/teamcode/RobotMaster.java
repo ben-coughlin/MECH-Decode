@@ -179,8 +179,6 @@ public abstract class RobotMaster extends OpMode {
 
         indicatorLight.setBallCount(inventory.getNumBalls());
         indicatorLight.setShotReady(ShooterSubsystem.isShotReady);
-        indicatorLight.setOuttakeRunning(Intake.isOuttakeRunning);
-        indicatorLight.setIntakeRunning(Intake.isIntakeRunning);
         indicatorLight.update();
 
 

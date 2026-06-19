@@ -78,6 +78,7 @@ public abstract class AutoMaster extends RobotMaster {
 
 
     private PathChain scorePreload;
+
     private PathChain grabCycleOne;
     private PathChain hitGate;
     private PathChain scoreCycleOne;
@@ -87,6 +88,8 @@ public abstract class AutoMaster extends RobotMaster {
     private PathChain scoreCycleThree;
     private PathChain grabCycleFour;
     private PathChain scoreCycleFour;
+
+    private double maxSpeed = 1;
 
 
 
@@ -104,13 +107,14 @@ public abstract class AutoMaster extends RobotMaster {
         opmodeTimer = new Timer();
         stageStartTimer = new Timer();
         opmodeTimer.resetTimer();
-        getSkippedStages(); //running this will set the park booleans and then we call it later to get stages
+        getSkippedStages(); //running this will set the park booleans, and then we call it later to get stages
 
         follower = Constants.createFollower(hardwareMap);
         buildPaths();
         follower.setStartingPose(getStartPose());
         follower.update();
         telemetry.addData("Selected", selectedProgram);
+        maxSpeed = (isAutoFar()) ? .85 : 1;
 
     }
 
@@ -137,15 +141,14 @@ public abstract class AutoMaster extends RobotMaster {
         super.mainLoop();
         follower.update();
 
-        LLResult currVision = Limelight.getCurrResult();
-        boolean hasValidVision = currVision != null
-                && currVision.isValid()
-                && isCorrectGoalTag(VisionUtils.getTagId(currVision));
+        boolean hasValidVision = Limelight.currResult != null
+                && Limelight.currResult.isValid()
+                && isCorrectGoalTag(VisionUtils.getTagId(Limelight.currResult));
 
         double tx = 0; // use safe values for both of these if vision fails
         if(hasValidVision)
         {
-             tx = isCorrectGoalTag(VisionUtils.getTagId(currVision)) ? Limelight.getCurrResult().getTx() : 0;
+             tx = isCorrectGoalTag(VisionUtils.getTagId(Limelight.currResult)) ? Limelight.currResult.getTx() : 0;
         }
 
 
@@ -153,13 +156,14 @@ public abstract class AutoMaster extends RobotMaster {
         turret.aimTurret(
                 hasValidVision,
                 tx,
-                gamepad2.right_stick_x,
-                false,
+                0,
+                true,
                 getTargetTurretAngle(),
                 follower.getVelocity().getMagnitude() < 2
         );
 
         updatePaths();
+
 
 
     }
@@ -279,7 +283,7 @@ public abstract class AutoMaster extends RobotMaster {
                 intake.turnIntakeOn();
                 transfer.turnTransferOn();
                 if (grabCycleTwo != null) {
-                    follower.followPath(grabCycleTwo, 0.9, true);
+                    follower.followPath(grabCycleTwo, maxSpeed, true);
                 } else {
                     nextStage();
                 }
@@ -287,7 +291,7 @@ public abstract class AutoMaster extends RobotMaster {
 
             }
 
-            if (!follower.isBusy() || stageStartTimer.getElapsedTimeSeconds() > 4) {
+            if (!follower.isBusy() || stageStartTimer.getElapsedTimeSeconds() > 3) {
                 nextStage(AutoStage.scoreCycleTwo.ordinal());
             }
         }
@@ -296,7 +300,7 @@ public abstract class AutoMaster extends RobotMaster {
                 initState();
                 shooterSubsystem.spinUp();
                 if (scoreCycleTwo != null) {
-                    follower.followPath(scoreCycleTwo);
+                    follower.followPath(scoreCycleTwo, maxSpeed, true);
                 } else {
                     nextStage();
                 }
@@ -318,7 +322,7 @@ public abstract class AutoMaster extends RobotMaster {
                 intake.turnIntakeOn();
                 transfer.turnTransferOn();
                 if (grabCycleThree != null) {
-                    follower.followPath(grabCycleThree, 0.9, true);
+                    follower.followPath(grabCycleThree, maxSpeed, true);
                 } else {
                     nextStage();
                 }
@@ -326,7 +330,7 @@ public abstract class AutoMaster extends RobotMaster {
 
             }
 
-            if (!follower.isBusy() || stageStartTimer.getElapsedTimeSeconds() > 4) {
+            if (!follower.isBusy() || stageStartTimer.getElapsedTimeSeconds() > 3) {
                 nextStage(AutoStage.scoreCycleThree.ordinal());
             }
         }
@@ -335,7 +339,7 @@ public abstract class AutoMaster extends RobotMaster {
                 initState();
                 shooterSubsystem.spinUp();
                 if (scoreCycleThree != null) {
-                    follower.followPath(scoreCycleThree);
+                    follower.followPath(scoreCycleThree, maxSpeed, true);
                 } else {
                     nextStage();
                 }
@@ -355,14 +359,14 @@ public abstract class AutoMaster extends RobotMaster {
                 if (grabCycleFour != null) {
                     intake.turnIntakeOn();
                     transfer.turnTransferOn();
-                    follower.followPath(grabCycleFour, true);
+                    follower.followPath(grabCycleFour, maxSpeed, true);
                     initState();
                 } else {
                     nextStage();
                 }
             }
 
-            if (!follower.isBusy() || stageStartTimer.getElapsedTimeSeconds() > 4) //stupid ugly hack bc isBusy isn't working well on far but idgaf anymore
+            if (!follower.isBusy() || stageStartTimer.getElapsedTimeSeconds() > 3.5) //stupid ugly hack bc isBusy isn't working well on far but idgaf anymore
             {
                 nextStage(AutoStage.scoreCycleFour.ordinal());
             }
@@ -373,7 +377,7 @@ public abstract class AutoMaster extends RobotMaster {
                 shooterSubsystem.spinUp();
                 intake.turnIntakeOn();
                 if (scoreCycleFour != null) {
-                    follower.followPath(scoreCycleFour);
+                    follower.followPath(scoreCycleFour, maxSpeed, true);
                 } else {
                     nextStage();
                 }

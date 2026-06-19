@@ -28,7 +28,7 @@ public class Limelight extends RobotMaster
     private static final double GOAL_APRILTAG_HEIGHT_INCHES = 29.0; // (h2)
     private static final double CAMERA_MOUNTING_ANGLE_DEGREES = 22.0; // (a1)
 
-    private static LLResult currResult = null;
+    public static LLResult currResult = null;
     private static long currLatency = 0;
     private static double tx;
 
@@ -173,12 +173,6 @@ public class Limelight extends RobotMaster
         return new double[]{tagX, tagY};
     }
 
-
-
-    public static LLResult getCurrResult()
-    {
-        return currResult;
-    }
     public static double getDistance() {
         return distance;
     }

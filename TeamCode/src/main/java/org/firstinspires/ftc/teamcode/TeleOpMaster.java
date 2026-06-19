@@ -1,9 +1,13 @@
 package org.firstinspires.ftc.teamcode;
 
 
+import com.pedropathing.ftc.PoseConverter;
+import com.pedropathing.geometry.PedroCoordinates;
+import com.pedropathing.geometry.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.subsystems.Limelight;
 import org.firstinspires.ftc.teamcode.subsystems.ShooterSubsystem;
 import org.firstinspires.ftc.teamcode.utils.Toggle;
@@ -100,10 +104,10 @@ public abstract class TeleOpMaster extends RobotMaster {
 
         // limelight
 
-        LLResult currVision = Limelight.getCurrResult();
-        boolean hasValidVision = currVision != null
-                && currVision.isValid()
-                && isCorrectGoalTag(VisionUtils.getTagId(currVision));
+
+        boolean hasValidVision = Limelight.currResult != null
+                && Limelight.currResult.isValid()
+                && isCorrectGoalTag(VisionUtils.getTagId(Limelight.currResult));
 
        // rumble when we're not using vision
 
@@ -141,7 +145,7 @@ public abstract class TeleOpMaster extends RobotMaster {
         // ALWAYS call aimTurret - it will use odometry if vision is lost
         turret.aimTurret(
                 hasValidVision,
-                hasValidVision ? Limelight.getCurrResult().getTx() : 0,
+                hasValidVision ? Limelight.currResult.getTx() : 0,
                 gamepad2.right_stick_x * MANUAL_TURN_COMPENSATION_FACTOR,
                 isUsingModifiedCenter,
                 newCenterAngle,
@@ -154,9 +158,10 @@ public abstract class TeleOpMaster extends RobotMaster {
         }
 
         runStateMachines();
-        telemetry.addData("Velocity: ", follower.getVelocity().getMagnitude());
+       // telemetry.addData("Velocity: ", follower.getVelocity().getMagnitude());
 
     }
+
 
 
 
@@ -196,7 +201,7 @@ public abstract class TeleOpMaster extends RobotMaster {
                     gamepad2.rumble(1, 1, 200);
                 }
 
-                if ((gamepad1.right_bumper || gamepad2.right_bumper)) {
+                if ((gamepad1.right_bumper)) {
                     incrementStage(progStates.FIRE_BALL.ordinal());
                 }
                 // cancels the shot
@@ -212,7 +217,7 @@ public abstract class TeleOpMaster extends RobotMaster {
                     initializeStateVariables();
                 }
                 shooterSubsystem.startShotSequence(isAuto);
-                if (gamepad1.circle || gamepad2.circle) {
+                if (gamepad1.circle || gamepad2.circle || gamepad2.right_bumper) {
                     shooterSubsystem.runStopActions();
 
                     incrementStage(progStates.IDLE.ordinal());

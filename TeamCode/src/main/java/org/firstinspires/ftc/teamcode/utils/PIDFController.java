@@ -44,10 +44,8 @@ public class PIDFController {
 
         dError = (pError - prevError) / timer.seconds();
 
-
         timer.reset();
         prevError = pError;
-
 
         double output = (kP * pError) + (kI * iError) + (kD * dError) + (kF * Math.signum(pError));
 

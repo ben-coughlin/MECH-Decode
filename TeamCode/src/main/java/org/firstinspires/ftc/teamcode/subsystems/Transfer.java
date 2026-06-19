@@ -44,7 +44,7 @@ public class Transfer {
         {
             transfer.setPower(0);
         }
-       else if(isTransferRunning && (isShotCommanded && shotTimer.milliseconds() > 100))
+       else if(isTransferRunning && (isShotCommanded && shotTimer.milliseconds() > 30))
        {
            transfer.setPower(0.1);
        }

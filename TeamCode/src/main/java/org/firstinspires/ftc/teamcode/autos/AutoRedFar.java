@@ -52,7 +52,7 @@ public class AutoRedFar extends AutoMaster {
 
     @Override
     protected double getTargetTurretAngle() {
-        return 63;
+        return 68;
     }
 
 
@@ -101,12 +101,11 @@ public class AutoRedFar extends AutoMaster {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(123.351, 29.113),
-                                new Pose(97.864, 8.379),
-                                new Pose(82.087, 10.887)
+                                new Pose(97.706, 8.063),
+                                new Pose(81.771, 15.788)
                         )
                 )
-                .setTangentHeadingInterpolation()
-                .setReversed()
+                .setLinearHeadingInterpolation(follower.getHeading(), Math.toRadians(0))
                 .build();
 
 
@@ -116,12 +115,12 @@ public class AutoRedFar extends AutoMaster {
     protected PathChain getGrabCycleTwo(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(82.087, 10.887),
-                                new Pose(103.230, 4.384),
-                                new Pose(132.735, 4.792),
-                                new Pose(129.795, 24.206)
+                                new Pose(81.771, 15.788),
+                                new Pose(104.021, 6.914),
+                                new Pose(130.679, 5.424),
+                                new Pose(127.581, 27.368)
                         )
-                ).setLinearHeadingInterpolation(follower.getHeading(), Math.toRadians(40))
+                ).setTangentHeadingInterpolation()
 
                 .build();
     }
@@ -132,12 +131,12 @@ public class AutoRedFar extends AutoMaster {
     protected PathChain getScoreCycleTwo(Follower follower) {
         return follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(129.795, 24.206),
-                                new Pose(110.512, 3.478),
-                                new Pose(81.604, 13.254)
+                                new Pose(130.111, 11.874),
+                                new Pose(139.919, 28.932),
+                                new Pose(80.497, 14.677)
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(120), Math.toRadians(0))
+                .setLinearHeadingInterpolation(follower.getHeading(), Math.toRadians(0))
                 .build();
     }
 

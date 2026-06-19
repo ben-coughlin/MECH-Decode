@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.tuning;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -12,7 +13,7 @@ import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Limelight;
 import org.firstinspires.ftc.teamcode.subsystems.Transfer;
 import org.firstinspires.ftc.teamcode.subsystems.Turret;
-
+@Disabled
 @TeleOp(name = "Hood Tuning")
 public class HoodTuning extends LinearOpMode {
 
@@ -107,7 +108,7 @@ public class HoodTuning extends LinearOpMode {
             rightBack .setPower((y + x - rx) / denom);
 
             // ── Distance rolling average ───────────────────────────────────
-            LLResult result       = Limelight.getCurrResult();
+            LLResult result       = Limelight.currResult;
             boolean  hasVision    = result != null && result.isValid();
             double   rawDistance  = limelight.getDistanceToTag(result);
 

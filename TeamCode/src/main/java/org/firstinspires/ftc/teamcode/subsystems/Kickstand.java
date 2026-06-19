@@ -17,11 +17,11 @@ public class Kickstand {
 
    public void lowerKickstand()
    {
-       kickstand.setPosition(lowered);
+       //kickstand.setPosition(lowered);
    }
    public void raiseKickstand()
    {
-       kickstand.setPosition(raised);
+       //kickstand.setPosition(raised);
    }
 
 

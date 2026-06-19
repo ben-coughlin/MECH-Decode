@@ -27,8 +27,7 @@ public class Intake
 
     public void turnIntakeOn()
     {
-        double intakePower = 1;
-        intake.setPower(intakePower);
+        intake.setPower(1);
         isIntakeRunning = true;
         isOuttakeRunning = false;
 
